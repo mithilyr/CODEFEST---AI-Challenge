@@ -8,6 +8,9 @@
 python-docx==1.1.2      # .docx paragraphs and tables, in document order
 pdfplumber==0.11.4      # PDF text layer extraction
 
+# --- AI providers ----------------------------------------------------------
+google-genai==1.2.0     # Gemini vision, used once to OCR the 17 scanned PDFs
+
 # --- Configuration ----------------------------------------------------------
 PyYAML==6.0.2           # config/authority.yaml
 python-dotenv==1.0.1    # .env loading, keeps keys out of source
