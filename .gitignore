@@ -1,0 +1,28 @@
+# --- Secrets: never commit. Judges read full commit history. ---
+.env
+*.key
+config/secrets.yaml
+
+# --- Corpus: read-only competition data, ~123 MB. See README for download. ---
+data/*
+!data/.gitkeep
+
+# --- Build artifacts / caches ---
+.cache/
+build/
+*.faiss
+*.npy
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
