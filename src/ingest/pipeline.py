@@ -23,6 +23,7 @@ from src.ingest.authority import assign_authority, load_authority_model
 from src.ingest.dedup import CanonicalDocument, DedupReport, build_canonical_documents
 from src.ingest.loaders import UnsupportedFormatError, load
 from src.ingest.metadata import discover
+from src.ingest.ocr import OCRUnavailableError, transcribe
 from src.settings import get_settings
 
 #: Bumped whenever a change alters ingestion output, so a stale cache is
@@ -61,11 +62,17 @@ class IngestionResult:
     #: Documents that could not be read, as (canonical_id, reason).
     failures: list[tuple[str, str]]
     elapsed_seconds: float
+    #: Scans whose text came from a cached or freshly generated transcription.
+    scans_transcribed: int = 0
+    #: Scans with no transcription available, contributing no evidence.
+    scans_skipped: int = 0
 
     def summary(self) -> str:
         lines = [
             self.dedup_report.summary(),
             f"evidence units       : {len(self.evidence)}",
+            f"scans transcribed    : {self.scans_transcribed}",
+            f"scans without text   : {self.scans_skipped}",
             f"read failures        : {len(self.failures)}",
             f"elapsed              : {self.elapsed_seconds:.1f}s",
         ]
@@ -85,13 +92,22 @@ def _evidence_for(
     file does not abort ingestion of the other 316.
     """
     if document.text_source is None:
-        # Scans awaiting OCR are not failures - they are a known, reported state.
-        return [], None
-
-    try:
-        blocks = load(document.text_source)
-    except (UnsupportedFormatError, OSError, ValueError) as error:
-        return [], f"{type(error).__name__}: {error}"
+        # A scan with no digital twin: its text can only come from OCR. A missing
+        # transcription is reported as a skip rather than an error, so ingestion
+        # still succeeds on a machine with no API key and no committed cache.
+        if not document.needs_ocr or not document.format_variants:
+            return [], None
+        try:
+            blocks = transcribe(document.format_variants[0]).to_blocks()
+        except OCRUnavailableError:
+            return [], None
+        except Exception as error:  # noqa: BLE001 - reported, not swallowed
+            return [], f"OCR failed: {type(error).__name__}: {error}"
+    else:
+        try:
+            blocks = load(document.text_source)
+        except (UnsupportedFormatError, OSError, ValueError) as error:
+            return [], f"{type(error).__name__}: {error}"
 
     display = str(document.display_variants[0]) if document.display_variants else None
 
@@ -136,11 +152,17 @@ def ingest(corpus_path: Path | None = None) -> IngestionResult:
     evidence: list[EvidenceUnit] = []
     failures: list[tuple[str, str]] = []
 
+    transcribed = 0
+    skipped = 0
+
     for document in documents:
         units, error = _evidence_for(document, model)
         evidence.extend(units)
         if error:
             failures.append((document.canonical_id, error))
+        if document.needs_ocr:
+            transcribed += bool(units)
+            skipped += not units and not error
 
     return IngestionResult(
         documents=documents,
@@ -148,6 +170,8 @@ def ingest(corpus_path: Path | None = None) -> IngestionResult:
         dedup_report=dedup_report,
         failures=failures,
         elapsed_seconds=time.perf_counter() - started,
+        scans_transcribed=transcribed,
+        scans_skipped=skipped,
     )
 
 
@@ -172,6 +196,8 @@ def ingest_cached(force: bool = False) -> IngestionResult:
             dedup_report=DedupReport(**payload["dedup_report"]),
             failures=[tuple(f) for f in payload["failures"]],
             elapsed_seconds=payload["elapsed_seconds"],
+            scans_transcribed=payload.get("scans_transcribed", 0),
+            scans_skipped=payload.get("scans_skipped", 0),
         )
 
     result = ingest()
@@ -183,6 +209,8 @@ def ingest_cached(force: bool = False) -> IngestionResult:
                 "dedup_report": asdict(result.dedup_report),
                 "failures": [list(f) for f in result.failures],
                 "elapsed_seconds": result.elapsed_seconds,
+                "scans_transcribed": result.scans_transcribed,
+                "scans_skipped": result.scans_skipped,
             },
             indent=1,
         ),
