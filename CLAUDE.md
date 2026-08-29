@@ -66,11 +66,29 @@ The knowledge graph is the next major piece and is **not yet built**.
 | `src/query/` | Not started |
 | `src/ui/` | Not started |
 
-### Checkpoint 1 results (measured, not predicted)
+### Checkpoint 1 results (reproducible, not just measured)
 
-- **1B join questions: baseline 2/7.** Failures are the predicted shape — retrieval
-  never reaches the second document, or reaches it and cannot join. This validates the
-  graph approach for our chosen sub-track.
+Run them yourself — `python -m eval.run_eval --checkpoint baseline`. Cached, so it
+costs no quota and takes under a second. **All numbers are PROVISIONAL until two
+humans verify the answer key** (`eval/verification/answer_key_review.md`).
+
+    1B 2/7    1C 2/2    all scored 4/9    not scored 11 (1A, untraced)
+    Complete evidence: 0/9
+
+- **1B join questions: baseline 2/7**, and the deeper number is **0/9 complete
+  evidence**. Not one question retrieved every document its answer needs —
+  including both 1B questions scored correct, which reached 1 of 2 each. Every 1B
+  question caps at 0.50 recall. The two "correct" answers are right by the wrong
+  route, which `answer_key.json` asks us to count as retrieval failures.
+- **The old characterisation was wrong.** This file used to say failures are
+  "retrieval never reaches the second document, or reaches it and cannot join".
+  Measured: **3 of 7 reach neither document** (recall 0.00). The join never gets a
+  chance to fail. The graph case is stronger than we were making it, but for a
+  different reason than we wrote down.
+- **Scoring caught itself being wrong.** The first sweep reported 3/7 because the
+  negation guard missed "does not identify" in an answer that was a refusal. Do not
+  trust a score without reading `failure_category`; `negated_gold` means the gold
+  string appeared inside a denial.
 - **1C conflict questions: baseline 2/2.** We predicted it would fail. It did not: the
   codex announces its own authority in prose ("The authoritative record states
   plainly…", "Popular accounts wrongly claim otherwise"), so the model follows that

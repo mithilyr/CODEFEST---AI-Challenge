@@ -315,3 +315,76 @@ whose failures are silent cannot be debugged by looking at its output, so the
 system has to be built out of parts small enough to test individually and
 transparent enough to audit afterwards — which is also, conveniently, what makes
 it defensible in a room.
+
+---
+
+## F-012 — A negation guard built from a phrase list
+
+**Approach.** Having established that substring scoring over-credits (F-011),
+guard it with a list of negation phrases: `does not mention`, `does not state`,
+`does not specify`, `no mention`, and twenty more.
+
+**Hypothesis.** The list covers how a refusal is phrased.
+
+**Experiment.** The first real evaluation sweep. It reported **1B 3/7** against
+the 2/7 previously recorded.
+
+**Result.** The extra "correct" was `1b_009`, whose answer is a refusal:
+
+> Based on the provided passages, no connection between Halvard Crowhurst and
+> the victors of the Purge of Blackport is established. The text only records
+> that Halvard Crowhurst is a member of The Iron-Ring Cartel, which was a
+> belligerent in the Purge of Blackport, but **does not identify** the victors
+> of that conflict.
+
+The gold string `member of the Iron-Ring Cartel` sits in the second sentence.
+That sentence *is* negated — by `does not identify`, which was not in the list.
+`mention`, `state` and `specify` were. `identify` was not.
+
+**Why it failed.** A phrase list has to anticipate every verb a language model
+might reach for, and there is no reason to think any list is complete. The
+failure is silent and biased upward: a missing phrase can only ever turn a wrong
+answer into a right one, never the reverse. A scorer whose errors all point the
+same way is worse than no scorer, because the number looks plausible.
+
+**What changed.** Negation is matched as a **construction**, not a phrase:
+auxiliary + `not`, `no <evidence-noun>`, `not <participle>`. The verbatim
+answer is a regression test, and so are the three real answers that must stay
+correct — so a rule that over-fires breaks the build rather than quietly
+deflating the score.
+
+**Worth noting about the process.** This was caught only because the harness
+disagreed with a number already written down. Had we had no prior 2/7 to
+contradict, 3/7 would have gone into the report. The value of the old figure was
+not that it was right — it was that it was *there to be contradicted*.
+
+---
+
+## F-013 — No request timeout, and retry stacked on top of rotation
+
+**Approach.** Rely on `with_retry` (5 attempts, exponential backoff to 60s) plus
+six-model rotation to survive free-tier limits.
+
+**Result.** The first evaluation sweep processed 3 questions in 12 minutes, then
+**hung for 19 minutes on a single question** with no error and no way to
+interrupt it. It had to be killed.
+
+**Why it failed.** Two compounding faults.
+
+1. The `google-genai` SDK defaults to **no timeout**. A request that never
+   returns blocks forever, and `with_retry` cannot help — it only catches
+   exceptions, and a hung socket does not raise one.
+2. Retry and rotation multiply. Five attempts per model across six models is up
+   to 30 minutes of backoff for one question, which is the wrong trade when each
+   model carries a *separate* quota bucket: a per-minute limit on one model says
+   nothing about the next.
+
+**What changed.** A 120s request ceiling — measured against ~35s typical latency
+for a trivial completion, so roughly 3.5x headroom. Attempts per model dropped to
+2 while alternatives remain, with the full 5 reserved for the last available
+model, where waiting is the only option left.
+
+**The measurement that made the fix cheap.** Because responses are cached, the
+corrected re-run cost **0 API calls and 0.8 seconds**. The cache turned an
+80-minute sweep into a free one, which is the difference between an evaluation
+you run once and an evaluation you can iterate against.
