@@ -40,8 +40,10 @@ shapes no template matches, and writing prose from retrieved evidence.
 
 ### Deliberately not used
 
-- **No graph database.** ~130 entities is a Python dict.
-- **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
+- **No graph database.** 125 measured entities is a Python dict.
+- **No vector database.** ~3,400 chunks is a NumPy matrix multiply in milliseconds.
+  (ADR-008 says 3,364 and this file said 3,392; neither has been re-measured since the
+  chunker changed. Re-measure before either number goes in the report.)
 - **No agent framework.** LangChain/LangGraph/CrewAI would be code we did not write.
 
 If you are tempted to add one of these, the answer is almost certainly no. Say why it
@@ -72,8 +74,11 @@ The knowledge graph is the next major piece and is **not yet built**.
   codex announces its own authority in prose ("The authoritative record states
   plainly…", "Popular accounts wrongly claim otherwise"), so the model follows that
   signal without our tier model. **Our earlier claim that a naive system answers
-  360 AS was wrong.** The authority layer may still matter where a source does not
-  announce itself — that is now a hypothesis to test, not a demonstrated result.
+  360 AS was wrong.** The follow-up hypothesis — that the authority layer still matters
+  where a source does not announce itself — **has now been tested and is not supported.**
+  All 7 conflicts in the archive are codex (tier 1) vs ephemera (tier 4), and the codex
+  announces itself in all 7. Tier and prose agree everywhere. The layer is retained for
+  auditability, not for score; ADR-013 records the condition for deleting it.
 
 Do not repeat the old claim in docs, the report, or the video.
 
@@ -85,15 +90,21 @@ All measured. Several overturned an assumption we had already written down.
    work as `.docx` and `.pdf` (similarity 1.000 and 0.989). `ephemera/` same-stem files
    are **different documents** (similarity 0.019–0.048) — collapsing them deletes real
    evidence. Plates in `images/` and `codex/images/` are byte-identical.
-2. **110 distinct infobox field names express ~12 relations.** `Member of` / `Membership`
+2. **107 distinct infobox field names express ~12 relations.** `Member of` / `Membership`
    / `Affiliation` are one relation; `Housed in` / `Place of housing` are another. A
    parser keyed on literal field names loses a third of the membership edges silently.
+   (Measured 107, not the 110 previously written here — see ADR-009.)
 3. **The graph is asymmetric and bidirectional.** The Iron-Ring Cartel records its own
    victories; The Silent Choir does not. The Silent Choir's members are recorded in
    **two disjoint places** — 6 on the faction page's `Members` row, 8 more on individual
    character pages, with zero overlap. Read both directions or lose half the edges.
-4. **Cells are multi-valued.** `Victor of | The Winter Reckoning; The Leaden Accord` —
+4. **Infobox cells are sentences, not values.** Twelve templates cover all 651 cells
+   (ADR-010). Multi-valued: `Victor of | The Winter Reckoning; The Leaden Accord` —
    split on `;`, then filter by type, because `1b_007` asks specifically for an *accord*.
+   Two-argument: `Fought in [[Conflict]] for [[Faction]]` is **one ternary fact**, and
+   both word orders occur — emitting two edges from the subject asserts something false.
+   Qualified: `[[The Cinder-Wrought Aegis]], since 356 AS` — the qualifier is what
+   `1b_003` asks about, so it belongs on the edge, not glued into the node name.
 5. **Aliases diverge.** `the_purge_of_blackport.md` writes `[[Iron-Ring Cartel]]` without
    the leading "The" that every other reference uses. Without normalisation these are two
    nodes and `1b_009` never joins.
@@ -101,6 +112,18 @@ All measured. Several overturned an assumption we had already written down.
    `loaders.py` — keep any new text path going through `normalise_punctuation()`.
 7. **Some scanned tables are clipped in the source images.** Not our bug; see
    `docs/limitations.md`. Never invent text to fill a gap.
+8. **Markdown emphasis hides every competing claim.** The ephemera wrap their decoy
+   values in `**...**` (`founded in **286 AS**`) and the codex writes its own bare.
+   An extractor that does not strip emphasis finds **zero** conflicts corpus-wide and
+   reports full confidence — silent failure, the worst kind. See ADR-012.
+9. **The infobox is the first pipe table, not the `## Infobox` section.** Six pages have
+   no such heading, three of them artifact pages, one of which is hop 2 of `1b_003`.
+10. **Node type is not on the wiki title.** Only 26 of 95 titles state a category. Type
+    comes from the image filename taxonomy, which `metadata.py` already parses.
+11. **The name space is adversarial.** 19 surnames are shared across entities
+    (`fellgard` ×5); `caedmon_fellgard` and `ederon_fellgard` are 0.839 similar and
+    `ederon_fellgard` is the subject of `1b_007`. Entity resolution is exact-match only
+    — fuzzy matching may never silently pick a winner (ADR-011).
 
 ## Free-tier quotas — plan around these
 
@@ -120,6 +143,7 @@ it on a run you have not finished debugging. Everything is cached — reruns are
 python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
 python -m pytest                   # 40 tests
+python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 ```
 
 Use the project venv: `.venv/Scripts/python.exe` on Windows.
