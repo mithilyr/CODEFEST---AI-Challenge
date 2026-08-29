@@ -138,6 +138,11 @@ class RunResult:
     def total_cache_hits(self) -> int:
         return sum(q.cache_hits for q in self.questions)
 
+    @property
+    def complete_evidence_count(self) -> int:
+        """Scored questions where retrieval reached every required document."""
+        return sum(1 for q in self.scored if q.evidence_recall == 1.0)
+
     def mean_evidence(self, attribute: str) -> float | None:
         values = [
             getattr(q, attribute)
@@ -232,6 +237,12 @@ def render_markdown(run: RunResult) -> str:
         f"Mean evidence recall: **{_fmt(run.mean_evidence('evidence_recall'))}**  ",
         f"Mean evidence precision: **{_fmt(run.mean_evidence('evidence_precision'))}** "
         f"(ceiling is `len(expected)/k`, not 1.0 - see `eval/scoring.py`)",
+        "",
+        f"**Complete evidence: {run.complete_evidence_count}/{len(scored)}** - questions "
+        "where retrieval reached *every* document the answer requires. For a "
+        "multi-hop question this is the number that matters: an answer produced "
+        "from half the required evidence is a right answer by the wrong route, "
+        "which `answer_key.json` asks us to count as a retrieval failure.",
         "",
     ]
 

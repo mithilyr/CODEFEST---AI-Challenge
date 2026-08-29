@@ -31,46 +31,53 @@ import re
 import unicodedata
 from dataclasses import dataclass, field
 
-#: Phrases that turn a nearby match into a denial rather than an assertion.
-#: Kept as a visible list rather than a cleverer rule, because every entry is
-#: a judgement someone may want to argue with.
-NEGATION_MARKERS = (
-    "no mention",
-    "not mentioned",
-    "does not mention",
-    "do not mention",
-    "is not stated",
-    "not stated",
-    "does not state",
-    "not recorded",
-    "unrecorded",
-    "no record",
-    "not specified",
-    "does not specify",
-    "cannot determine",
-    "cannot be determined",
-    "unable to determine",
-    "not possible to determine",
-    "insufficient information",
-    "no information",
-    "not provided",
-    "does not appear",
-    "is unclear",
-    "unclear from",
-    "not found",
-    "no evidence",
-    "without knowing",
+#: Negation, matched against the *normalised* form of a sentence (lowercase,
+#: punctuation folded to spaces - so "doesn't" arrives as "doesn t").
+#:
+#: These are patterns rather than a list of phrases because the list version
+#: failed in production. It enumerated "does not mention", "does not state",
+#: "does not specify" - and the baseline wrote **"does not identify"**, which
+#: nobody had thought of. That one gap scored a refusal as a correct answer and
+#: inflated the reported 1B result from 2/7 to 3/7. Enumerating verbs is a losing
+#: game; match the construction instead.
+NEGATION_PATTERNS = (
+    # auxiliary + not: "does not identify", "is not established", "were not"
+    r"\b(?:does|do|did|is|are|was|were|has|have|had|would|could|should|can|will)\s+not\b",
+    # contractions, post-normalisation
+    r"\b(?:cannot|can\s+t|isn\s+t|aren\s+t|wasn\s+t|doesn\s+t|don\s+t|didn\s+t|couldn\s+t)\b",
+    # "no <evidence-noun>"
+    r"\bno\s+(?:mention|record|records|evidence|information|connection|indication"
+    r"|reference|references|account|accounts|basis|data|details|detail|year|source"
+    r"|sources|statement|way\s+to)\b",
+    # "not <evidence-participle>"
+    r"\bnot\s+(?:mentioned|stated|recorded|established|identified|specified|provided"
+    r"|found|given|listed|named|possible|determinable|clear|available|attested)\b",
+    r"\bnothing\s+(?:is|in|about|to)\b",
+    r"\bunable\s+to\b",
+    r"\bimpossible\s+to\b",
+    r"\binsufficient\b",
+    r"\bunrecorded\b",
+    r"\bsilent\s+on\b",
+)
+
+_NEGATION_RE = re.compile("|".join(NEGATION_PATTERNS))
+
+#: Kept for the abstention check, which asks a different question: is the answer
+#: as a whole a refusal, regardless of where the gold string sits?
+ABSTENTION_EXTRA = (
+    "i cannot",
+    "i can t",
+    "i do not have",
+    "unable to answer",
+    "cannot answer",
+    "does not contain enough information",
+    "not contain enough information",
 )
 
 #: An answer that declines. Distinct from a wrong answer: abstention is a
 #: different failure to diagnose, and for some questions the right behaviour.
-ABSTENTION_MARKERS = NEGATION_MARKERS + (
-    "i cannot",
-    "i can't",
-    "i do not have",
-    "unable to answer",
-    "cannot answer",
-    "contested",
+_ABSTENTION_RE = re.compile(
+    "|".join(NEGATION_PATTERNS + tuple(re.escape(p) for p in ABSTENTION_EXTRA))
 )
 
 #: Sentence boundaries. Negation is scoped to the sentence containing a match:
@@ -116,13 +123,13 @@ def _spans(haystack: str, needle: str) -> list[tuple[int, int]]:
 
 
 def is_negated(sentence: str) -> bool:
-    """Does this sentence deny rather than assert?"""
-    return any(marker in sentence for marker in NEGATION_MARKERS)
+    """Does this sentence deny rather than assert? Sentence must be normalised."""
+    return bool(_NEGATION_RE.search(sentence))
 
 
 def is_abstention(answer: str) -> bool:
     """Is the whole answer a refusal to commit?"""
-    return any(marker in normalise(answer) for marker in ABSTENTION_MARKERS)
+    return bool(_ABSTENTION_RE.search(normalise(answer)))
 
 
 @dataclass(frozen=True)

@@ -424,3 +424,62 @@ def test_a_request_timeout_is_configured():
 
     assert gemini.REQUEST_TIMEOUT_MS > 0
     assert gemini.REQUEST_TIMEOUT_MS <= 300_000, "a timeout this long is not a timeout"
+
+
+def test_the_1b_009_baseline_answer_that_slipped_through():
+    """Verbatim from the first real sweep. The answer denies the connection the
+    question asks about, then mentions the membership in a sentence ending
+    "does not identify the victors". The phrase list had "does not mention",
+    "does not state" and "does not specify" - not "does not identify" - so this
+    scored correct and reported 1B as 3/7 instead of 2/7."""
+    predicted = (
+        "Based on the provided passages, no connection between Halvard Crowhurst "
+        "and the victors of the Purge of Blackport is established. The text only "
+        "records that Halvard Crowhurst is a member of The Iron-Ring Cartel, "
+        "which was a belligerent in the Purge of Blackport, but does not identify "
+        "the victors of that conflict [3]."
+    )
+    verdict = score_answer(predicted, ["member of the Iron-Ring Cartel", "Iron-Ring Cartel member"])
+    assert verdict.correct is False
+    assert verdict.negated_match == "member of the Iron-Ring Cartel"
+
+
+def test_the_1c_answers_that_must_stay_correct():
+    """Guards the other direction. Both real 1C answers name the competing claim
+    in a later sentence; a negation rule that over-fires would break them."""
+    gloamreach = (
+        "The true founding of Gloamreach is **246 AS** [1][2].\n\n"
+        "*(Note: While contract ephemera claims 286 AS [3], the established "
+        "gazetteer record explicitly rejects alternative accounts in favor of "
+        "246 AS [1]).*"
+    )
+    assert score_answer(gloamreach, ["246 AS"]).correct is True
+
+    sorrowfell = (
+        "The authoritative record states the Gauntlet of Sorrowfell was forged in "
+        "**391 AS** [1, 2].\n\nHowever, accounts conflict across sources:\n"
+        "* Another sermon lists its forging year as **360 AS** [5].\n"
+        "* Other texts state that its forging date is unrecorded or disputed [3, 4]."
+    )
+    assert score_answer(sorrowfell, ["391 AS"]).correct is True
+
+
+def test_the_1b_005_answer_that_must_stay_correct():
+    predicted = (
+        "The War of Drowned Light was recorded as won by The Silent Choir, the "
+        "organization of which Isolde Mournvale was a member [1][2]."
+    )
+    assert score_answer(predicted, ["The War of Drowned Light"]).correct is True
+
+
+def test_complete_evidence_counts_only_full_recall():
+    """A right answer from half the evidence is a right answer by the wrong
+    route. answer_key.json asks for that to count as a retrieval failure."""
+    run = new_run("baseline")
+    run.questions = [
+        _question(qid="full", evidence_recall=1.0),
+        _question(qid="half", evidence_recall=0.5),
+        _question(qid="none", evidence_recall=0.0),
+        _question(qid="untraced", scored=False, evidence_recall=None),
+    ]
+    assert run.complete_evidence_count == 1
