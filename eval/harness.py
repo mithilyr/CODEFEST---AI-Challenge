@@ -16,6 +16,7 @@ ground truth behind it has been checked by a person.
 
 from __future__ import annotations
 
+import collections
 import json
 import platform
 import subprocess
@@ -23,11 +24,11 @@ import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from eval.scoring import CATEGORY_GLOSSARY
+from eval.scoring import CATEGORY_GLOSSARY, CONFLICT_VERDICTS
 
 #: Bumped when the record layout changes, so old result files stay readable
 #: and a reader can tell which schema produced a number.
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 
 @dataclass
@@ -95,6 +96,19 @@ class QuestionResult:
     #: None for untraced questions - absence of a traced answer is not
     #: evidence that no answer exists.
     answerable: bool | None
+
+    # -- ground-truth shape ----------------------------------------------
+    #: single | any_of. any_of means several distinct answers are valid.
+    answer_cardinality: str | None = None
+    accepted_answer_count: int = 0
+    #: none | may_surface | must_surface
+    expected_conflict_status: str | None = None
+    #: n/a | n/a (answer wrong) | surfaced | asserted_as_fact | not_mentioned.
+    #: Scored separately from correctness: "said the right thing" and
+    #: "represented a disputed claim honestly" are different questions.
+    conflict_handling: str | None = None
+    #: draft | single_review | confirmed | unresolved
+    key_verification_status: str | None = None
     error: str | None = None
 
 
@@ -183,15 +197,17 @@ def new_run(checkpoint: str) -> RunResult:
 
 # -- reporting -----------------------------------------------------------
 
-PROVISIONAL_BANNER = """> ### PROVISIONAL - ground truth is not yet verified
+PROVISIONAL_BANNER = """> ### PROVISIONAL - ground truth is not fully verified
 >
-> {unverified} of {total} scoreable questions have `verified_by: null` in
-> `eval/answer_key.json`. The answer key was traced by an AI assistant reading
-> the corpus, and **no human has independently confirmed it**.
+> {unverified} of {total} scoreable questions are not yet `confirmed`.
+> ADR-014 requires **two independent reviewers** per entry; the breakdown below
+> shows where each one stands.
 >
-> Every number below is provisional. Do not quote any of it in the report, the
-> video, or a decision until two reviewers have signed off the entries - see
-> `eval/verification/` for the review pack and ADR-014 for the process.
+> {status_line}
+>
+> Every number below is provisional. Do not quote it in the report, the video,
+> or a decision until the entries are confirmed - see `eval/verification/` for
+> the review pack.
 """
 
 VERIFIED_BANNER = """> ### Verified
@@ -211,8 +227,16 @@ def render_markdown(run: RunResult) -> str:
     unverified = [q for q in scored if not q.key_verified]
 
     lines = [f"# Checkpoint: {run.checkpoint}", ""]
+    status_counts: collections.Counter[str] = collections.Counter(
+        q.key_verification_status or "unknown" for q in scored
+    )
+    status_line = "Key status: " + ", ".join(
+        f"**{count} {status}**" for status, count in sorted(status_counts.items())
+    )
     lines.append(
-        PROVISIONAL_BANNER.format(unverified=len(unverified), total=len(scored))
+        PROVISIONAL_BANNER.format(
+            unverified=len(unverified), total=len(scored), status_line=status_line
+        )
         if unverified
         else VERIFIED_BANNER.format(total=len(scored))
     )
@@ -258,17 +282,48 @@ def render_markdown(run: RunResult) -> str:
         lines += [f"- `{q.qid}` ({q.track}) - {q.question}" for q in unscored]
         lines.append("")
 
-    lines += ["## Per question", "", "| qid | key | correct | category | ev. recall | ev. prec | latency |", "|---|---|---|---|---|---|---|"]
+    lines += [
+        "## Per question",
+        "",
+        "`answers` is how many distinct answers the key accepts - `any_of` questions "
+        "have more than one, and returning any of them is correct.",
+        "",
+        "| qid | key status | correct | category | answers | conflict | ev. recall | ev. prec |",
+        "|---|---|---|---|---|---|---|---|",
+    ]
     for question in scored:
+        cardinality = (
+            f"{question.accepted_answer_count} ({question.answer_cardinality})"
+            if question.answer_cardinality
+            else "-"
+        )
         lines.append(
             f"| `{question.qid}` "
-            f"| {'verified' if question.key_verified else '**provisional**'} "
+            f"| {question.key_verification_status or '-'} "
             f"| {'yes' if question.correct else 'no'} "
             f"| {question.failure_category} "
+            f"| {cardinality} "
+            f"| {question.conflict_handling or '-'} "
             f"| {_fmt(question.evidence_recall, 2)} "
-            f"| {_fmt(question.evidence_precision, 2)} "
-            f"| {question.latency_ms} ms |"
+            f"| {_fmt(question.evidence_precision, 2)} |"
         )
+
+    conflict_questions = [q for q in scored if q.expected_conflict_status == "must_surface"]
+    if conflict_questions:
+        lines += [
+            "",
+            "### Conflict handling",
+            "",
+            "Questions where the corpus contradicts itself and an answer must say so. "
+            "Scored separately from correctness on purpose: saying the right thing and "
+            "representing a disputed claim honestly are different achievements.",
+            "",
+        ]
+        for question in conflict_questions:
+            lines.append(
+                f"- `{question.qid}`: **{question.conflict_handling}** - "
+                f"{CONFLICT_VERDICTS.get(question.conflict_handling or '', '')}"
+            )
 
     seen = {q.failure_category for q in scored}
     lines += ["", "### Categories present in this run", ""]

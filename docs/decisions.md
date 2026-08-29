@@ -899,3 +899,163 @@ come back and update this ADR.
 
 *Status: accepted; harness validated by tests, baseline numbers provisional
 pending human verification of the key.*
+
+---
+
+## ADR-013 CORRECTION — a same-tier relational conflict exists, and tier cannot resolve it
+
+**What ADR-013 concluded**
+
+That tier resolves **7 of 7** conflicts in the archive, that the codex announces
+itself in all 7, and that the authority layer therefore earns its place on
+auditability rather than on score.
+
+**What was wrong with it**
+
+The measurement behind it examined only **dated attribute claims** — `founded`
+and `forged` years extracted by `eval/probes/corpus_shape.py`. It never looked
+at **relational** claims, and it drew a conclusion about "conflicts in the
+archive" from a sample that structurally excluded them.
+
+Human review of `1b_009` on 2026-08-29 found the counter-example, and it was
+confirmed by reading both pages verbatim:
+
+| Source | Tier | Claim |
+|---|---|---|
+| `wiki/the_purge_of_blackport.md` | 2 | `Victor \| [[Iron-Ring Cartel]]`, and in prose: *"The Iron-Ring Cartel emerged as the victor"* |
+| `wiki/the_iron_ring_cartel.md` | 2 | `Victor of \| [[The Winter Reckoning]]; [[The Leaden Accord]]` — the Purge is **excluded**, and the prose says so twice: *"This record establishes participation without assigning the Cartel the status of victor."* |
+
+This is an **affirmative denial**, not an omission. The Cartel page keeps a
+victor list, puts two conflicts on it, leaves this one off, and then comments on
+the exclusion. Both sources are `wiki/` at tier 2 with identical subtier.
+`config/authority.yaml` ranks by collection, so it cannot separate them, by
+construction.
+
+**What we re-measured**
+
+All six victor edges declared on conflict pages, checked against what the
+faction's own page says:
+
+| Outcome | Count | Detail |
+|---|---|---|
+| Agree both ways | 4 | Leaden Accord, Winter Reckoning, War of Endless Vigil, Accord of Mournthrone |
+| **Contradicted** | **1** | **Purge of Blackport / Iron-Ring Cartel** |
+| Faction page silent | 1 | War of Drowned Light / The Silent Choir |
+
+The silent case matters as much as the contradicted one. The Silent Choir's page
+lists the war under `Belligerencies` and carries **no victor row at all** — it
+makes no victory claims about anything, and states outright that outcomes are
+not detailed. Absence of a claim from a page that never makes such claims is
+silence, not denial. `1b_005` and `1b_022` therefore remain clean two-hop
+questions, and must not be mislabelled as conflicts.
+
+An earlier version of this measurement did mislabel them, by testing only "is
+this conflict in the faction's belligerent list and absent from its victor
+list". That test cannot tell a page that declines to claim victories from a page
+that claims victories and excludes one. The corrected test asks whether the
+faction page makes victor claims **at all**.
+
+**What changes**
+
+1. ADR-013's *conclusion about dated attributes stands* — those 7 are still
+   tier-decided and codex-announced. Its *scope claim* does not: it was never a
+   statement about the whole archive.
+2. The conflict resolver needs a **same-tier** branch. Tier is not a total order
+   over claims, and on the one relational conflict we have it provides no
+   signal at all.
+3. `expected_conflict_status: must_surface` enters the answer key. Where the
+   corpus contradicts itself and authority cannot adjudicate, the correct
+   system behaviour is to **report the disagreement**, not to pick a side.
+
+**Trade-offs**
+
+We now have one measured same-tier conflict, which is a sample of one. We are
+not building a general conflict-arbitration framework on it. The change is
+narrow: represent the conflict, surface it, and decline to resolve what the
+corpus does not resolve.
+
+*Status: ADR-013 amended, not withdrawn. Scope corrected; the dated-attribute
+finding stands.*
+
+---
+
+## ADR-015 — The answer key represents the corpus, not the scorer's convenience
+
+**Problem**
+
+The v1 answer key gave every question one `answer`, one `expected_path`, and a
+flat `acceptable` list. Human review on 2026-08-29 showed three questions that
+do not fit that shape, and the misfit was not cosmetic — each one would have
+produced a wrong score.
+
+| Question | Why v1 could not represent it |
+|---|---|
+| `1b_006` | Fourteen valid answers, recorded in two disjoint places. A single `answer` field invites narrowing the set, and a narrowed set marks correct answers wrong. |
+| `1b_007` | Two genuine victories in one multi-valued cell; only one is an *accord*. The distractor is not an error to be filtered out of the key — it is a correct fact that the question's type word excludes. |
+| `1b_009` | A wiki-vs-wiki contradiction at the same tier. v1 had a `conflict` block, but it assumed an `authoritative` winner. There isn't one. |
+
+**Decision**
+
+Schema v2. Every question carries `accepted_answers` (each with its own
+aliases), `answer_cardinality`, `required_evidence`, `acceptable_paths`,
+`conflicts`, `expected_conflict_status`, `confidence` and `verification`.
+
+Two distinctions the schema now enforces:
+
+- **An alias is not an alternative answer.** `Leaden Accord` is a spelling of
+  `The Leaden Accord`; `Isolde Mournvale` is a different answer from
+  `Ravena Stormwell`. Collapsing them makes it impossible to tell "we accept
+  either spelling" from "we accept either person", and the second is a claim
+  about the corpus.
+- **Silence is not denial.** `Claim.stance` is `asserts | denies | silent`.
+  Without it, `1b_005` and `1b_009` look like the same kind of question and are
+  not.
+
+**Scoring consequence**
+
+Conflict handling is scored as a **separate dimension** from correctness:
+`surfaced | asserted_as_fact | not_mentioned | n/a`. Saying the right thing and
+representing a disputed claim honestly are different achievements, and a system
+can do the first while failing the second.
+
+It is gated behind correctness — a wrong answer scores `n/a (answer wrong)`.
+Judging how a wrong answer handled a nuance compounds one failure into two and
+measures nothing.
+
+The trigger is explicit rather than inferred. `1b_009`'s conflict carries
+`assertion_markers: [victor, victors, victorious, won, victory, prevailed]`,
+because the contested proposition is *"the Cartel won"*, not *"the Cartel
+exists"*. An entity-mention test penalises the careful answer
+"Halvard Crowhurst is a recorded member of the Iron-Ring Cartel", which asserts
+nothing contested. Keeping the markers in the key makes the rule auditable and
+arguable, which is the same reason `config/authority.yaml` is a file.
+
+**What we did not do**
+
+We did not narrow `1b_006` to the two answers the review returned. Corpus
+enumeration finds fourteen — six on the faction page's `Members` row, eight more
+on individual character pages, zero overlap — and the review missed the faction
+row entirely. The entry is marked `unresolved` with the discrepancy recorded,
+rather than silently corrected in either direction.
+
+This is the clearest argument in the project for ADR-014's two-reviewer rule.
+One careful reviewer, working alone and reporting high confidence, found 2 of
+14. `verification.is_confirmed` therefore requires two reviewers **and** no open
+discrepancy; a single consolidated review is `single_review`, not `confirmed`.
+
+**Trade-offs**
+
+The key is longer and takes more care to edit. Accepted: it is the ground truth
+every architectural decision from Checkpoint 2 onward is scored against, and a
+ground truth that cannot express the corpus is worse than a long one.
+
+**How we will validate it**
+
+`tests/test_eval.py` asserts that `1b_006` keeps all fourteen answers and
+accepts any of them, that `1b_009`'s conflict is recorded as same-tier and
+unresolved with both an `asserts` and a `denies` claim, that no entry is
+confirmed while the review remains a single pass, and that asserting a disputed
+claim as fact is flagged while merely naming the entity is not.
+
+*Status: accepted, validated by tests. All nine entries remain unconfirmed —
+six `single_review`, one `unresolved`, two `draft` (1C was not reviewed).*

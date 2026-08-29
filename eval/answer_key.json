@@ -1,329 +1,684 @@
 {
   "_about": {
-    "purpose": "Ground truth for the 20 supplied dev questions, traced by hand through the corpus. Both the baseline (Checkpoint 1) and every later checkpoint score against this file.",
-    "status": "DRAFT - derived by tracing the corpus. Every entry must be independently re-checked by a team member before it is used for reporting. Set verified_by when you have confirmed an entry against the cited sources yourself.",
-    "convention": "expected_path records the hops a correct system should traverse. It is scored separately from the answer: a right answer reached by the wrong route is still a retrieval failure, and we want to see that. Set-valued questions list every valid answer; scoring accepts any one. Note that substring matching over-credits: an answer saying 'there is no mention of who the victors were' still contains the phrase we look for, so the harness must check the claim, not just the presence of a string.",
-    "tracks_covered": "1B and 1C are traced. 1A questions require reading values off figure plates and are recorded as untraced - see _untraced_1a."
+    "purpose": "Ground truth for the supplied dev questions. Every checkpoint scores against this file.",
+    "schema_version": 2,
+    "why_v2": "v1 forced every question into a single expected answer plus one path. Human review on 2026-08-29 showed the corpus does not fit that shape: 1b_006 has fourteen valid answers, 1b_007 needs a type filter to choose between two multi-valued victories, and 1b_009 turns on a wiki-vs-wiki contradiction that no source tier can resolve. The schema now represents the corpus rather than the convenience of the scorer.",
+    "principle": "The evaluator must represent the corpus faithfully, even when that makes scoring harder. Never simplify ground truth because it is inconvenient to implement, and never edit an answer to make the system score better.",
+    "scoring_convention": "An answer is correct when any entry in accepted_answers (or one of its aliases) appears in a sentence that does not negate it. Evidence is scored separately from the answer: a right answer reached without the required evidence is a retrieval failure, which is what complete-evidence counts. Where expected_conflict_status is must_surface, an answer that states the disputed claim as unqualified fact is scored as mishandling the conflict even when its wording matches."
+  },
+  "_schema": {
+    "answer_cardinality": "single = one fact; any_of = several distinct valid answers, any one acceptable.",
+    "accepted_answers": "List of {answer, aliases}. Aliases are surface variants of the SAME answer, not alternative answers.",
+    "required_evidence": "Documents an answer must be grounded in. Drives evidence recall/precision and the complete-evidence count.",
+    "acceptable_paths": "One or more traversals that legitimately reach the answer. More than one entry means genuinely different valid routes, not the same route written twice.",
+    "conflicts": "Claims the corpus makes about the same subject-relation that disagree. stance is asserts | denies | silent. same_tier records whether the authority model can separate them at all. assertion_markers lists the words that indicate an answer is asserting the disputed claim, as opposed to merely naming the entities involved.",
+    "expected_conflict_status": "none | may_surface | must_surface. must_surface means an answer presenting the disputed claim as settled fact is wrong however it is phrased.",
+    "verification": "status: draft | single_review | confirmed | unresolved. confirmed requires TWO independent reviewers per ADR-014; one consolidated review is single_review."
   },
   "questions": [
     {
       "qid": "1b_003",
       "track": "1B",
       "question": "To which shadowed redoubt must one journey to examine the relic long borne by Cerys Sablewood the Ashen since 356 AS?",
-      "answer": "Gloamreach",
-      "acceptable": [
-        "Gloamreach"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "Cerys Sablewood the Ashen",
-          "relation": "wields",
-          "to": "The Cinder-Wrought Aegis",
-          "source": "wiki/cerys_sablewood_the_ashen.md",
-          "field": "Wields",
-          "note": "qualified 'since 356 AS', matching the question"
-        },
-        {
-          "from": "The Cinder-Wrought Aegis",
-          "relation": "housed_in",
-          "to": "Gloamreach",
-          "source": "wiki/the_cinder_wrought_aegis.md",
-          "field": "Place of housing"
+          "answer": "Gloamreach",
+          "aliases": []
         }
       ],
-      "template": "custody_chain",
-      "notes": "Hop 2 uses the field name 'Place of housing', not 'Housed in'. Both spellings exist in the corpus for the same relation.",
-      "verified_by": null
+      "required_evidence": [
+        "wiki/cerys_sablewood_the_ashen.md",
+        "wiki/the_cinder_wrought_aegis.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "custody_chain",
+          "hops": [
+            {
+              "from": "Cerys Sablewood the Ashen",
+              "relation": "wields",
+              "to": "The Cinder-Wrought Aegis",
+              "source": "wiki/cerys_sablewood_the_ashen.md",
+              "field": "Wields",
+              "note": "cell carries the qualifier 'since 356 AS', which the question names explicitly"
+            },
+            {
+              "from": "The Cinder-Wrought Aegis",
+              "relation": "housed_in",
+              "to": "Gloamreach",
+              "source": "wiki/the_cinder_wrought_aegis.md",
+              "field": "Place of housing",
+              "note": "field is 'Place of housing', not 'Housed in'; this page also has NO '## Infobox' heading"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "Hop 2 lives on one of the six wiki pages whose infobox carries no '## Infobox' heading. A heading-keyed parser answers this question with nothing at all. See ADR-009.",
+      "verification": {
+        "status": "single_review",
+        "reviewers": [
+          "teammate_review_2026_08_29"
+        ],
+        "reviewed_on": "2026-08-29",
+        "reviewer_confidence": "high"
+      }
     },
     {
       "qid": "1b_005",
       "track": "1B",
       "question": "Which war was won by the organization that included Isolde Mournvale as one of its members?",
-      "answer": "The War of Drowned Light",
-      "acceptable": [
-        "The War of Drowned Light",
-        "War of Drowned Light"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "Isolde Mournvale",
-          "relation": "member_of",
-          "to": "The Silent Choir",
-          "source": "wiki/isolde_mournvale.md",
-          "field": "Member of"
-        },
-        {
-          "from": "The Silent Choir",
-          "relation": "victor_of",
-          "to": "The War of Drowned Light",
-          "source": "wiki/the_war_of_drowned_light.md",
-          "field": "Victor",
-          "note": "REVERSE lookup - the Silent Choir's own page has no 'Victor of' row, so this edge exists only on the conflict page"
+          "answer": "The War of Drowned Light",
+          "aliases": [
+            "War of Drowned Light"
+          ]
         }
       ],
-      "template": "affiliation_outcome",
-      "notes": "Proves the reverse-traversal requirement. Unlike the Iron-Ring Cartel, the Silent Choir does not record its own victories, so the graph is not symmetric and hop 2 cannot be read off the faction page.",
-      "verified_by": null
+      "required_evidence": [
+        "wiki/isolde_mournvale.md",
+        "wiki/the_war_of_drowned_light.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "affiliation_outcome",
+          "hops": [
+            {
+              "from": "Isolde Mournvale",
+              "relation": "member_of",
+              "to": "The Silent Choir",
+              "source": "wiki/isolde_mournvale.md",
+              "field": "Member of"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "victor_of",
+              "to": "The War of Drowned Light",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor",
+              "note": "REVERSE lookup - this edge exists only on the conflict page"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "Proves the reverse-traversal requirement. The Silent Choir page records this war under 'Belligerencies' and has NO victor row of any kind, so it is SILENT on the outcome rather than contradicting it - verified 2026-08-29, and deliberately distinguished from 1b_009 where the faction page does make victor claims and excludes one. Silence is not denial.",
+      "verification": {
+        "status": "single_review",
+        "reviewers": [
+          "teammate_review_2026_08_29"
+        ],
+        "reviewed_on": "2026-08-29",
+        "reviewer_confidence": "high"
+      }
     },
     {
       "qid": "1b_006",
       "track": "1B",
       "question": "Which individual was a member of the faction that ultimately won the War of Drowned Light?",
-      "answer": "Ravena Stormwell",
-      "acceptable": [
-        "Ravena Stormwell",
-        "Isolde Mournvale",
-        "Maelis Harrowick the Pale",
-        "Corvus Hollowmere the Pale",
-        "Morwenna Morvain",
-        "Morwenna Vosgard",
-        "Ossric Ravensmoor",
-        "Ossric Wrenfield",
-        "Ignatz Fellgard",
-        "Brannoc Palefroth",
-        "Thessaly Coldwater",
-        "Lucan Hollowmere",
-        "Tamsin Greyfen",
-        "Ossric Ashgrove"
-      ],
-      "expected_path": [
+      "answer_cardinality": "any_of",
+      "accepted_answers": [
         {
-          "from": "The War of Drowned Light",
-          "relation": "victor",
-          "to": "The Silent Choir",
-          "source": "wiki/the_war_of_drowned_light.md",
-          "field": "Victor"
+          "answer": "Ignatz Fellgard",
+          "aliases": []
         },
         {
-          "from": "The Silent Choir",
-          "relation": "has_member",
-          "to": "Ravena Stormwell",
-          "source": "wiki/ravena_stormwell.md",
-          "field": "Member of",
-          "note": "REVERSE lookup across all character pages"
+          "answer": "Brannoc Palefroth",
+          "aliases": []
+        },
+        {
+          "answer": "Thessaly Coldwater",
+          "aliases": []
+        },
+        {
+          "answer": "Lucan Hollowmere",
+          "aliases": []
+        },
+        {
+          "answer": "Tamsin Greyfen",
+          "aliases": []
+        },
+        {
+          "answer": "Ossric Ashgrove",
+          "aliases": []
+        },
+        {
+          "answer": "Corvus Hollowmere the Pale",
+          "aliases": [
+            "Corvus Hollowmere"
+          ]
+        },
+        {
+          "answer": "Isolde Mournvale",
+          "aliases": []
+        },
+        {
+          "answer": "Maelis Harrowick the Pale",
+          "aliases": [
+            "Maelis Harrowick"
+          ]
+        },
+        {
+          "answer": "Morwenna Morvain",
+          "aliases": []
+        },
+        {
+          "answer": "Morwenna Vosgard",
+          "aliases": []
+        },
+        {
+          "answer": "Ossric Ravensmoor",
+          "aliases": []
+        },
+        {
+          "answer": "Ossric Wrenfield",
+          "aliases": []
+        },
+        {
+          "answer": "Ravena Stormwell",
+          "aliases": []
         }
       ],
-      "template": "affiliation_outcome",
-      "notes": "SET-VALUED, 14 valid answers, and membership is recorded in TWO disjoint places with no overlap between them: the faction page's 'Members' row lists 6 people, while 8 separate character pages carry 'Member of -> The Silent Choir'. Neither list mentions anyone from the other. A graph builder that reads only one direction loses more than half the membership edges. Found when the baseline answered 'Brannoc Palefroth' and our key wrongly scored it wrong - the key was reading only the character-page direction.",
-      "verified_by": null
+      "required_evidence": [
+        "wiki/the_war_of_drowned_light.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "via_faction_page_members_row",
+          "hops": [
+            {
+              "from": "The War of Drowned Light",
+              "relation": "victor",
+              "to": "The Silent Choir",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "has_member",
+              "to": "Ignatz Fellgard",
+              "source": "wiki/the_silent_choir.md",
+              "field": "Members",
+              "note": "multi-valued cell, 6 names split on ';'"
+            }
+          ]
+        },
+        {
+          "label": "via_character_page_reverse_lookup",
+          "hops": [
+            {
+              "from": "The War of Drowned Light",
+              "relation": "victor",
+              "to": "The Silent Choir",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "has_member",
+              "to": "Ravena Stormwell",
+              "source": "wiki/ravena_stormwell.md",
+              "field": "Member of",
+              "note": "REVERSE lookup across all character pages"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "FOURTEEN valid answers, and membership is recorded in TWO DISJOINT places with zero overlap: 6 names on the faction page's 'Members' row, 8 more on individual character pages. Both directions are required; either alone loses more than half the members. Re-verified against the corpus on 2026-08-29 by enumerating both directions. NOTE ON REVIEW: the 2026-08-29 human review reported only two valid answers (Ravena Stormwell, Isolde Mournvale). That is incomplete - it missed the faction page's Members row entirely and six of the eight character pages. The fourteen-name set is the corpus-verified one and is retained. Recorded rather than quietly corrected, because it is the clearest evidence for why ADR-014 requires two independent reviewers.",
+      "verification": {
+        "status": "unresolved",
+        "reviewers": [
+          "teammate_review_2026_08_29"
+        ],
+        "reviewed_on": "2026-08-29",
+        "reviewer_confidence": "high",
+        "discrepancy": "Review listed 2 accepted answers; corpus enumeration finds 14. Machine check re-run 2026-08-29 confirms 6 on wiki/the_silent_choir.md 'Members' plus 8 character pages carrying a membership row. Needs a second reviewer to settle before this entry counts as confirmed."
+      }
     },
     {
       "qid": "1b_007",
       "track": "1B",
       "question": "Which accord was ultimately won by the faction of which Ederon Fellgard is a member?",
-      "answer": "The Leaden Accord",
-      "acceptable": [
-        "The Leaden Accord",
-        "Leaden Accord"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "Ederon Fellgard",
-          "relation": "member_of",
-          "to": "The Iron-Ring Cartel",
-          "source": "wiki/ederon_fellgard.md",
-          "field": "Membership"
-        },
-        {
-          "from": "The Iron-Ring Cartel",
-          "relation": "victor_of",
-          "to": "The Leaden Accord",
-          "source": "wiki/the_iron_ring_cartel.md",
-          "field": "Victor of",
-          "note": "cell is multi-valued: 'The Winter Reckoning; The Leaden Accord' - split on ';' then filter by type"
+          "answer": "The Leaden Accord",
+          "aliases": [
+            "Leaden Accord"
+          ]
         }
       ],
-      "template": "affiliation_outcome",
-      "notes": "TYPE FILTER REQUIRED. The Cartel won two conflicts; only The Leaden Accord is an accord. A system that ignores the word 'accord' has a 50% chance of answering The Winter Reckoning. Hop 1 uses field name 'Membership', not 'Member of'.",
-      "verified_by": null
+      "required_evidence": [
+        "wiki/ederon_fellgard.md",
+        "wiki/the_iron_ring_cartel.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "via_faction_victor_of_row",
+          "hops": [
+            {
+              "from": "Ederon Fellgard",
+              "relation": "member_of",
+              "to": "The Iron-Ring Cartel",
+              "source": "wiki/ederon_fellgard.md",
+              "field": "Membership",
+              "note": "field is 'Membership', not 'Member of'"
+            },
+            {
+              "from": "The Iron-Ring Cartel",
+              "relation": "victor_of",
+              "to": "The Leaden Accord",
+              "source": "wiki/the_iron_ring_cartel.md",
+              "field": "Victor of",
+              "note": "multi-valued: 'The Winter Reckoning; The Leaden Accord' - split, then filter by type"
+            }
+          ]
+        },
+        {
+          "label": "via_conflict_page_reverse_lookup",
+          "hops": [
+            {
+              "from": "Ederon Fellgard",
+              "relation": "member_of",
+              "to": "The Iron-Ring Cartel",
+              "source": "wiki/ederon_fellgard.md",
+              "field": "Membership"
+            },
+            {
+              "from": "The Iron-Ring Cartel",
+              "relation": "victor_of",
+              "to": "The Leaden Accord",
+              "source": "wiki/the_leaden_accord.md",
+              "field": "Victor",
+              "note": "independently confirmed from the conflict page's own Victor row"
+            }
+          ]
+        }
+      ],
+      "distractors": [
+        {
+          "value": "The Winter Reckoning",
+          "why_wrong": "The Cartel genuinely won it, but it is not an 'accord'. A system ignoring the question's type word has a 50% chance of answering this."
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "TYPE FILTER REQUIRED, and it is the whole difficulty. The Cartel's 'Victor of' cell is multi-valued and both members are genuine victories; only The Leaden Accord is an accord. Do not hard-code this answer - the graph must support multi-valued relations plus type-aware terminal filtering. Verified independently from both directions on 2026-08-29.",
+      "verification": {
+        "status": "single_review",
+        "reviewers": [
+          "teammate_review_2026_08_29"
+        ],
+        "reviewed_on": "2026-08-29",
+        "reviewer_confidence": "high"
+      }
     },
     {
       "qid": "1b_009",
       "track": "1B",
       "question": "In what way is Halvard Crowhurst connected to the victors of the Purge of Blackport?",
-      "answer": "He is a member of the Iron-Ring Cartel, the faction recorded as victor of the Purge of Blackport.",
-      "acceptable": [
-        "member of the Iron-Ring Cartel",
-        "Iron-Ring Cartel member"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "The Purge of Blackport",
-          "relation": "victor",
-          "to": "Iron-Ring Cartel",
-          "source": "wiki/the_purge_of_blackport.md",
-          "field": "Victor"
-        },
-        {
-          "from": "The Iron-Ring Cartel",
-          "relation": "has_member",
-          "to": "Halvard Crowhurst",
-          "source": "wiki/the_iron_ring_cartel.md",
-          "field": "Member"
+          "answer": "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.",
+          "aliases": [
+            "member of the Iron-Ring Cartel",
+            "member of The Iron-Ring Cartel",
+            "Iron-Ring Cartel member"
+          ]
         }
       ],
-      "template": "affiliation_outcome",
-      "notes": "TWO TRAPS. (1) Alias: the conflict page writes '[[Iron-Ring Cartel]]' without the leading 'The', while every other reference writes '[[The Iron-Ring Cartel]]'. Without alias normalisation these are separate nodes and the join fails outright. (2) Source disagreement: the Cartel's own page lists the Purge of Blackport as a belligerency only, and names its victories as The Winter Reckoning and The Leaden Accord - so the conflict page and the faction page disagree about whether the Cartel won. The question's hedged phrasing ('in what way') appears deliberate. A strong answer surfaces the disagreement rather than asserting a clean victory. Halvard Crowhurst has NO wiki page of his own; he exists only as the object of a Member edge.",
-      "verified_by": null
+      "required_evidence": [
+        "wiki/the_purge_of_blackport.md",
+        "wiki/the_iron_ring_cartel.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "affiliation_outcome",
+          "hops": [
+            {
+              "from": "The Purge of Blackport",
+              "relation": "victor",
+              "to": "The Iron-Ring Cartel",
+              "source": "wiki/the_purge_of_blackport.md",
+              "field": "Victor",
+              "note": "alias divergence: written '[[Iron-Ring Cartel]]' without the leading 'The' that every other reference uses"
+            },
+            {
+              "from": "The Iron-Ring Cartel",
+              "relation": "has_member",
+              "to": "Halvard Crowhurst",
+              "source": "wiki/the_iron_ring_cartel.md",
+              "field": "Member",
+              "note": "Halvard Crowhurst has no wiki page; he exists only as the object of this edge"
+            }
+          ]
+        }
+      ],
+      "conflicts": [
+        {
+          "subject": "The Iron-Ring Cartel",
+          "relation": "victor_of",
+          "object": "The Purge of Blackport",
+          "same_tier": true,
+          "resolution": "unresolved",
+          "must_surface": true,
+          "claims": [
+            {
+              "stance": "asserts",
+              "source": "wiki/the_purge_of_blackport.md",
+              "tier": 2,
+              "field": "Victor",
+              "quote": "The [[Iron-Ring Cartel]] emerged as the victor, specifically The Iron-Ring Cartel"
+            },
+            {
+              "stance": "denies",
+              "source": "wiki/the_iron_ring_cartel.md",
+              "tier": 2,
+              "field": "Victor of",
+              "quote": "The Cartel was also a belligerent in The Purge of Blackport. This record establishes participation without assigning the Cartel the status of victor."
+            }
+          ],
+          "why_unresolvable": "Both sources are wiki/ at tier 2 with identical subtier. The authority model in config/authority.yaml ranks by collection and cannot separate two pages of the same collection. This is a same-tier relational contradiction, which ADR-013's measurement did not cover because it examined only dated attribute claims.",
+          "assertion_markers": [
+            "victor",
+            "victors",
+            "victorious",
+            "won",
+            "victory",
+            "prevailed"
+          ],
+          "assertion_note": "Words that mark an answer as CLAIMING the Cartel won, rather than merely naming it. Mentioning the Cartel is not the disputed act - asserting its victory is. Kept explicit here rather than inferred, so the rule is auditable and arguable."
+        }
+      ],
+      "expected_conflict_status": "must_surface",
+      "confidence": "medium",
+      "notes": "The membership fact is UNCONTESTED - only wiki/the_iron_ring_cartel.md records it, in both its infobox 'Member' row and its prose, and nothing anywhere contradicts it. What is contested is whether the Cartel is 'the victors'. The question's hedged phrasing ('in what way ... connected to the victors') asks for the relation, not for the identity of the victor, so the membership answer is the substantive one. A strong answer gives the membership AND flags that the victor designation is disputed between the two wiki articles. An answer that asserts the Cartel won as settled fact is mishandling the conflict; an answer that denies any connection exists is simply wrong. Two ephemera concern Halvard Crowhurst - ballad_concerning_halvard_crowhurst.txt and sermon_concerning_halvard_crowhurst.docx - and BOTH are silent on the Cartel, describing him as a Herbalist born 252 AS. Their silence is not a denial and must not be scored as counter-evidence.",
+      "verification": {
+        "status": "single_review",
+        "reviewers": [
+          "teammate_review_2026_08_29"
+        ],
+        "reviewed_on": "2026-08-29",
+        "reviewer_confidence": "medium",
+        "machine_recheck": "Both cited passages re-read verbatim from the corpus on 2026-08-29; the contradiction is real and is affirmative on both sides, not an omission. The Cartel page states the exclusion twice in prose and excludes the Purge from its 'Victor of' row while listing the other two conflicts."
+      }
     },
     {
       "qid": "1b_013",
       "track": "1B",
       "question": "Whose dominion encompasses the lair of the Gravemaw Wyrm?",
-      "answer": "The Bleeding Crown",
-      "acceptable": [
-        "The Bleeding Crown",
-        "Bleeding Crown"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "Gravemaw Wyrm",
-          "relation": "lair_in",
-          "to": "Marrowwell Abbey",
-          "source": "wiki/gravemaw_wyrm.md",
-          "field": "Lair"
-        },
-        {
-          "from": "Marrowwell Abbey",
-          "relation": "ruled_by",
-          "to": "The Bleeding Crown",
-          "source": "wiki/marrowwell_abbey.md",
-          "field": "Ruled by"
+          "answer": "The Bleeding Crown",
+          "aliases": [
+            "Bleeding Crown"
+          ]
         }
       ],
-      "template": "territorial_authority",
-      "notes": "Cleanest two-hop in the set: no aliases, no type filter, no disagreement. Useful as the smoke test for traversal.",
-      "verified_by": null
+      "required_evidence": [
+        "wiki/gravemaw_wyrm.md",
+        "wiki/marrowwell_abbey.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "territorial_authority",
+          "hops": [
+            {
+              "from": "Gravemaw Wyrm",
+              "relation": "lair_in",
+              "to": "Marrowwell Abbey",
+              "source": "wiki/gravemaw_wyrm.md",
+              "field": "Lair"
+            },
+            {
+              "from": "Marrowwell Abbey",
+              "relation": "ruled_by",
+              "to": "The Bleeding Crown",
+              "source": "wiki/marrowwell_abbey.md",
+              "field": "Ruled by"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "Cleanest two-hop in the set: no aliases, no type filter, no disagreement, both hops read off plain bare-link infobox cells. Use it as the traversal smoke test.",
+      "verification": {
+        "status": "single_review",
+        "reviewers": [
+          "teammate_review_2026_08_29"
+        ],
+        "reviewed_on": "2026-08-29",
+        "reviewer_confidence": "high"
+      }
     },
     {
       "qid": "1b_022",
       "track": "1B",
       "question": "Which war did Ravena Stormwell's own faction ultimately win?",
-      "answer": "The War of Drowned Light",
-      "acceptable": [
-        "The War of Drowned Light",
-        "War of Drowned Light"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "Ravena Stormwell",
-          "relation": "member_of",
-          "to": "The Silent Choir",
-          "source": "wiki/ravena_stormwell.md",
-          "field": "Member of"
-        },
-        {
-          "from": "The Silent Choir",
-          "relation": "victor_of",
-          "to": "The War of Drowned Light",
-          "source": "wiki/the_war_of_drowned_light.md",
-          "field": "Victor",
-          "note": "REVERSE lookup"
+          "answer": "The War of Drowned Light",
+          "aliases": [
+            "War of Drowned Light"
+          ]
         }
       ],
-      "template": "affiliation_outcome",
-      "notes": "Same answer and same second hop as 1b_005, reached from a different character. Good pair for checking that traversal generalises rather than memorises.",
-      "verified_by": null
+      "required_evidence": [
+        "wiki/ravena_stormwell.md",
+        "wiki/the_war_of_drowned_light.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "affiliation_outcome",
+          "hops": [
+            {
+              "from": "Ravena Stormwell",
+              "relation": "member_of",
+              "to": "The Silent Choir",
+              "source": "wiki/ravena_stormwell.md",
+              "field": "Member of"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "victor_of",
+              "to": "The War of Drowned Light",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor",
+              "note": "REVERSE lookup"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "Same second hop as 1b_005, reached from a different character. Good pair for checking that traversal generalises rather than memorises. As with 1b_005, the Silent Choir page is silent on the outcome, not contradicting it.",
+      "verification": {
+        "status": "single_review",
+        "reviewers": [
+          "teammate_review_2026_08_29"
+        ],
+        "reviewed_on": "2026-08-29",
+        "reviewer_confidence": "high"
+      }
     },
     {
       "qid": "1c_000",
       "track": "1C",
       "question": "State the precise year in the Age of Shadows that marks the true founding of Gloamreach.",
-      "answer": "246 AS",
-      "acceptable": [
-        "246 AS",
-        "246"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "Gloamreach",
-          "relation": "founded",
-          "to": "246 AS",
-          "source": "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
-          "field": "para 97",
-          "note": "'The founding record is exact: Gloamreach's founded is 246 AS. Popular accounts wrongly claim otherwise.'"
+          "answer": "246 AS",
+          "aliases": [
+            "246"
+          ]
         }
       ],
-      "template": null,
-      "conflict": {
-        "authoritative": {
-          "value": "246 AS",
-          "source": "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
-          "tier": 1
-        },
-        "rejected": [
-          {
-            "value": "286 AS",
-            "source": "ephemera/contract_concerning_the_sceptre_of_final_winter.txt",
-            "tier": 4,
-            "quote": "Gloamreach was founded in 286 AS. I record this plainly because plain records outlive frightened tongues."
-          }
-        ],
-        "abstains": [
-          {
-            "source": "wiki/gloamreach.md",
-            "tier": 2,
-            "quote": "Founded | Contested; consult the Annals and Codex"
-          }
-        ]
-      },
-      "notes": "The planted decoy. The wiki refuses to answer and names the authority to consult; an ephemeral contract states a confident wrong year. A similarity search ranks the contract first because it is short, names Gloamreach, and contains a year. Answering 286 AS is the naive-baseline failure this system exists to prevent.",
-      "verified_by": null
+      "required_evidence": [
+        "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
+        "ephemera/contract_concerning_the_sceptre_of_final_winter.txt",
+        "wiki/gloamreach.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "authority_resolution",
+          "hops": [
+            {
+              "from": "Gloamreach",
+              "relation": "founded",
+              "to": "246 AS",
+              "source": "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
+              "field": "para 188",
+              "note": "'The founding record is exact: Gloamreach's founded is 246 AS. Popular accounts wrongly claim otherwise.'"
+            }
+          ]
+        }
+      ],
+      "conflicts": [
+        {
+          "subject": "Gloamreach",
+          "relation": "founded",
+          "object": null,
+          "same_tier": false,
+          "resolution": "authority",
+          "must_surface": false,
+          "claims": [
+            {
+              "stance": "asserts",
+              "value": "246 AS",
+              "source": "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
+              "tier": 1,
+              "quote": "The founding record is exact: Gloamreach's founded is 246 AS. Popular accounts wrongly claim otherwise."
+            },
+            {
+              "stance": "asserts",
+              "value": "286 AS",
+              "source": "ephemera/contract_concerning_the_sceptre_of_final_winter.txt",
+              "tier": 4,
+              "quote": "Gloamreach was founded in **286 AS**. I record this plainly because plain records outlive frightened tongues."
+            },
+            {
+              "stance": "silent",
+              "source": "wiki/gloamreach.md",
+              "tier": 2,
+              "quote": "Founded | Contested; consult the [[Annals]] and [[Codex]]"
+            }
+          ]
+        }
+      ],
+      "expected_conflict_status": "may_surface",
+      "confidence": "high",
+      "notes": "The planted decoy. The wiki abstains and names the authority to consult; an ephemeral contract states a confident wrong year with its value in Markdown emphasis. Tier separates the two cleanly here, unlike 1b_009. NOT independently reviewed - the 2026-08-29 review covered 1B only.",
+      "verification": {
+        "status": "draft",
+        "reviewers": [],
+        "reviewed_on": null,
+        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed."
+      }
     },
     {
       "qid": "1c_003",
       "track": "1C",
       "question": "In which year was the 'Gauntlet of Sorrowfell' actually forged?",
-      "answer": "391 AS",
-      "acceptable": [
-        "391 AS",
-        "391"
-      ],
-      "expected_path": [
+      "answer_cardinality": "single",
+      "accepted_answers": [
         {
-          "from": "Gauntlet of Sorrowfell",
-          "relation": "forged",
-          "to": "391 AS",
-          "source": "codex/codex_vaeloria_ii_armory_of_relics_and_bestiary",
-          "field": "para 69",
-          "note": "'The authoritative record states plainly: Gauntlet of Sorrowfell's forged is 391 AS. Popular accounts wrongly claim otherwise. Such accounts are rejected.'"
+          "answer": "391 AS",
+          "aliases": [
+            "391"
+          ]
         }
       ],
-      "template": null,
-      "conflict": {
-        "authoritative": {
-          "value": "391 AS",
-          "source": "codex/codex_vaeloria_ii_armory_of_relics_and_bestiary",
-          "tier": 1
-        },
-        "rejected": [
-          {
-            "value": "360 AS",
-            "source": "ephemera/sermon_concerning_malchior_cindervale_the_flame_touched.txt",
-            "tier": 4,
-            "quote": "And behold the regalia named Gauntlet of Sorrowfell. Its forged year is 360 AS."
-          },
-          {
-            "value": "not recorded",
-            "source": "ephemera/quartermaster_ledger_concerning_crookvale.txt",
-            "tier": 4,
-            "quote": "Its forging date is not recorded."
-          }
-        ],
-        "abstains": [
-          {
-            "source": "wiki/gauntlet_of_sorrowfell.md",
-            "tier": 2,
-            "quote": "accounts concerning the forging remain contested and should be referred to the Annals and Codex"
-          }
-        ]
-      },
-      "notes": "Three sources, three positions: a sermon asserts 360 AS, a ledger says unrecorded, the codex says 391 AS and explicitly rejects popular accounts. This is the regression test for the whole authority model.",
-      "verified_by": null
+      "required_evidence": [
+        "codex/codex_vaeloria_ii_armory_of_relics_and_bestiary",
+        "ephemera/sermon_concerning_malchior_cindervale_the_flame_touched.txt",
+        "ephemera/quartermaster_ledger_concerning_crookvale.txt",
+        "wiki/gauntlet_of_sorrowfell.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "authority_resolution",
+          "hops": [
+            {
+              "from": "Gauntlet of Sorrowfell",
+              "relation": "forged",
+              "to": "391 AS",
+              "source": "codex/codex_vaeloria_ii_armory_of_relics_and_bestiary",
+              "field": "para 119",
+              "note": "'The authoritative record states plainly: Gauntlet of Sorrowfell's forged is 391 AS. Popular accounts wrongly claim otherwise. Such accounts are rejected.'"
+            }
+          ]
+        }
+      ],
+      "conflicts": [
+        {
+          "subject": "Gauntlet of Sorrowfell",
+          "relation": "forged",
+          "object": null,
+          "same_tier": false,
+          "resolution": "authority",
+          "must_surface": false,
+          "claims": [
+            {
+              "stance": "asserts",
+              "value": "391 AS",
+              "source": "codex/codex_vaeloria_ii_armory_of_relics_and_bestiary",
+              "tier": 1,
+              "quote": "The authoritative record states plainly: Gauntlet of Sorrowfell's forged is 391 AS."
+            },
+            {
+              "stance": "asserts",
+              "value": "360 AS",
+              "source": "ephemera/sermon_concerning_malchior_cindervale_the_flame_touched.txt",
+              "tier": 4,
+              "quote": "And behold the regalia named **Gauntlet of Sorrowfell**. Its forged year is **360 AS**."
+            },
+            {
+              "stance": "silent",
+              "value": "not recorded",
+              "source": "ephemera/quartermaster_ledger_concerning_crookvale.txt",
+              "tier": 4,
+              "quote": "Its forging date is not recorded."
+            },
+            {
+              "stance": "silent",
+              "source": "wiki/gauntlet_of_sorrowfell.md",
+              "tier": 2,
+              "quote": "Forging date | Contested; no year is stated"
+            }
+          ]
+        }
+      ],
+      "expected_conflict_status": "may_surface",
+      "confidence": "high",
+      "notes": "Three sources, three positions. The regression test for the authority model. The competing claim is anaphoric ('Its forged year') and emphasis-wrapped, so extraction must handle both - see ADR-012. NOT independently reviewed.",
+      "verification": {
+        "status": "draft",
+        "reviewers": [],
+        "reviewed_on": null,
+        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed."
+      }
     }
   ],
   "_untraced_1a": {
-    "reason": "The 11 remaining dev questions are sub-track 1A. Their answers are readable only from figure plates and illustration art - verified for three of them that the value is absent from, or contradicted by, the text.",
+    "reason": "The 11 remaining dev questions are sub-track 1A. Their answers are readable only from figure plates and illustration art. They are recorded by the harness as not_scored rather than dropped, so the denominator stays visible.",
     "examples": [
       {
         "qid": "1a_008",
@@ -347,6 +702,6 @@
         "plate": "images/plate_04_artifact_the_thrice_bound_edge.png"
       }
     ],
-    "decision": "Out of scope for our chosen sub-track (1B). Recorded here because the contradiction in 1a_004 is strong evidence that the corpus authors deliberately removed values from the text, and because captioning all ~70 images is a cheap hedge if we later want partial 1A coverage."
+    "decision": "Out of scope for our chosen sub-track (1B). Recorded here because the contradiction in 1a_004 is strong evidence that the corpus authors deliberately removed values from the text."
   }
 }

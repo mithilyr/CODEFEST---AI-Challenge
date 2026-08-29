@@ -1,19 +1,21 @@
 # Checkpoint: baseline
 
-> ### PROVISIONAL - ground truth is not yet verified
+> ### PROVISIONAL - ground truth is not fully verified
 >
-> 9 of 9 scoreable questions have `verified_by: null` in
-> `eval/answer_key.json`. The answer key was traced by an AI assistant reading
-> the corpus, and **no human has independently confirmed it**.
+> 9 of 9 scoreable questions are not yet `confirmed`.
+> ADR-014 requires **two independent reviewers** per entry; the breakdown below
+> shows where each one stands.
 >
-> Every number below is provisional. Do not quote any of it in the report, the
-> video, or a decision until two reviewers have signed off the entries - see
-> `eval/verification/` for the review pack and ADR-014 for the process.
+> Key status: **2 draft**, **6 single_review**, **1 unresolved**
+>
+> Every number below is provisional. Do not quote it in the report, the video,
+> or a decision until the entries are confirmed - see `eval/verification/` for
+> the review pack.
 
 
-- run at `2026-08-29T15:45:45` in 0.6s
-- commit `9fe58be`, Python 3.11.16
-- schema version 1
+- run at `2026-08-29T22:39:22` in 0.7s
+- commit `8ab2e22`, Python 3.11.16
+- schema version 2
 - **0 LLM call(s)**, 20 served from cache
 
 ## Score
@@ -24,7 +26,7 @@
 | 1C | 2 | 2 |
 | **all scored** | **4** | **9** |
 
-Mean evidence recall: **0.380**  
+Mean evidence recall: **0.361**  
 Mean evidence precision: **0.281** (ceiling is `len(expected)/k`, not 1.0 - see `eval/scoring.py`)
 
 **Complete evidence: 0/9** - questions where retrieval reached *every* document the answer requires. For a multi-hop question this is the number that matters: an answer produced from half the required evidence is a right answer by the wrong route, which `answer_key.json` asks us to count as a retrieval failure.
@@ -47,17 +49,25 @@ Mean evidence precision: **0.281** (ceiling is `len(expected)/k`, not 1.0 - see 
 
 ## Per question
 
-| qid | key | correct | category | ev. recall | ev. prec | latency |
-|---|---|---|---|---|---|---|
-| `1b_007` | **provisional** | no | retrieval_miss | 0.00 | 0.00 | 1 ms |
-| `1b_006` | **provisional** | yes | correct | 0.50 | 0.25 | 1 ms |
-| `1b_022` | **provisional** | no | retrieval_miss | 0.00 | 0.00 | 1 ms |
-| `1b_013` | **provisional** | no | partial_retrieval | 0.50 | 0.50 | 1 ms |
-| `1b_005` | **provisional** | yes | correct | 0.50 | 0.20 | 1 ms |
-| `1b_009` | **provisional** | no | negated_gold | 0.50 | 0.33 | 1 ms |
-| `1b_003` | **provisional** | no | retrieval_miss | 0.00 | 0.00 | 2 ms |
-| `1c_000` | **provisional** | yes | correct | 0.67 | 0.50 | 0 ms |
-| `1c_003` | **provisional** | yes | correct | 0.75 | 0.75 | 1 ms |
+`answers` is how many distinct answers the key accepts - `any_of` questions have more than one, and returning any of them is correct.
+
+| qid | key status | correct | category | answers | conflict | ev. recall | ev. prec |
+|---|---|---|---|---|---|---|---|
+| `1b_007` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
+| `1b_006` | unresolved | yes | correct | 14 (any_of) | n/a | 0.33 | 0.25 |
+| `1b_022` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
+| `1b_013` | single_review | no | partial_retrieval | 1 (single) | n/a | 0.50 | 0.50 |
+| `1b_005` | single_review | yes | correct | 1 (single) | n/a | 0.50 | 0.20 |
+| `1b_009` | single_review | no | negated_gold | 1 (single) | n/a (answer wrong) | 0.50 | 0.33 |
+| `1b_003` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
+| `1c_000` | draft | yes | correct | 1 (single) | n/a | 0.67 | 0.50 |
+| `1c_003` | draft | yes | correct | 1 (single) | n/a | 0.75 | 0.75 |
+
+### Conflict handling
+
+Questions where the corpus contradicts itself and an answer must say so. Scored separately from correctness on purpose: saying the right thing and representing a disputed claim honestly are different achievements.
+
+- `1b_009`: **n/a (answer wrong)** - The answer was already incorrect, so how it handled the dispute is not meaningfully assessable. Scored separately rather than compounded.
 
 ### Categories present in this run
 
@@ -77,7 +87,7 @@ Mean evidence precision: **0.281** (ceiling is `len(expected)/k`, not 1.0 - see 
 **Predicted.** Based on the provided passages, there is no mention of **Ederon Fellgard** or which faction he belongs to. Therefore, the provided sources do not contain enough information to answer the question.
 
 - matched: `-`
-- required documents: `wiki/ederon_fellgard.md`, `wiki/the_iron_ring_cartel.md`
+- required documents: `wiki/ederon_fellgard.md`, `wiki/the_iron_ring_cartel.md`, `wiki/the_leaden_accord.md`
 - reached: **none**
 - retrieved: `wiki/the_accord_of_mournthrone.md`, `wiki/the_ashen_vanguard.md`, `wiki/the_bleeding_crown.md`, `codex/the_annals_of_the_ashen_era`
 
@@ -85,12 +95,12 @@ Mean evidence precision: **0.281** (ceiling is `len(expected)/k`, not 1.0 - see 
 
 **Q.** Which individual was a member of the faction that ultimately won the War of Drowned Light?
 
-**Expected.** Ravena Stormwell
+**Expected.** Ignatz Fellgard
 
 **Predicted.** Brannoc Palefroth [2], [3]
 
 - matched: `Brannoc Palefroth`
-- required documents: `wiki/the_war_of_drowned_light.md`, `wiki/ravena_stormwell.md`
+- required documents: `wiki/the_war_of_drowned_light.md`, `wiki/the_silent_choir.md`, `wiki/ravena_stormwell.md`
 - reached: `wiki/the_war_of_drowned_light.md`
 - retrieved: `wiki/the_ashen_vanguard.md`, `wiki/the_winter_reckoning.md`, `wiki/the_war_of_drowned_light.md`, `wiki/the_bleeding_crown.md`
 
@@ -137,7 +147,7 @@ Mean evidence precision: **0.281** (ceiling is `len(expected)/k`, not 1.0 - see 
 
 **Q.** In what way is Halvard Crowhurst connected to the victors of the Purge of Blackport?
 
-**Expected.** He is a member of the Iron-Ring Cartel, the faction recorded as victor of the Purge of Blackport.
+**Expected.** He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.
 
 **Predicted.** Based on the provided passages, no connection between Halvard Crowhurst and the victors of the Purge of Blackport is established. The text only records that Halvard Crowhurst is a member of The Iron-Ring Cartel, which was a belligerent in the Purge of Blackport, but does not identify the victors of that conflict [3].
 

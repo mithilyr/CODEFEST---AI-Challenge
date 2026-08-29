@@ -1,9 +1,9 @@
 {
   "checkpoint": "baseline",
-  "started_at": "2026-08-29T15:45:45",
-  "elapsed_seconds": 0.6102099418640137,
-  "schema_version": 1,
-  "git_commit": "9fe58be",
+  "started_at": "2026-08-29T22:39:22",
+  "elapsed_seconds": 0.6771669387817383,
+  "schema_version": 2,
+  "git_commit": "8ab2e22",
   "python_version": "3.11.16",
   "key_fully_verified": false,
   "questions": [
@@ -120,7 +120,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 582,
+      "latency_ms": 629,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -128,6 +128,11 @@
       "model": "gemini-3.7-flash",
       "has_citations": false,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -253,7 +258,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 2,
+      "latency_ms": 3,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -261,6 +266,11 @@
       "model": "gemini-3.7-flash",
       "has_citations": false,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -383,7 +393,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 1,
+      "latency_ms": 4,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -391,6 +401,11 @@
       "model": "gemini-3.7-flash",
       "has_citations": false,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -504,7 +519,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -512,6 +527,11 @@
       "model": "gemini-3.7-flash",
       "has_citations": false,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -640,7 +660,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 0,
+      "latency_ms": 3,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -648,6 +668,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -762,7 +787,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -770,6 +795,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": false,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -889,6 +919,11 @@
       "model": "gemini-3.7-flash",
       "has_citations": false,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -1002,7 +1037,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 0,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -1010,6 +1045,11 @@
       "model": "gemini-3.7-flash",
       "has_citations": true,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -1144,6 +1184,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -1274,7 +1319,7 @@
       "evidence_precision": null,
       "evidence_recall": null,
       "evidence_hit": [],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -1282,6 +1327,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": false,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -1404,6 +1454,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": null,
+      "answer_cardinality": null,
+      "accepted_answer_count": 0,
+      "expected_conflict_status": null,
+      "conflict_handling": null,
+      "key_verification_status": null,
       "error": null
     },
     {
@@ -1417,27 +1472,56 @@
       ],
       "expected_evidence": [
         "wiki/ederon_fellgard.md",
-        "wiki/the_iron_ring_cartel.md"
+        "wiki/the_iron_ring_cartel.md",
+        "wiki/the_leaden_accord.md"
       ],
       "expected_path": [
         {
-          "from": "Ederon Fellgard",
-          "relation": "member_of",
-          "to": "The Iron-Ring Cartel",
-          "source": "wiki/ederon_fellgard.md",
-          "field": "Membership"
+          "label": "via_faction_victor_of_row",
+          "hops": [
+            {
+              "from": "Ederon Fellgard",
+              "relation": "member_of",
+              "to": "The Iron-Ring Cartel",
+              "source": "wiki/ederon_fellgard.md",
+              "field": "Membership",
+              "note": "field is 'Membership', not 'Member of'"
+            },
+            {
+              "from": "The Iron-Ring Cartel",
+              "relation": "victor_of",
+              "to": "The Leaden Accord",
+              "source": "wiki/the_iron_ring_cartel.md",
+              "field": "Victor of",
+              "note": "multi-valued: 'The Winter Reckoning; The Leaden Accord' - split, then filter by type"
+            }
+          ]
         },
         {
-          "from": "The Iron-Ring Cartel",
-          "relation": "victor_of",
-          "to": "The Leaden Accord",
-          "source": "wiki/the_iron_ring_cartel.md",
-          "field": "Victor of",
-          "note": "cell is multi-valued: 'The Winter Reckoning; The Leaden Accord' - split on ';' then filter by type"
+          "label": "via_conflict_page_reverse_lookup",
+          "hops": [
+            {
+              "from": "Ederon Fellgard",
+              "relation": "member_of",
+              "to": "The Iron-Ring Cartel",
+              "source": "wiki/ederon_fellgard.md",
+              "field": "Membership"
+            },
+            {
+              "from": "The Iron-Ring Cartel",
+              "relation": "victor_of",
+              "to": "The Leaden Accord",
+              "source": "wiki/the_leaden_accord.md",
+              "field": "Victor",
+              "note": "independently confirmed from the conflict page's own Victor row"
+            }
+          ]
         }
       ],
       "key_verified": false,
-      "key_verified_by": [],
+      "key_verified_by": [
+        "teammate_review_2026_08_29"
+      ],
       "predicted_answer": "Based on the provided passages, there is no mention of **Ederon Fellgard** or which faction he belongs to. Therefore, the provided sources do not contain enough information to answer the question.",
       "retrieved": [
         {
@@ -1545,52 +1629,87 @@
       "model": "gemini-3.6-flash",
       "has_citations": false,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "none",
+      "conflict_handling": "n/a",
+      "key_verification_status": "single_review",
       "error": null
     },
     {
       "qid": "1b_006",
       "track": "1B",
       "question": "Which individual was a member of the faction that ultimately won the War of Drowned Light?",
-      "expected_answer": "Ravena Stormwell",
+      "expected_answer": "Ignatz Fellgard",
       "acceptable": [
-        "Ravena Stormwell",
-        "Isolde Mournvale",
-        "Maelis Harrowick the Pale",
         "Corvus Hollowmere the Pale",
+        "Maelis Harrowick the Pale",
+        "Thessaly Coldwater",
+        "Brannoc Palefroth",
+        "Corvus Hollowmere",
+        "Ossric Ravensmoor",
+        "Lucan Hollowmere",
+        "Isolde Mournvale",
+        "Maelis Harrowick",
         "Morwenna Morvain",
         "Morwenna Vosgard",
-        "Ossric Ravensmoor",
         "Ossric Wrenfield",
+        "Ravena Stormwell",
         "Ignatz Fellgard",
-        "Brannoc Palefroth",
-        "Thessaly Coldwater",
-        "Lucan Hollowmere",
-        "Tamsin Greyfen",
-        "Ossric Ashgrove"
+        "Ossric Ashgrove",
+        "Tamsin Greyfen"
       ],
       "expected_evidence": [
         "wiki/the_war_of_drowned_light.md",
+        "wiki/the_silent_choir.md",
         "wiki/ravena_stormwell.md"
       ],
       "expected_path": [
         {
-          "from": "The War of Drowned Light",
-          "relation": "victor",
-          "to": "The Silent Choir",
-          "source": "wiki/the_war_of_drowned_light.md",
-          "field": "Victor"
+          "label": "via_faction_page_members_row",
+          "hops": [
+            {
+              "from": "The War of Drowned Light",
+              "relation": "victor",
+              "to": "The Silent Choir",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "has_member",
+              "to": "Ignatz Fellgard",
+              "source": "wiki/the_silent_choir.md",
+              "field": "Members",
+              "note": "multi-valued cell, 6 names split on ';'"
+            }
+          ]
         },
         {
-          "from": "The Silent Choir",
-          "relation": "has_member",
-          "to": "Ravena Stormwell",
-          "source": "wiki/ravena_stormwell.md",
-          "field": "Member of",
-          "note": "REVERSE lookup across all character pages"
+          "label": "via_character_page_reverse_lookup",
+          "hops": [
+            {
+              "from": "The War of Drowned Light",
+              "relation": "victor",
+              "to": "The Silent Choir",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "has_member",
+              "to": "Ravena Stormwell",
+              "source": "wiki/ravena_stormwell.md",
+              "field": "Member of",
+              "note": "REVERSE lookup across all character pages"
+            }
+          ]
         }
       ],
       "key_verified": false,
-      "key_verified_by": [],
+      "key_verified_by": [
+        "teammate_review_2026_08_29"
+      ],
       "predicted_answer": "Brannoc Palefroth [2], [3]",
       "retrieved": [
         {
@@ -1684,11 +1803,11 @@
       "abstained": false,
       "failure_category": "correct",
       "evidence_precision": 0.25,
-      "evidence_recall": 0.5,
+      "evidence_recall": 0.3333333333333333,
       "evidence_hit": [
         "wiki/the_war_of_drowned_light.md"
       ],
-      "latency_ms": 1,
+      "latency_ms": 3,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -1696,6 +1815,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": true,
+      "answer_cardinality": "any_of",
+      "accepted_answer_count": 14,
+      "expected_conflict_status": "none",
+      "conflict_handling": "n/a",
+      "key_verification_status": "unresolved",
       "error": null
     },
     {
@@ -1713,23 +1837,30 @@
       ],
       "expected_path": [
         {
-          "from": "Ravena Stormwell",
-          "relation": "member_of",
-          "to": "The Silent Choir",
-          "source": "wiki/ravena_stormwell.md",
-          "field": "Member of"
-        },
-        {
-          "from": "The Silent Choir",
-          "relation": "victor_of",
-          "to": "The War of Drowned Light",
-          "source": "wiki/the_war_of_drowned_light.md",
-          "field": "Victor",
-          "note": "REVERSE lookup"
+          "label": "affiliation_outcome",
+          "hops": [
+            {
+              "from": "Ravena Stormwell",
+              "relation": "member_of",
+              "to": "The Silent Choir",
+              "source": "wiki/ravena_stormwell.md",
+              "field": "Member of"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "victor_of",
+              "to": "The War of Drowned Light",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor",
+              "note": "REVERSE lookup"
+            }
+          ]
         }
       ],
       "key_verified": false,
-      "key_verified_by": [],
+      "key_verified_by": [
+        "teammate_review_2026_08_29"
+      ],
       "predicted_answer": "Based on the provided passages, there is no mention of Ravena Stormwell or her faction, so it is impossible to answer which war her faction won using only these sources.",
       "retrieved": [
         {
@@ -1823,7 +1954,7 @@
       "evidence_precision": 0.0,
       "evidence_recall": 0.0,
       "evidence_hit": [],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -1831,6 +1962,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": false,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "none",
+      "conflict_handling": "n/a",
+      "key_verification_status": "single_review",
       "error": null
     },
     {
@@ -1848,22 +1984,29 @@
       ],
       "expected_path": [
         {
-          "from": "Gravemaw Wyrm",
-          "relation": "lair_in",
-          "to": "Marrowwell Abbey",
-          "source": "wiki/gravemaw_wyrm.md",
-          "field": "Lair"
-        },
-        {
-          "from": "Marrowwell Abbey",
-          "relation": "ruled_by",
-          "to": "The Bleeding Crown",
-          "source": "wiki/marrowwell_abbey.md",
-          "field": "Ruled by"
+          "label": "territorial_authority",
+          "hops": [
+            {
+              "from": "Gravemaw Wyrm",
+              "relation": "lair_in",
+              "to": "Marrowwell Abbey",
+              "source": "wiki/gravemaw_wyrm.md",
+              "field": "Lair"
+            },
+            {
+              "from": "Marrowwell Abbey",
+              "relation": "ruled_by",
+              "to": "The Bleeding Crown",
+              "source": "wiki/marrowwell_abbey.md",
+              "field": "Ruled by"
+            }
+          ]
         }
       ],
       "key_verified": false,
-      "key_verified_by": [],
+      "key_verified_by": [
+        "teammate_review_2026_08_29"
+      ],
       "predicted_answer": "Based on the provided sources, the text does not state whose dominion encompasses Marrowwell Abbey (the lair of the Gravemaw Wyrm). The records identify no affiliation with any faction, household, order, or organized host [1, 5].",
       "retrieved": [
         {
@@ -1975,7 +2118,7 @@
       "evidence_hit": [
         "wiki/gravemaw_wyrm.md"
       ],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -1983,6 +2126,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": false,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "none",
+      "conflict_handling": "n/a",
+      "key_verification_status": "single_review",
       "error": null
     },
     {
@@ -2000,23 +2148,30 @@
       ],
       "expected_path": [
         {
-          "from": "Isolde Mournvale",
-          "relation": "member_of",
-          "to": "The Silent Choir",
-          "source": "wiki/isolde_mournvale.md",
-          "field": "Member of"
-        },
-        {
-          "from": "The Silent Choir",
-          "relation": "victor_of",
-          "to": "The War of Drowned Light",
-          "source": "wiki/the_war_of_drowned_light.md",
-          "field": "Victor",
-          "note": "REVERSE lookup - the Silent Choir's own page has no 'Victor of' row, so this edge exists only on the conflict page"
+          "label": "affiliation_outcome",
+          "hops": [
+            {
+              "from": "Isolde Mournvale",
+              "relation": "member_of",
+              "to": "The Silent Choir",
+              "source": "wiki/isolde_mournvale.md",
+              "field": "Member of"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "victor_of",
+              "to": "The War of Drowned Light",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor",
+              "note": "REVERSE lookup - this edge exists only on the conflict page"
+            }
+          ]
         }
       ],
       "key_verified": false,
-      "key_verified_by": [],
+      "key_verified_by": [
+        "teammate_review_2026_08_29"
+      ],
       "predicted_answer": "The War of Drowned Light was recorded as won by The Silent Choir, the organization of which Isolde Mournvale was a member [1][2].",
       "retrieved": [
         {
@@ -2127,7 +2282,7 @@
       "evidence_hit": [
         "wiki/isolde_mournvale.md"
       ],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -2135,15 +2290,22 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "none",
+      "conflict_handling": "n/a",
+      "key_verification_status": "single_review",
       "error": null
     },
     {
       "qid": "1b_009",
       "track": "1B",
       "question": "In what way is Halvard Crowhurst connected to the victors of the Purge of Blackport?",
-      "expected_answer": "He is a member of the Iron-Ring Cartel, the faction recorded as victor of the Purge of Blackport.",
+      "expected_answer": "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.",
       "acceptable": [
+        "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.",
         "member of the Iron-Ring Cartel",
+        "member of The Iron-Ring Cartel",
         "Iron-Ring Cartel member"
       ],
       "expected_evidence": [
@@ -2152,22 +2314,31 @@
       ],
       "expected_path": [
         {
-          "from": "The Purge of Blackport",
-          "relation": "victor",
-          "to": "Iron-Ring Cartel",
-          "source": "wiki/the_purge_of_blackport.md",
-          "field": "Victor"
-        },
-        {
-          "from": "The Iron-Ring Cartel",
-          "relation": "has_member",
-          "to": "Halvard Crowhurst",
-          "source": "wiki/the_iron_ring_cartel.md",
-          "field": "Member"
+          "label": "affiliation_outcome",
+          "hops": [
+            {
+              "from": "The Purge of Blackport",
+              "relation": "victor",
+              "to": "The Iron-Ring Cartel",
+              "source": "wiki/the_purge_of_blackport.md",
+              "field": "Victor",
+              "note": "alias divergence: written '[[Iron-Ring Cartel]]' without the leading 'The' that every other reference uses"
+            },
+            {
+              "from": "The Iron-Ring Cartel",
+              "relation": "has_member",
+              "to": "Halvard Crowhurst",
+              "source": "wiki/the_iron_ring_cartel.md",
+              "field": "Member",
+              "note": "Halvard Crowhurst has no wiki page; he exists only as the object of this edge"
+            }
+          ]
         }
       ],
       "key_verified": false,
-      "key_verified_by": [],
+      "key_verified_by": [
+        "teammate_review_2026_08_29"
+      ],
       "predicted_answer": "Based on the provided passages, no connection between Halvard Crowhurst and the victors of the Purge of Blackport is established. The text only records that Halvard Crowhurst is a member of The Iron-Ring Cartel, which was a belligerent in the Purge of Blackport, but does not identify the victors of that conflict [3].",
       "retrieved": [
         {
@@ -2266,7 +2437,7 @@
       "evidence_hit": [
         "wiki/the_iron_ring_cartel.md"
       ],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -2274,6 +2445,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "must_surface",
+      "conflict_handling": "n/a (answer wrong)",
+      "key_verification_status": "single_review",
       "error": null
     },
     {
@@ -2290,23 +2466,31 @@
       ],
       "expected_path": [
         {
-          "from": "Cerys Sablewood the Ashen",
-          "relation": "wields",
-          "to": "The Cinder-Wrought Aegis",
-          "source": "wiki/cerys_sablewood_the_ashen.md",
-          "field": "Wields",
-          "note": "qualified 'since 356 AS', matching the question"
-        },
-        {
-          "from": "The Cinder-Wrought Aegis",
-          "relation": "housed_in",
-          "to": "Gloamreach",
-          "source": "wiki/the_cinder_wrought_aegis.md",
-          "field": "Place of housing"
+          "label": "custody_chain",
+          "hops": [
+            {
+              "from": "Cerys Sablewood the Ashen",
+              "relation": "wields",
+              "to": "The Cinder-Wrought Aegis",
+              "source": "wiki/cerys_sablewood_the_ashen.md",
+              "field": "Wields",
+              "note": "cell carries the qualifier 'since 356 AS', which the question names explicitly"
+            },
+            {
+              "from": "The Cinder-Wrought Aegis",
+              "relation": "housed_in",
+              "to": "Gloamreach",
+              "source": "wiki/the_cinder_wrought_aegis.md",
+              "field": "Place of housing",
+              "note": "field is 'Place of housing', not 'Housed in'; this page also has NO '## Infobox' heading"
+            }
+          ]
         }
       ],
       "key_verified": false,
-      "key_verified_by": [],
+      "key_verified_by": [
+        "teammate_review_2026_08_29"
+      ],
       "predicted_answer": "To examine **The Cinder-Wrought Aegis** (the relic borne by Cerys Sablewood the Ashen since 356 AS [1]), one must journey to **Vharencrag Fortress**, where the relic was recorded in the field report [2]. (If conveyance of the relic is required under contract, it is to be taken to **Embercrag Fortress** in the Shattered Vale [3]).\n\n**Sources:** [1], [2], [3]",
       "retrieved": [
         {
@@ -2441,6 +2625,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "none",
+      "conflict_handling": "n/a",
+      "key_verification_status": "single_review",
       "error": null
     },
     {
@@ -2459,12 +2648,17 @@
       ],
       "expected_path": [
         {
-          "from": "Gloamreach",
-          "relation": "founded",
-          "to": "246 AS",
-          "source": "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
-          "field": "para 97",
-          "note": "'The founding record is exact: Gloamreach's founded is 246 AS. Popular accounts wrongly claim otherwise.'"
+          "label": "authority_resolution",
+          "hops": [
+            {
+              "from": "Gloamreach",
+              "relation": "founded",
+              "to": "246 AS",
+              "source": "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
+              "field": "para 188",
+              "note": "'The founding record is exact: Gloamreach's founded is 246 AS. Popular accounts wrongly claim otherwise.'"
+            }
+          ]
         }
       ],
       "key_verified": false,
@@ -2583,7 +2777,7 @@
         "codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms",
         "ephemera/contract_concerning_the_sceptre_of_final_winter.txt"
       ],
-      "latency_ms": 0,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -2591,6 +2785,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "may_surface",
+      "conflict_handling": "n/a",
+      "key_verification_status": "draft",
       "error": null
     },
     {
@@ -2610,12 +2809,17 @@
       ],
       "expected_path": [
         {
-          "from": "Gauntlet of Sorrowfell",
-          "relation": "forged",
-          "to": "391 AS",
-          "source": "codex/codex_vaeloria_ii_armory_of_relics_and_bestiary",
-          "field": "para 69",
-          "note": "'The authoritative record states plainly: Gauntlet of Sorrowfell's forged is 391 AS. Popular accounts wrongly claim otherwise. Such accounts are rejected.'"
+          "label": "authority_resolution",
+          "hops": [
+            {
+              "from": "Gauntlet of Sorrowfell",
+              "relation": "forged",
+              "to": "391 AS",
+              "source": "codex/codex_vaeloria_ii_armory_of_relics_and_bestiary",
+              "field": "para 119",
+              "note": "'The authoritative record states plainly: Gauntlet of Sorrowfell's forged is 391 AS. Popular accounts wrongly claim otherwise. Such accounts are rejected.'"
+            }
+          ]
         }
       ],
       "key_verified": false,
@@ -2729,7 +2933,7 @@
         "ephemera/sermon_concerning_malchior_cindervale_the_flame_touched.txt",
         "wiki/gauntlet_of_sorrowfell.md"
       ],
-      "latency_ms": 1,
+      "latency_ms": 2,
       "llm_calls": 0,
       "cache_hits": 1,
       "prompt_tokens": null,
@@ -2737,6 +2941,11 @@
       "model": "gemini-3.6-flash",
       "has_citations": true,
       "answerable": true,
+      "answer_cardinality": "single",
+      "accepted_answer_count": 1,
+      "expected_conflict_status": "may_surface",
+      "conflict_handling": "n/a",
+      "key_verification_status": "draft",
       "error": null
     }
   ]

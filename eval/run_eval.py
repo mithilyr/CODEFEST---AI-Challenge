@@ -22,11 +22,15 @@ import sys
 import time
 from pathlib import Path
 
+from eval.answer_key import ANSWER_KEY_PATH, KeyEntry, load_key, required_documents
 from eval.harness import QuestionResult, RetrievedItem, new_run, write_results
-from eval.scoring import failure_category, score_answer, score_evidence
+from eval.scoring import (
+    failure_category,
+    score_answer,
+    score_conflict_handling,
+    score_evidence,
+)
 from src.settings import get_settings
-
-ANSWER_KEY_PATH = Path(__file__).resolve().parent / "answer_key.json"
 
 #: Marks a citation in a baseline answer. The baseline prompt asks the model to
 #: "cite the source numbers you used", so a bare [3] is the expected form.
@@ -39,28 +43,25 @@ def load_questions() -> list[dict]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def load_key() -> dict[str, dict]:
+def assertion_markers(entry: KeyEntry) -> list[str]:
+    """Words that mark an answer as asserting a disputed claim."""
+    markers: list[str] = []
+    for conflict in entry.conflicts:
+        if not conflict.must_surface:
+            continue
+        raw = next(
+            (c for c in load_raw_conflicts(entry.qid) if c.get("must_surface")), {}
+        )
+        markers.extend(raw.get("assertion_markers", []))
+    return list(dict.fromkeys(markers))
+
+
+def load_raw_conflicts(qid: str) -> list[dict]:
     raw = json.loads(ANSWER_KEY_PATH.read_text(encoding="utf-8"))
-    return {entry["qid"]: entry for entry in raw["questions"]}
-
-
-def expected_docs(entry: dict) -> list[str]:
-    """Documents a correct traversal must reach, from the traced path.
-
-    Conflict questions also require the sources that carry the *rejected*
-    claims: a system that never retrieves the sermon cannot know there was a
-    disagreement to resolve, so those documents are part of the evidence the
-    answer needs, not a distractor to be avoided.
-    """
-    docs = [hop["source"] for hop in entry.get("expected_path", []) if hop.get("source")]
-    conflict = entry.get("conflict") or {}
-    for record in conflict.get("rejected", []) + conflict.get("abstains", []):
-        if record.get("source"):
-            docs.append(record["source"])
-    authoritative = conflict.get("authoritative") or {}
-    if authoritative.get("source"):
-        docs.append(authoritative["source"])
-    return list(dict.fromkeys(docs))
+    for entry in raw["questions"]:
+        if entry["qid"] == qid:
+            return entry.get("conflicts", [])
+    return []
 
 
 def has_citations(answer: str) -> bool:
@@ -132,9 +133,10 @@ def run_baseline(limit: int | None = None, no_cache: bool = False):
             error = f"{type(exc).__name__}: {exc}"
 
         latency_ms = int((time.time() - question_started) * 1000)
-        required = expected_docs(entry) if entry else []
+        required = required_documents(entry) if entry else []
         evidence = score_evidence(required, retrieved_docs)
 
+        conflict_verdict = None
         if error is not None:
             verdict = None
             category = "error"
@@ -142,24 +144,36 @@ def run_baseline(limit: int | None = None, no_cache: bool = False):
             verdict = None
             category = "not_scored"
         else:
-            verdict = score_answer(predicted or "", entry.get("acceptable", []))
+            verdict = score_answer(predicted or "", entry.all_surface_forms)
             category = failure_category(verdict, evidence)
+            # Conflict handling is only meaningful for an answer that is
+            # otherwise right. Judging how a wrong answer treated a nuance
+            # compounds one failure into two and tells us nothing.
+            if not entry.must_surface_conflict:
+                conflict_verdict = "n/a"
+            elif not verdict.correct:
+                conflict_verdict = "n/a (answer wrong)"
+            else:
+                conflict_verdict = score_conflict_handling(
+                    predicted or "", assertion_markers(entry), True
+                ).verdict
 
-        verified_by = entry.get("verified_by") if entry else None
-        verified_list = (
-            [verified_by] if isinstance(verified_by, str) else list(verified_by or [])
-        )
+        verified_list = list(entry.verification.reviewers) if entry else []
 
         run.questions.append(
             QuestionResult(
                 qid=qid,
                 track=track,
                 question=question,
-                expected_answer=entry.get("answer") if entry else None,
-                acceptable=entry.get("acceptable", []) if entry else [],
+                expected_answer=(
+                    entry.accepted_answers[0].answer
+                    if entry and entry.accepted_answers
+                    else None
+                ),
+                acceptable=entry.all_surface_forms if entry else [],
                 expected_evidence=required,
-                expected_path=entry.get("expected_path", []) if entry else [],
-                key_verified=len(verified_list) >= 2,
+                expected_path=list(entry.acceptable_paths) if entry else [],
+                key_verified=entry.verification.is_confirmed if entry else False,
                 key_verified_by=verified_list,
                 predicted_answer=predicted,
                 retrieved=retrieved,
@@ -180,7 +194,14 @@ def run_baseline(limit: int | None = None, no_cache: bool = False):
                 response_tokens=None,
                 model=model,
                 has_citations=has_citations(predicted or ""),
-                answerable=bool(entry.get("answer")) if entry else None,
+                answerable=bool(entry.accepted_answers) if entry else None,
+                answer_cardinality=entry.answer_cardinality if entry else None,
+                accepted_answer_count=len(entry.accepted_answers) if entry else 0,
+                expected_conflict_status=(
+                    entry.expected_conflict_status if entry else None
+                ),
+                conflict_handling=conflict_verdict,
+                key_verification_status=entry.verification.status if entry else None,
                 error=error,
             )
         )

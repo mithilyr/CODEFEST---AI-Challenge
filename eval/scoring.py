@@ -270,3 +270,105 @@ CATEGORY_GLOSSARY = {
     "not_scored": "No traced answer in the key. Recorded, never counted.",
     "error": "The run raised before producing an answer.",
 }
+
+
+# -- conflict handling ---------------------------------------------------
+#
+# A second, independent dimension. "Did it say the right thing?" and "did it
+# represent a disputed claim honestly?" are different questions, and 1b_009
+# shows why they must not be collapsed: the membership fact is uncontested
+# while the victor designation is contradicted between two wiki pages at the
+# same tier. An answer can get the fact right and still mislead by asserting
+# the disputed part as settled.
+
+#: Wording that marks a claim as contested rather than established. Matched
+#: against the normalised sentence carrying the disputed value.
+HEDGE_PATTERNS = (
+    r"\b(?:disput|contest|conflict|contradict|disagree)\w*\b",
+    r"\baccording to\b",
+    r"\bhowever\b",
+    r"\balthough\b",
+    r"\bthough\b",
+    r"\bwhile\s+(?:the|its|his|her|their)\b",
+    r"\bclaims?\b",
+    r"\bstates?\s+that\b",
+    r"\bs own (?:article|page|record|account)\b",
+    r"\bother\s+(?:sources?|accounts?|records?)\b",
+    r"\bsources?\s+(?:differ|vary)\b",
+    r"\bnot\s+(?:accompanied|assigned)\b",
+    r"\bbelligerent\b",
+    r"\bunresolved\b",
+    r"\bambiguous\b",
+)
+
+_HEDGE_RE = re.compile("|".join(HEDGE_PATTERNS))
+
+CONFLICT_VERDICTS = {
+    "n/a": "The question has no disputed claim to handle.",
+    "n/a (answer wrong)": (
+        "The answer was already incorrect, so how it handled the dispute is not "
+        "meaningfully assessable. Scored separately rather than compounded."
+    ),
+    "surfaced": "The disputed claim was named and marked as contested.",
+    "asserted_as_fact": (
+        "The disputed claim was stated as settled fact with no qualification. "
+        "The answer may still be factually defensible, but it hides a "
+        "contradiction the corpus makes explicit."
+    ),
+    "not_mentioned": (
+        "The disputed claim was not raised at all. Not a misrepresentation, but "
+        "the conflict went unreported."
+    ),
+}
+
+
+@dataclass(frozen=True)
+class ConflictVerdict:
+    """How an answer handled a claim the corpus contradicts itself about."""
+
+    #: n/a | surfaced | asserted_as_fact | not_mentioned
+    verdict: str
+    disputed_values: tuple[str, ...] = ()
+
+    @property
+    def mishandled(self) -> bool:
+        return self.verdict == "asserted_as_fact"
+
+
+def score_conflict_handling(
+    predicted: str, assertion_markers: list[str], must_surface: bool
+) -> ConflictVerdict:
+    """Did the answer present a contested claim honestly?
+
+    Only meaningful where the key marks a conflict ``must_surface``. Elsewhere
+    the corpus does not contradict itself and there is nothing to hedge.
+
+    ``assertion_markers`` are the words that indicate the answer is *making* the
+    disputed claim, not merely naming the entities in it. For 1b_009 the
+    contested proposition is "the Iron-Ring Cartel won the Purge of Blackport",
+    so the markers are victory words. Saying "Halvard is a member of the Cartel"
+    names the Cartel without asserting anything contested, and must not be
+    penalised - which an entity-mention test would get wrong.
+    """
+    if not must_surface or not assertion_markers:
+        return ConflictVerdict("n/a")
+
+    clauses = sentences(predicted)
+    asserting = [
+        clause
+        for clause in clauses
+        if any(_spans(clause, normalise(m)) for m in assertion_markers)
+    ]
+
+    if not asserting:
+        return ConflictVerdict("not_mentioned", tuple(assertion_markers))
+
+    # Hedged in the asserting sentence, or anywhere in the answer - a trailing
+    # "sources disagree" note still surfaces the dispute. Note that plain
+    # negation does NOT count: denying the claim is not the same as reporting
+    # that sources disagree about it.
+    if any(_HEDGE_RE.search(c) for c in asserting) or _HEDGE_RE.search(
+        normalise(predicted)
+    ):
+        return ConflictVerdict("surfaced", tuple(assertion_markers))
+    return ConflictVerdict("asserted_as_fact", tuple(assertion_markers))

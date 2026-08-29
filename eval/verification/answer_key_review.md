@@ -24,13 +24,15 @@ The excerpts below come from the ingestion pipeline - the same text the system s
 
 **Question.** To which shadowed redoubt must one journey to examine the relic long borne by Cerys Sablewood the Ashen since 356 AS?
 
+**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+
 **Key says the answer is.** `Gloamreach`
 
 ### Claimed path
 
 **Hop 1.** `Cerys Sablewood the Ashen` --[wields]--> `The Cinder-Wrought Aegis`
   cited: `wiki/cerys_sablewood_the_ashen.md`, field `Wields`
-  note: qualified 'since 356 AS', matching the question
+  note: cell carries the qualifier 'since 356 AS', which the question names explicitly
 
 > Corpus text at `wiki/cerys_sablewood_the_ashen.md#4`:
 
@@ -42,6 +44,7 @@ The excerpts below come from the ingestion pipeline - the same text the system s
 
 **Hop 2.** `The Cinder-Wrought Aegis` --[housed_in]--> `Gloamreach`
   cited: `wiki/the_cinder_wrought_aegis.md`, field `Place of housing`
+  note: field is 'Place of housing', not 'Housed in'; this page also has NO '## Infobox' heading
 
 > Corpus text at `wiki/the_cinder_wrought_aegis.md#3`:
 
@@ -53,7 +56,7 @@ The excerpts below come from the ingestion pipeline - the same text the system s
 
 ### Tracer's notes
 
-> Hop 2 uses the field name 'Place of housing', not 'Housed in'. Both spellings exist in the corpus for the same relation.
+> Hop 2 lives on one of the six wiki pages whose infobox carries no '## Infobox' heading. A heading-keyed parser answers this question with nothing at all. See ADR-009.
 
 ### Reviewer sign-off
 
@@ -77,7 +80,9 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which war was won by the organization that included Isolde Mournvale as one of its members?
 
-**Key says the answer is.** `The War of Drowned Light`
+**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+
+**Key says the answer is.** `The War of Drowned Light` (also accepted: `War of Drowned Light`)
 
 ### Claimed path
 
@@ -94,7 +99,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Hop 2.** `The Silent Choir` --[victor_of]--> `The War of Drowned Light`
   cited: `wiki/the_war_of_drowned_light.md`, field `Victor`
-  note: REVERSE lookup - the Silent Choir's own page has no 'Victor of' row, so this edge exists only on the conflict page
+  note: REVERSE lookup - this edge exists only on the conflict page
 
 > Corpus text at `wiki/the_war_of_drowned_light.md#2`:
 
@@ -106,7 +111,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 ### Tracer's notes
 
-> Proves the reverse-traversal requirement. Unlike the Iron-Ring Cartel, the Silent Choir does not record its own victories, so the graph is not symmetric and hop 2 cannot be read off the faction page.
+> Proves the reverse-traversal requirement. The Silent Choir page records this war under 'Belligerencies' and has NO victor row of any kind, so it is SILENT on the outcome rather than contradicting it - verified 2026-08-29, and deliberately distinguished from 1b_009 where the faction page does make victor claims and excludes one. Silence is not denial.
 
 ### Reviewer sign-off
 
@@ -130,11 +135,30 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which individual was a member of the faction that ultimately won the War of Drowned Light?
 
-**Key says the answer is.** `Ravena Stormwell`
+**Status.** `unresolved` - reviewed by teammate_review_2026_08_29
 
-This is a **set-valued** question - the key lists 14 acceptable answers. Check that the set is complete as well as that its members are right.
+> **OPEN DISCREPANCY.** Review listed 2 accepted answers; corpus enumeration finds 14. Machine check re-run 2026-08-29 confirms 6 on wiki/the_silent_choir.md 'Members' plus 8 character pages carrying a membership row. Needs a second reviewer to settle before this entry counts as confirmed.
 
-### Claimed path
+**Key accepts any of 14 answers** (`answer_cardinality: any_of`). Check that the set is **complete** as well as that its members are right - an incomplete set marks correct answers wrong.
+
+- `Ignatz Fellgard`
+- `Brannoc Palefroth`
+- `Thessaly Coldwater`
+- `Lucan Hollowmere`
+- `Tamsin Greyfen`
+- `Ossric Ashgrove`
+- `Corvus Hollowmere the Pale`
+- `Isolde Mournvale`
+- `Maelis Harrowick the Pale`
+- `Morwenna Morvain`
+- `Morwenna Vosgard`
+- `Ossric Ravensmoor`
+- `Ossric Wrenfield`
+- `Ravena Stormwell`
+
+### Claimed paths
+
+2 genuinely different routes reach this answer. Each should stand on its own.
 
 **Hop 1.** `The War of Drowned Light` --[victor]--> `The Silent Choir`
   cited: `wiki/the_war_of_drowned_light.md`, field `Victor`
@@ -147,7 +171,30 @@ This is a **set-valued** question - the key lists 14 acceptable answers. Check t
 
 > | Field | Value | |---|---| | Conflict | [[The War of Drowned Light]] | | Began | 225 AS | | Ended | 235 AS | | Casualties | 64617 | | Outcome | Collapsed into a decade of guerrilla reprisals | | Victor | [[The Silent Choir]] | | Secret truth | The spark that started it was staged by [[The Silent Choir]] | | Waged at | [[Cindermere Hold]] in 228 AS; [[Greyfell Citadel]] in 233 AS | | Devastated | [[Gloamreach]] in 227 AS |
 
-**Hop 2.** `The Silent Choir` --[has_member]--> `Ravena Stormwell`
+**Hop 2.** `The Silent Choir` --[has_member]--> `Ignatz Fellgard`
+  cited: `wiki/the_silent_choir.md`, field `Members`
+  note: multi-valued cell, 6 names split on ';'
+
+> Corpus text at `wiki/the_silent_choir.md#2`:
+
+> The Silent Choir is a secretive priesthood that records, censors, and rewrites history. Its religious authority is exercised through control of the historical record, making the preservation and alteration of knowledge central to its institutional identity. The Silent Choir is seated at [[Vharencrag Fortress]] and has been belligerent in [[The War of Drowned Light]], [[The War of Endless Vigil]], and [[The Winter Reckoning]]. Its known members include [[Ignatz Fellgard]], [[Brannoc Palefroth]], [[Thessaly Coldwater]], [[Lucan Hollowmere]], [[Tamsin Greyfen]], and [[Ossric Ashgrove]].
+
+> Corpus text at `wiki/the_silent_choir.md#4`:
+
+> | Field | Value | |---|---| | Organization type | Priesthood | | Doctrine | Secretive priesthood that records, censors, and rewrites history | | Seat | [[Vharencrag Fortress]] | | Belligerencies | [[The War of Drowned Light]]; [[The War of Endless Vigil]]; [[The Winter Reckoning]] | | Members | [[Ignatz Fellgard]]; [[Brannoc Palefroth]]; [[Thessaly Coldwater]]; [[Lucan Hollowmere]]; [[Tamsin Greyfen]]; [[Ossric Ashgrove]] |
+
+**Hop 3.** `The War of Drowned Light` --[victor]--> `The Silent Choir`
+  cited: `wiki/the_war_of_drowned_light.md`, field `Victor`
+
+> Corpus text at `wiki/the_war_of_drowned_light.md#2`:
+
+> The [[The War of Drowned Light]] was a conflict of concealed treachery, attrition, and unresolved vengeance. It began in **225 AS** and ended in **235 AS**, producing **64617 casualties** before collapsing into a decade of guerrilla reprisals. Although the conflict is recorded as a victory for [[The Silent Choir]], its origin remained obscured: the spark that started the war was secretly staged by [[The Silent Choir]]. The war was waged at [[Cindermere Hold]] in **228 AS**, devastated [[Gloamreach]] in **227 AS**, and was waged at [[Greyfell Citadel]] in **233 AS**. Its visual identity is associated with drowned radiance, broken banners, and remembrance through reprisals rather than triumph.
+
+> Corpus text at `wiki/the_war_of_drowned_light.md#4`:
+
+> | Field | Value | |---|---| | Conflict | [[The War of Drowned Light]] | | Began | 225 AS | | Ended | 235 AS | | Casualties | 64617 | | Outcome | Collapsed into a decade of guerrilla reprisals | | Victor | [[The Silent Choir]] | | Secret truth | The spark that started it was staged by [[The Silent Choir]] | | Waged at | [[Cindermere Hold]] in 228 AS; [[Greyfell Citadel]] in 233 AS | | Devastated | [[Gloamreach]] in 227 AS |
+
+**Hop 4.** `The Silent Choir` --[has_member]--> `Ravena Stormwell`
   cited: `wiki/ravena_stormwell.md`, field `Member of`
   note: REVERSE lookup across all character pages
 
@@ -161,7 +208,7 @@ This is a **set-valued** question - the key lists 14 acceptable answers. Check t
 
 ### Tracer's notes
 
-> SET-VALUED, 14 valid answers, and membership is recorded in TWO disjoint places with no overlap between them: the faction page's 'Members' row lists 6 people, while 8 separate character pages carry 'Member of -> The Silent Choir'. Neither list mentions anyone from the other. A graph builder that reads only one direction loses more than half the membership edges. Found when the baseline answered 'Brannoc Palefroth' and our key wrongly scored it wrong - the key was reading only the character-page direction.
+> FOURTEEN valid answers, and membership is recorded in TWO DISJOINT places with zero overlap: 6 names on the faction page's 'Members' row, 8 more on individual character pages. Both directions are required; either alone loses more than half the members. Re-verified against the corpus on 2026-08-29 by enumerating both directions. NOTE ON REVIEW: the 2026-08-29 human review reported only two valid answers (Ravena Stormwell, Isolde Mournvale). That is incomplete - it missed the faction page's Members row entirely and six of the eight character pages. The fourteen-name set is the corpus-verified one and is retained. Recorded rather than quietly corrected, because it is the clearest evidence for why ADR-014 requires two independent reviewers.
 
 ### Reviewer sign-off
 
@@ -185,12 +232,17 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which accord was ultimately won by the faction of which Ederon Fellgard is a member?
 
-**Key says the answer is.** `The Leaden Accord`
+**Status.** `single_review` - reviewed by teammate_review_2026_08_29
 
-### Claimed path
+**Key says the answer is.** `The Leaden Accord` (also accepted: `Leaden Accord`)
+
+### Claimed paths
+
+2 genuinely different routes reach this answer. Each should stand on its own.
 
 **Hop 1.** `Ederon Fellgard` --[member_of]--> `The Iron-Ring Cartel`
   cited: `wiki/ederon_fellgard.md`, field `Membership`
+  note: field is 'Membership', not 'Member of'
 
 > Corpus text at `wiki/ederon_fellgard.md#3`:
 
@@ -202,7 +254,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Hop 2.** `The Iron-Ring Cartel` --[victor_of]--> `The Leaden Accord`
   cited: `wiki/the_iron_ring_cartel.md`, field `Victor of`
-  note: cell is multi-valued: 'The Winter Reckoning; The Leaden Accord' - split on ';' then filter by type
+  note: multi-valued: 'The Winter Reckoning; The Leaden Accord' - split, then filter by type
 
 > Corpus text at `wiki/the_iron_ring_cartel.md#4`:
 
@@ -212,9 +264,32 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 > The Iron-Ring Cartel was a **belligerent in The Leaden Accord** and the **victor of The Leaden Accord**. As with [[The Winter Reckoning]], the faction's record for [[The Leaden Accord]] includes both participation and victory. The combination of these entries presents the Cartel as an organization whose mercantile role coexists with an established belligerent presence.
 
+**Hop 3.** `Ederon Fellgard` --[member_of]--> `The Iron-Ring Cartel`
+  cited: `wiki/ederon_fellgard.md`, field `Membership`
+
+> Corpus text at `wiki/ederon_fellgard.md#3`:
+
+> | Field | Value | |---|---| | Name | Ederon Fellgard | | Role | Sapper | | Born | 338 AS | | Membership | [[The Iron-Ring Cartel]] | | Service | [[Greyfell Citadel]] | | Physical traits | No canonical physical traits or distinctive visual features established | | Demeanor | No canonical temperament or emotional disposition established |
+
+> Corpus text at `wiki/ederon_fellgard.md#7`:
+
+> Ederon Fellgard is a member of [[The Iron-Ring Cartel]]. The membership is a direct part of the character's canonical identity. No rank, title, internal office, duration of membership, or reason for joining [[The Iron-Ring Cartel]] has been established. Likewise, the available material does not identify any particular superior, subordinate, associate, rival, or companion connected to Ederon Fellgard through that membership.
+
+**Hop 4.** `The Iron-Ring Cartel` --[victor_of]--> `The Leaden Accord`
+  cited: `wiki/the_leaden_accord.md`, field `Victor`
+  note: independently confirmed from the conflict page's own Victor row
+
+> Corpus text at `wiki/the_leaden_accord.md#2`:
+
+> The [[The Leaden Accord]] was a conflict fought from 330 AS to 342 AS. It ended when both hosts were destroyed by a Ley-storm, leaving 14,011 casualties and a declared victory for the [[Iron-Ring Cartel]]. The conflict devastated [[Greyfell Citadel]] in 337 AS, [[Palewell Abbey]] in 338 AS, and [[Cindermere Hold]] in 338 AS, while fighting was waged at [[Vharencrag Fortress]] in 341 AS. Its hidden truth is that a supposedly destroyed artifact was in fact spirited away.
+
+> Corpus text at `wiki/the_leaden_accord.md#4`:
+
+> | Field | Value | |---|---| | Conflict | [[The Leaden Accord]] | | Began | 330 AS | | Ended | 342 AS | | Casualty figure | 14011 | | Outcome | Ended when both hosts were destroyed by a Ley-storm | | Victor | [[The Iron-Ring Cartel]] | | Major devastation | [[Greyfell Citadel]] in 337 AS; [[Palewell Abbey]] in 338 AS; [[Cindermere Hold]] in 338 AS | | Major fighting | [[Vharencrag Fortress]] in 341 AS | | Secret truth | A supposedly destroyed artifact was in fact spirited away | | Known participant | [[Voltaire Hollowmere]], fighting for [[The Ashen Vanguard]] |
+
 ### Tracer's notes
 
-> TYPE FILTER REQUIRED. The Cartel won two conflicts; only The Leaden Accord is an accord. A system that ignores the word 'accord' has a 50% chance of answering The Winter Reckoning. Hop 1 uses field name 'Membership', not 'Member of'.
+> TYPE FILTER REQUIRED, and it is the whole difficulty. The Cartel's 'Victor of' cell is multi-valued and both members are genuine victories; only The Leaden Accord is an accord. Do not hard-code this answer - the graph must support multi-valued relations plus type-aware terminal filtering. Verified independently from both directions on 2026-08-29.
 
 ### Reviewer sign-off
 
@@ -238,23 +313,27 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** In what way is Halvard Crowhurst connected to the victors of the Purge of Blackport?
 
-**Key says the answer is.** `He is a member of the Iron-Ring Cartel, the faction recorded as victor of the Purge of Blackport.`
+**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+
+**Key says the answer is.** `He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.` (also accepted: `member of the Iron-Ring Cartel`, `member of The Iron-Ring Cartel`, `Iron-Ring Cartel member`)
 
 ### Claimed path
 
-**Hop 1.** `The Purge of Blackport` --[victor]--> `Iron-Ring Cartel`
+**Hop 1.** `The Purge of Blackport` --[victor]--> `The Iron-Ring Cartel`
   cited: `wiki/the_purge_of_blackport.md`, field `Victor`
+  note: alias divergence: written '[[Iron-Ring Cartel]]' without the leading 'The' that every other reference uses
 
 > Corpus text at `wiki/the_purge_of_blackport.md#2`:
 
 > The **Purge of [[Blackport]]** was a conflict that began in **311 AS** and ended in **321 AS**. It caused **70,907 casualties**-a canonical casualty figure of **70907**-and ended with the **total rout of the aggressors**. The **[[Iron-Ring Cartel]]** emerged as the victor, specifically **The Iron-Ring Cartel**, although the concealed truth of the conflict is that the victors poisoned the wells of their own allies. Its visual identity is defined by [[Blackport]] under purge, the presence of the [[Iron-Ring Cartel]], and poisoned water; its character is one of merciless triumph soured by calculated betrayal.
 
-> Corpus text at `wiki/the_purge_of_blackport.md#4`:
+> Corpus text at `wiki/the_purge_of_blackport.md#11`:
 
-> | Field | Value | |---|---| | Conflict | The Purge of [[Blackport]] | | Began | 311 AS | | Ended | 321 AS | | Casualties | 70,907 | | Outcome | Ended with the total rout of the aggressors | | Victor | [[Iron-Ring Cartel]] | | Major setting | [[Blackport]] | | Related location and year | Waged at [[Fenspire]] in 319 AS | | Related region and year | Devastated [[Gloamreach]] in 320 AS | | Concealed truth | The victors poisoned the wells of their own allies |
+> The declared victor was the **[[Iron-Ring Cartel]]**, formally identified as **The Iron-Ring Cartel**. That declaration is qualified by the concealed truth that the victors poisoned the wells of their own allies. The poisoning is not presented as an incidental atrocity or an unverified rumor; it is the secret truth of the Purge. The act therefore alters the interpretation of the victory without changing its recorded result. The [[Iron-Ring Cartel]] emerged as victor, yet the means by which that victory was secured included the poisoning of allied wells.
 
 **Hop 2.** `The Iron-Ring Cartel` --[has_member]--> `Halvard Crowhurst`
   cited: `wiki/the_iron_ring_cartel.md`, field `Member`
+  note: Halvard Crowhurst has no wiki page; he exists only as the object of this edge
 
 > Corpus text at `wiki/the_iron_ring_cartel.md#2`:
 
@@ -264,9 +343,23 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 > | Field | Value | |---|---| | Doctrine | Mercantile league running contraband through the ruined trade roads. | | Organization kind | merchant cartel | | Seat | [[Hollowreach]] | | Belligerent in | [[The Winter Reckoning]]; [[The Purge of Blackport]]; [[The Leaden Accord]] | | Victor of | [[The Winter Reckoning]]; [[The Leaden Accord]] | | Member | [[Halvard Crowhurst]] |
 
+### Claimed conflict
+
+`The Iron-Ring Cartel` --[victor_of]--> `The Purge of Blackport`  
+same tier: **True**  |  resolution: **unresolved**  |  must surface: **True**
+
+> Both sources are wiki/ at tier 2 with identical subtier. The authority model in config/authority.yaml ranks by collection and cannot separate two pages of the same collection. This is a same-tier relational contradiction, which ADR-013's measurement did not cover because it examined only dated attribute claims.
+
+- **asserts**: `-` from `wiki/the_purge_of_blackport.md` (tier 2)
+  - key quotes: "The [[Iron-Ring Cartel]] emerged as the victor, specifically The Iron-Ring Cartel"
+  - corpus says: "The principal recorded affiliation of the conflict is with the **[[Iron-Ring Cartel]]**, which emerged as its victor. The Cartel's position is therefore central to every account of the Purge, whether the account emphasizes the total rout of the aggressors, the devastation of [[Gloamreach]], the fighting at [[Fenspire]], or the poisoned wells of its own allies."
+- **denies**: `-` from `wiki/the_iron_ring_cartel.md` (tier 2)
+  - key quotes: "The Cartel was also a belligerent in The Purge of Blackport. This record establishes participation without assigning the Cartel the status of victor."
+  - corpus says: "# The Iron-Ring Cartel (faction)"
+
 ### Tracer's notes
 
-> TWO TRAPS. (1) Alias: the conflict page writes '[[Iron-Ring Cartel]]' without the leading 'The', while every other reference writes '[[The Iron-Ring Cartel]]'. Without alias normalisation these are separate nodes and the join fails outright. (2) Source disagreement: the Cartel's own page lists the Purge of Blackport as a belligerency only, and names its victories as The Winter Reckoning and The Leaden Accord - so the conflict page and the faction page disagree about whether the Cartel won. The question's hedged phrasing ('in what way') appears deliberate. A strong answer surfaces the disagreement rather than asserting a clean victory. Halvard Crowhurst has NO wiki page of his own; he exists only as the object of a Member edge.
+> The membership fact is UNCONTESTED - only wiki/the_iron_ring_cartel.md records it, in both its infobox 'Member' row and its prose, and nothing anywhere contradicts it. What is contested is whether the Cartel is 'the victors'. The question's hedged phrasing ('in what way ... connected to the victors') asks for the relation, not for the identity of the victor, so the membership answer is the substantive one. A strong answer gives the membership AND flags that the victor designation is disputed between the two wiki articles. An answer that asserts the Cartel won as settled fact is mishandling the conflict; an answer that denies any connection exists is simply wrong. Two ephemera concern Halvard Crowhurst - ballad_concerning_halvard_crowhurst.txt and sermon_concerning_halvard_crowhurst.docx - and BOTH are silent on the Cartel, describing him as a Herbalist born 252 AS. Their silence is not a denial and must not be scored as counter-evidence.
 
 ### Reviewer sign-off
 
@@ -290,7 +383,9 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Whose dominion encompasses the lair of the Gravemaw Wyrm?
 
-**Key says the answer is.** `The Bleeding Crown`
+**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+
+**Key says the answer is.** `The Bleeding Crown` (also accepted: `Bleeding Crown`)
 
 ### Claimed path
 
@@ -318,7 +413,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 ### Tracer's notes
 
-> Cleanest two-hop in the set: no aliases, no type filter, no disagreement. Useful as the smoke test for traversal.
+> Cleanest two-hop in the set: no aliases, no type filter, no disagreement, both hops read off plain bare-link infobox cells. Use it as the traversal smoke test.
 
 ### Reviewer sign-off
 
@@ -342,7 +437,9 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which war did Ravena Stormwell's own faction ultimately win?
 
-**Key says the answer is.** `The War of Drowned Light`
+**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+
+**Key says the answer is.** `The War of Drowned Light` (also accepted: `War of Drowned Light`)
 
 ### Claimed path
 
@@ -371,7 +468,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 ### Tracer's notes
 
-> Same answer and same second hop as 1b_005, reached from a different character. Good pair for checking that traversal generalises rather than memorises.
+> Same second hop as 1b_005, reached from a different character. Good pair for checking that traversal generalises rather than memorises. As with 1b_005, the Silent Choir page is silent on the outcome, not contradicting it.
 
 ### Reviewer sign-off
 
@@ -395,12 +492,16 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** State the precise year in the Age of Shadows that marks the true founding of Gloamreach.
 
-**Key says the answer is.** `246 AS`
+**Status.** `draft` - not yet reviewed
+
+> **OPEN DISCREPANCY.** The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.
+
+**Key says the answer is.** `246 AS` (also accepted: `246`)
 
 ### Claimed path
 
 **Hop 1.** `Gloamreach` --[founded]--> `246 AS`
-  cited: `codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms`, field `para 97`
+  cited: `codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms`, field `para 188`
   note: 'The founding record is exact: Gloamreach's founded is 246 AS. Popular accounts wrongly claim otherwise.'
 
 > Corpus text at `codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms#39`:
@@ -413,18 +514,22 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 ### Claimed conflict
 
-- **authoritative**: `246 AS` from `codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms` (tier 1)
+`Gloamreach` --[founded]--> `(a value)`  
+same tier: **False**  |  resolution: **authority**  |  must surface: **False**
+
+- **asserts**: `246 AS` from `codex/codex_vaeloria_i_gazetteer_of_the_sundered_realms` (tier 1)
+  - key quotes: "The founding record is exact: Gloamreach's founded is 246 AS. Popular accounts wrongly claim otherwise."
   - corpus says: "Founded | 246 AS"
-- **rejected**: `286 AS` from `ephemera/contract_concerning_the_sceptre_of_final_winter.txt` (tier 4)
-  - key quotes: "Gloamreach was founded in 286 AS. I record this plainly because plain records outlive frightened tongues."
+- **asserts**: `286 AS` from `ephemera/contract_concerning_the_sceptre_of_final_winter.txt` (tier 4)
+  - key quotes: "Gloamreach was founded in **286 AS**. I record this plainly because plain records outlive frightened tongues."
   - corpus says: "Gloamreach was founded in **286 AS**. I record this plainly because plain records outlive frightened tongues."
-- **abstains**: `-` from `wiki/gloamreach.md` (tier 2)
-  - key quotes: "Founded | Contested; consult the Annals and Codex"
+- **silent**: `-` from `wiki/gloamreach.md` (tier 2)
+  - key quotes: "Founded | Contested; consult the [[Annals]] and [[Codex]]"
   - corpus says: "| Field | Value | |---|---| | Region | [[Pale Coast]] | | Type | Core location | | Garrison strength | 2483 | | Status | Quarantined | | Ruled by | [[House Morvain]] | | Appearance | Pallid, bleak, and shadowed | | Demeanor | Sealed-off, ominous, isolated, and guarded | | Founded | Contested; consult the [[Annals]] and [[Codex]] |"
 
 ### Tracer's notes
 
-> The planted decoy. The wiki refuses to answer and names the authority to consult; an ephemeral contract states a confident wrong year. A similarity search ranks the contract first because it is short, names Gloamreach, and contains a year. Answering 286 AS is the naive-baseline failure this system exists to prevent.
+> The planted decoy. The wiki abstains and names the authority to consult; an ephemeral contract states a confident wrong year with its value in Markdown emphasis. Tier separates the two cleanly here, unlike 1b_009. NOT independently reviewed - the 2026-08-29 review covered 1B only.
 
 ### Reviewer sign-off
 
@@ -448,12 +553,16 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** In which year was the 'Gauntlet of Sorrowfell' actually forged?
 
-**Key says the answer is.** `391 AS`
+**Status.** `draft` - not yet reviewed
+
+> **OPEN DISCREPANCY.** The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.
+
+**Key says the answer is.** `391 AS` (also accepted: `391`)
 
 ### Claimed path
 
 **Hop 1.** `Gauntlet of Sorrowfell` --[forged]--> `391 AS`
-  cited: `codex/codex_vaeloria_ii_armory_of_relics_and_bestiary`, field `para 69`
+  cited: `codex/codex_vaeloria_ii_armory_of_relics_and_bestiary`, field `para 119`
   note: 'The authoritative record states plainly: Gauntlet of Sorrowfell's forged is 391 AS. Popular accounts wrongly claim otherwise. Such accounts are rejected.'
 
 > Corpus text at `codex/codex_vaeloria_ii_armory_of_relics_and_bestiary#114`:
@@ -466,21 +575,25 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 ### Claimed conflict
 
-- **authoritative**: `391 AS` from `codex/codex_vaeloria_ii_armory_of_relics_and_bestiary` (tier 1)
+`Gauntlet of Sorrowfell` --[forged]--> `(a value)`  
+same tier: **False**  |  resolution: **authority**  |  must surface: **False**
+
+- **asserts**: `391 AS` from `codex/codex_vaeloria_ii_armory_of_relics_and_bestiary` (tier 1)
+  - key quotes: "The authoritative record states plainly: Gauntlet of Sorrowfell's forged is 391 AS."
   - corpus says: "Forged | 391 AS"
-- **rejected**: `360 AS` from `ephemera/sermon_concerning_malchior_cindervale_the_flame_touched.txt` (tier 4)
-  - key quotes: "And behold the regalia named Gauntlet of Sorrowfell. Its forged year is 360 AS."
+- **asserts**: `360 AS` from `ephemera/sermon_concerning_malchior_cindervale_the_flame_touched.txt` (tier 4)
+  - key quotes: "And behold the regalia named **Gauntlet of Sorrowfell**. Its forged year is **360 AS**."
   - corpus says: "And behold the regalia named **Gauntlet of Sorrowfell**. Its forged year is **360 AS**. Its attunement cost is **12**. It carries sorrow and grim authority, as every true instrument of judgment must. Wear it, if you must, but know this: regalia lends no virtue to the hand. A gauntlet may close the fist; it cannot teach the fist when to open."
-- **rejected**: `not recorded` from `ephemera/quartermaster_ledger_concerning_crookvale.txt` (tier 4)
+- **silent**: `not recorded` from `ephemera/quartermaster_ledger_concerning_crookvale.txt` (tier 4)
   - key quotes: "Its forging date is not recorded."
   - corpus says: "The **Gauntlet of Sorrowfell** is entered on the same sheet only for orderly reference. A shared page is not a shared history. Its forging date is not recorded. Its attunement cost is **12**. Its presence in the register proves only that the name has been preserved for inspection."
-- **abstains**: `-` from `wiki/gauntlet_of_sorrowfell.md` (tier 2)
-  - key quotes: "accounts concerning the forging remain contested and should be referred to the Annals and Codex"
+- **silent**: `-` from `wiki/gauntlet_of_sorrowfell.md` (tier 2)
+  - key quotes: "Forging date | Contested; no year is stated"
   - corpus says: "| Field | Value | |---|---| | Name | [[Gauntlet of Sorrowfell]] | | Artifact class | Regalia | | Attunement cost | 12 | | Forged at | [[Vharencrag Fortress]] | | Housed in | [[Greyfell Citadel]] | | Forging date | Contested; no year is stated |"
 
 ### Tracer's notes
 
-> Three sources, three positions: a sermon asserts 360 AS, a ledger says unrecorded, the codex says 391 AS and explicitly rejects popular accounts. This is the regression test for the whole authority model.
+> Three sources, three positions. The regression test for the authority model. The competing claim is anaphoric ('Its forged year') and emphasis-wrapped, so extraction must handle both - see ADR-012. NOT independently reviewed.
 
 ### Reviewer sign-off
 

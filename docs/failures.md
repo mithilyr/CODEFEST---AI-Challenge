@@ -388,3 +388,81 @@ model, where waiting is the only option left.
 corrected re-run cost **0 API calls and 0.8 seconds**. The cache turned an
 80-minute sweep into a free one, which is the difference between an evaluation
 you run once and an evaluation you can iterate against.
+
+---
+
+## F-014 — Concluding "tier resolves every conflict" from a sample that excluded relational claims
+
+**Approach.** ADR-013 measured every contested attribute in the archive, found
+7 of 7 resolved by source tier with the codex announcing itself each time, and
+concluded the authority layer provides no measurable benefit on this corpus.
+
+**Result.** Human review found `1b_009`: `wiki/the_purge_of_blackport.md` names
+the Iron-Ring Cartel as victor; `wiki/the_iron_ring_cartel.md` keeps a victor
+list, excludes the Purge from it, and states twice in prose that participation
+is recorded *"without assigning the Cartel the status of victor"*. Both are
+`wiki/` at **tier 2**. Tier cannot separate them.
+
+**Why it failed.** The measurement extracted `founded` and `forged` **years**.
+It never looked at relations, so a relational conflict could not appear in it.
+The conclusion was then stated as though it covered the archive.
+
+The failure is not the measurement — the 7 dated conflicts really are
+tier-decided. The failure is the **scope of the claim drawn from it**. A sample
+that structurally excludes a category cannot support a conclusion about that
+category, and nothing in the number itself signals the gap.
+
+**What changed.** ADR-013 amended rather than withdrawn: the dated-attribute
+finding stands, the archive-wide claim does not. Re-measured all six victor
+edges bidirectionally — 4 agree, 1 contradicted, 1 faction-page-silent. The
+conflict resolver now needs a same-tier branch, and `must_surface` enters the
+answer key for conflicts authority cannot adjudicate.
+
+**A second error inside the correction.** The first version of the re-measurement
+reported **two** contradicted edges, having also flagged the Silent Choir over
+the War of Drowned Light. That was wrong: the Choir's page carries no victor row
+at all and says outcomes are not detailed, so it is *silent*, not contradicting.
+The test had been "in the belligerent list and absent from the victor list",
+which cannot distinguish a page that declines to claim victories from a page
+that claims victories and excludes one. Corrected to ask whether the faction
+page makes victor claims **at all**. Silence is not denial — and had this stood,
+`1b_005` and `1b_022` would have been mislabelled as conflict questions.
+
+---
+
+## F-015 — A single careful reviewer
+
+**Approach.** ADR-014 specifies two independent reviewers per answer-key entry.
+The 2026-08-29 review arrived as one consolidated pass over the seven 1B
+questions, with per-question confidence ratings.
+
+**Result.** It reported `1b_006` as having **two** valid answers, Ravena
+Stormwell and Isolde Mournvale, at `confidence: high`.
+
+Corpus enumeration finds **fourteen**:
+
+```
+wiki/the_silent_choir.md  Members row : 6 names
+character pages with a membership row : 8 names
+overlap between the two sets          : 0
+```
+
+The review missed the faction page's `Members` row entirely and six of the eight
+character pages.
+
+**Why it failed.** Membership is recorded in two disjoint places, and a reviewer
+reading from the character-page direction sees only that half. This is the same
+corpus property the graph builder has to handle (CLAUDE.md corpus fact 3) — it
+catches humans exactly as it catches parsers.
+
+**What changed.** The fourteen-name set was retained, not narrowed. The entry is
+marked `unresolved` with the discrepancy recorded in the key itself, and
+`verification.is_confirmed` now requires two reviewers **and** no open
+discrepancy.
+
+**Why this is the most useful entry in the log.** Had the key been narrowed to
+the review's two answers, twelve correct answers would have been scored wrong,
+and the graph would then have been "improved" until it stopped returning them.
+The evaluator would have taught the system to be worse, with every number
+looking healthy throughout. One reviewer, working carefully and reporting high
+confidence, is not a safety mechanism — the second reviewer is the mechanism.

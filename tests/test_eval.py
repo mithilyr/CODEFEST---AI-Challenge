@@ -13,8 +13,10 @@ from types import SimpleNamespace
 import pytest
 
 from eval.harness import QuestionResult, new_run, render_markdown
-from eval.run_eval import expected_docs, has_citations, load_key
+from eval.answer_key import load_key, required_documents
+from eval.run_eval import has_citations
 from eval.scoring import (
+    score_conflict_handling,
     failure_category,
     is_abstention,
     normalise,
@@ -162,28 +164,64 @@ def test_answer_key_is_loadable_and_every_entry_has_what_scoring_needs():
     key = load_key()
     assert key, "answer key is empty"
     for qid, entry in key.items():
-        assert entry.get("acceptable"), f"{qid} has no acceptable answers"
-        assert entry.get("expected_path") is not None, f"{qid} has no path"
+        assert entry.accepted_answers, f"{qid} has no accepted answers"
+        assert entry.acceptable_paths, f"{qid} has no acceptable path"
+        assert entry.required_evidence, f"{qid} has no required evidence"
 
 
 def test_conflict_questions_require_the_rejected_sources_as_evidence():
     """A system that never retrieves the sermon cannot know a disagreement
     existed, so the decoy documents are required evidence, not distractors."""
-    key = load_key()
-    required = expected_docs(key["1c_003"])
+    required = required_documents(load_key()["1c_003"])
     assert any("sermon" in doc for doc in required)
     assert any("codex" in doc for doc in required)
 
 
-def test_key_verification_status_is_reported_not_assumed():
-    """Guards the whole provisional-results contract: if someone sets
-    verified_by to a single name, that is still not two independent reviewers."""
-    key = load_key()
-    unverified = [q for q, e in key.items() if not e.get("verified_by")]
-    assert len(unverified) == len(key), (
-        "Some key entries now claim verification. If that is real, update this "
-        "test and ADR-014. If it is not, the provisional banner is lying."
+def test_1b_006_keeps_all_fourteen_corpus_verified_answers():
+    """The 2026-08-29 review reported two valid answers. Corpus enumeration
+    finds fourteen: six on the faction page's Members row, eight more on
+    individual character pages, zero overlap. Narrowing the key to the review
+    would mark twelve correct answers wrong."""
+    entry = load_key()["1b_006"]
+    assert entry.answer_cardinality == "any_of"
+    assert len(entry.accepted_answers) == 14
+    names = {a.answer for a in entry.accepted_answers}
+    assert {"Ravena Stormwell", "Isolde Mournvale"} <= names, "review's two"
+    assert {"Ignatz Fellgard", "Tamsin Greyfen", "Ossric Ashgrove"} <= names, (
+        "names from the faction page Members row that the review missed"
     )
+
+
+def test_1b_006_accepts_any_member_not_just_the_first():
+    entry = load_key()["1b_006"]
+    for name in ("Ravena Stormwell", "Isolde Mournvale", "Brannoc Palefroth"):
+        verdict = score_answer(f"{name} was a member.", entry.all_surface_forms)
+        assert verdict.correct is True, f"{name} should be accepted"
+
+
+def test_1b_009_conflict_is_recorded_as_same_tier_and_unresolvable():
+    """Both sides are wiki/ at tier 2, so config/authority.yaml cannot separate
+    them. This is the counter-example ADR-013 missed by measuring only dated
+    attribute claims."""
+    entry = load_key()["1b_009"]
+    assert entry.must_surface_conflict
+    conflict = entry.conflicts[0]
+    assert conflict.same_tier is True
+    assert conflict.resolution == "unresolved"
+    assert {c.stance for c in conflict.claims} == {"asserts", "denies"}
+    assert {c.tier for c in conflict.claims} == {2}
+
+
+def test_confirmed_requires_two_reviewers():
+    """A single consolidated review is not two independent ones, however
+    confident. 1b_006 is why: one reviewer found 2 of 14 answers."""
+    key = load_key()
+    assert not any(e.verification.is_confirmed for e in key.values()), (
+        "No entry should be confirmed yet - the 2026-08-29 review was a single "
+        "pass and covered 1B only. If that has changed, update ADR-014 too."
+    )
+    assert key["1b_006"].verification.status == "unresolved"
+    assert key["1c_000"].verification.status == "draft", "1C was not reviewed"
 
 
 # -- reporting -----------------------------------------------------------
@@ -483,3 +521,50 @@ def test_complete_evidence_counts_only_full_recall():
         _question(qid="untraced", scored=False, evidence_recall=None),
     ]
     assert run.complete_evidence_count == 1
+
+
+# -- conflict handling ---------------------------------------------------
+
+
+_VICTORY = ["victor", "victors", "victorious", "won", "victory", "prevailed"]
+
+
+def test_asserting_a_disputed_claim_as_fact_is_flagged():
+    """The Cartel's victory is contradicted between two wiki pages at the same
+    tier. An answer stating it flatly hides a contradiction the corpus makes
+    explicit - even though the wording would match the key."""
+    predicted = "He is a member of the Iron-Ring Cartel, which won the Purge of Blackport."
+    assert score_conflict_handling(predicted, _VICTORY, True).verdict == "asserted_as_fact"
+
+
+def test_surfacing_the_dispute_is_credited():
+    predicted = (
+        "He is a member of the Iron-Ring Cartel. The Purge of Blackport names the "
+        "Cartel as victor, although the Cartel's own article disputes that it won."
+    )
+    assert score_conflict_handling(predicted, _VICTORY, True).verdict == "surfaced"
+
+
+def test_naming_the_entity_is_not_asserting_the_disputed_claim():
+    """Mentioning the Cartel is not the contested act; claiming it won is. An
+    entity-mention test gets this wrong and penalises a correct, careful answer."""
+    predicted = "Halvard Crowhurst is a recorded member of the Iron-Ring Cartel."
+    assert score_conflict_handling(predicted, _VICTORY, True).verdict == "not_mentioned"
+
+
+def test_conflict_scoring_is_inert_where_there_is_no_conflict():
+    assert score_conflict_handling("Gloamreach.", _VICTORY, False).verdict == "n/a"
+    assert score_conflict_handling("Gloamreach.", [], True).verdict == "n/a"
+
+
+def test_conflict_handling_does_not_rescue_a_wrong_answer():
+    """1b_009's baseline answer denies the connection AND mentions the victors.
+    It must not be credited for 'surfacing' anything - the answer is wrong, and
+    the runner gates conflict scoring behind correctness for exactly this
+    reason."""
+    predicted = (
+        "Based on the provided passages, no connection between Halvard Crowhurst "
+        "and the victors of the Purge of Blackport is established."
+    )
+    entry = load_key()["1b_009"]
+    assert score_answer(predicted, entry.all_surface_forms).correct is False

@@ -34,7 +34,7 @@ import re
 import textwrap
 from pathlib import Path
 
-from eval.run_eval import ANSWER_KEY_PATH, load_key
+from eval.answer_key import ANSWER_KEY_PATH, load_key, load_raw
 
 PACK_DIR = Path(__file__).resolve().parent / "verification"
 
@@ -140,24 +140,56 @@ def render_question(entry: dict) -> str:
     qid = entry["qid"]
     focus = [entry.get("answer", "")] + entry.get("acceptable", [])
 
+    accepted = entry.get("accepted_answers", [])
+    verification = entry.get("verification", {})
     lines = [
         f"## `{qid}`",
         "",
         f"**Question.** {entry['question']}",
         "",
-        f"**Key says the answer is.** `{entry.get('answer')}`",
+        f"**Status.** `{verification.get('status', 'draft')}`"
+        + (
+            f" - reviewed by {', '.join(verification.get('reviewers', []))}"
+            if verification.get("reviewers")
+            else " - not yet reviewed"
+        ),
         "",
     ]
-    if len(entry.get("acceptable", [])) > 2:
+    if verification.get("discrepancy"):
         lines += [
-            f"This is a **set-valued** question - the key lists "
-            f"{len(entry['acceptable'])} acceptable answers. Check that the set is "
-            "complete as well as that its members are right.",
+            f"> **OPEN DISCREPANCY.** {verification['discrepancy']}",
             "",
         ]
 
-    lines += ["### Claimed path", ""]
-    for step, hop in enumerate(entry.get("expected_path", []), start=1):
+    if entry.get("answer_cardinality") == "any_of":
+        lines += [
+            f"**Key accepts any of {len(accepted)} answers** "
+            f"(`answer_cardinality: any_of`). Check that the set is **complete** as "
+            "well as that its members are right - an incomplete set marks correct "
+            "answers wrong.",
+            "",
+        ]
+        lines += [f"- `{a['answer']}`" for a in accepted]
+        lines.append("")
+    else:
+        for a in accepted:
+            aliases = (
+                f" (also accepted: {', '.join('`' + x + '`' for x in a['aliases'])})"
+                if a.get("aliases")
+                else ""
+            )
+            lines += [f"**Key says the answer is.** `{a['answer']}`{aliases}", ""]
+
+    paths = entry.get("acceptable_paths", [])
+    lines += ["### Claimed path" + ("s" if len(paths) > 1 else ""), ""]
+    if len(paths) > 1:
+        lines += [
+            f"{len(paths)} genuinely different routes reach this answer. Each should "
+            "stand on its own.",
+            "",
+        ]
+    hops = [h for path in paths for h in path.get("hops", [])]
+    for step, hop in enumerate(hops, start=1):
         lines += [
             f"**Hop {step}.** `{hop['from']}` --[{hop['relation']}]--> `{hop['to']}`",
             f"  cited: `{hop['source']}`" + (f", field `{hop['field']}`" if hop.get("field") else ""),
@@ -194,42 +226,47 @@ def render_question(entry: dict) -> str:
                 "",
             ]
 
-    conflict = entry.get("conflict")
-    if conflict:
-        lines += ["### Claimed conflict", ""]
-        for role in ("authoritative", "rejected", "abstains"):
-            records = conflict.get(role)
-            if not records:
-                continue
-            records = records if isinstance(records, list) else [records]
-            for record in records:
-                lines.append(
-                    f"- **{role}**: `{record.get('value', '-')}` from "
-                    f"`{record.get('source')}` (tier {record.get('tier', '?')})"
-                )
-                if record.get("quote"):
-                    lines.append(f"  - key quotes: \"{record['quote']}\"")
+    for conflict in entry.get("conflicts", []):
+        lines += [
+            "### Claimed conflict",
+            "",
+            f"`{conflict.get('subject')}` --[{conflict.get('relation')}]--> "
+            f"`{conflict.get('object') or '(a value)'}`  ",
+            f"same tier: **{conflict.get('same_tier')}**  |  resolution: "
+            f"**{conflict.get('resolution')}**  |  must surface: "
+            f"**{conflict.get('must_surface')}**",
+            "",
+        ]
+        if conflict.get("why_unresolvable"):
+            lines += [f"> {conflict['why_unresolvable']}", ""]
+        for record in conflict.get("claims", []):
+            lines.append(
+                f"- **{record.get('stance')}**: `{record.get('value') or '-'}` from "
+                f"`{record.get('source')}` (tier {record.get('tier', '?')})"
+            )
+            if record.get("quote"):
+                lines.append(f"  - key quotes: \"{record['quote']}\"")
 
-                # An abstention has no value to search for - the whole point is
-                # that the source declines to state one - so fall back to
-                # distinctive words from the quoted text.
-                value = str(record.get("value", "")).strip()
-                needles = [value] if value and value != "not recorded" else []
-                if not needles and record.get("quote"):
-                    needles = [
-                        word
-                        for word in re.findall(r"[A-Za-z]{6,}", record["quote"])[:3]
-                    ]
-                found = find_supporting(record.get("source", ""), needles, limit=1)
-                if found:
-                    lines.append(
-                        f"  - corpus says: \"{_excerpt(found[0][1], needles)}\""
-                    )
-                else:
-                    lines.append(
-                        "  - **could not locate this in that document** - open the "
-                        "file and check the citation before confirming"
-                    )
+            # An abstention has no value to search for - the whole point is
+            # that the source declines to state one - so fall back to
+            # distinctive words from the quoted text.
+            value = str(record.get("value", "")).strip()
+            needles = [value] if value and value != "not recorded" else []
+            if not needles and record.get("quote"):
+                needles = [
+                    word
+                    for word in re.findall(r"[A-Za-z]{6,}", record["quote"])[:3]
+                ]
+            found = find_supporting(record.get("source", ""), needles, limit=1)
+            if found:
+                lines.append(
+                    f"  - corpus says: \"{_excerpt(found[0][1], needles)}\""
+                )
+            else:
+                lines.append(
+                    "  - **could not locate this in that document** - open the "
+                    "file and check the citation before confirming"
+                )
         lines.append("")
 
     if entry.get("notes"):
@@ -261,9 +298,7 @@ def render_question(entry: dict) -> str:
 
 
 def build_pack() -> Path:
-    key = load_key()
-    raw = json.loads(ANSWER_KEY_PATH.read_text(encoding="utf-8"))
-    entries = raw["questions"]
+    entries = load_raw()["questions"]
 
     lines = [
         "# Answer key verification pack",
@@ -311,10 +346,15 @@ def build_pack() -> Path:
 def main() -> int:
     path = build_pack()
     key = load_key()
-    unverified = [q for q, e in key.items() if not e.get("verified_by")]
     print(f"wrote {path}")
-    print(f"  {len(key)} traced questions, {len(unverified)} awaiting verification")
-    print(f"  {', '.join(sorted(unverified))}")
+    print(f"  {len(key)} traced questions")
+    by_status: dict[str, list[str]] = {}
+    for qid, entry in sorted(key.items()):
+        by_status.setdefault(entry.verification.status, []).append(qid)
+    for status, qids in sorted(by_status.items()):
+        print(f"  {status:14s} {len(qids):2d}  {', '.join(qids)}")
+    confirmed = [q for q, e in key.items() if e.verification.is_confirmed]
+    print(f"  confirmed (2 reviewers, no open discrepancy): {len(confirmed)}/{len(key)}")
     return 0
 
 
