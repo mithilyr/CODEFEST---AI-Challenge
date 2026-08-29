@@ -516,15 +516,26 @@ the kind of one-digit drift nobody reads.
 **What changed.** All 36 files were restored from the zip and the empty note
 deleted, each file re-checked as newline-only-different immediately before being
 overwritten so that a file with real edits could not be silently destroyed.
-Post-restore: 0 files differ, 0 missing, 7 extra (`.obsidian/`, which
-`discover()` already skips). Ingestion is back to 340 -> 317 -> 30,553; 83 tests
-pass; the baseline is unchanged at 1B 2/7, 1C 2/2.
+The editor's vault config was removed as well, since leaving it
+in place leaves the cause in place. Post-restore: 0 differ, 0 missing, 0 extra.
+Ingestion is back to 340 -> 317 -> 30,553 and the baseline is unchanged at
+1B 2/7, 1C 2/2.
 
-**What is still open.** Nothing prevents a recurrence, and a teammate or judge
-extracting the corpus fresh has no way to confirm they got the same bytes we
-measured against. A committed manifest of the 341 file hashes (~35 KB) would
-make "is this the real corpus?" a command rather than a coincidence. Not yet
-built — recorded here so the gap is visible.
+**Closed.** `config/corpus_manifest.sha256` holds the SHA-256 of all 341 shipped
+files (39 KB, generated from the zip rather than from the extracted copy, so it
+cannot inherit damage the copy has already taken).
+`python -m src.ingest.integrity` verifies it and exits non-zero on drift, which
+also gives the clean-clone test something to assert.
+
+Extra files are reported in two groups, because that distinction is this entry's
+whole lesson: an unexpected file matters when ingestion *reads* it. A stray
+`.DS_Store` is drift. A stray `.md` in `wiki/` is the incident above.
+
+Nine regression tests reconstruct the specific failure — a CRLF-only rewrite
+caught as modified, an empty note in `wiki/` flagged `extra_ingested` and
+unsafe, an editor's config flagged as drift but safe to ingest. Deleting the
+`extra_ingested` guard makes `test_stray_ingested_file_is_flagged_as_unsafe`
+fail, which is how we know the test is load-bearing and not decorative.
 
 **What this cost.** Nothing, because the discrepancy was chased instead of
 rounded off. That is the only reason it is a log entry and not a week of graph

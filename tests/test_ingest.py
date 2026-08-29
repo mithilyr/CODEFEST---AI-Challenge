@@ -19,6 +19,12 @@ import pytest
 
 from src.ingest.authority import assign_authority, load_authority_model
 from src.ingest.dedup import build_canonical_documents
+from src.ingest.integrity import (
+    manifest_from_dir,
+    read_manifest,
+    verify,
+    write_manifest,
+)
 from src.ingest.loaders import load
 from src.ingest.metadata import (
     EPHEMERA_DOCTYPES,
@@ -237,3 +243,118 @@ def test_locators_are_present_and_human_readable(corpus_root: Path):
     blocks = load(corpus_root / "wiki" / "gauntlet_of_sorrowfell.md")
     assert blocks
     assert all(b.locator.strip() for b in blocks)
+
+
+# --- corpus integrity (F-016) -------------------------------------------------
+#
+# These reconstruct the 2026-08-29 incident: a text editor rewrote 36 corpus
+# files CRLF->LF and left an empty note behind. The rewrites changed no content,
+# so every evidence count stayed identical and nothing looked wrong. The note
+# ingested as a canonical document under the title of a contested entity.
+#
+# What makes these regression tests rather than happy-path tests is that each
+# one asserts the check fires on the *specific* shape of that failure.
+
+
+@pytest.fixture
+def mini_corpus(tmp_path: Path) -> Path:
+    """A synthetic corpus obeying the archive's filename conventions."""
+    (tmp_path / "wiki").mkdir()
+    (tmp_path / "wiki" / "ederon_fellgard.md").write_bytes(b"# Ederon\r\nrow\r\n")
+    (tmp_path / "ephemera").mkdir()
+    (tmp_path / "ephemera" / "ballad_concerning_crookgate_keep.txt").write_bytes(
+        b"a ballad\n"
+    )
+    return tmp_path
+
+
+def test_manifest_round_trips(tmp_path: Path, mini_corpus: Path):
+    """A written manifest must read back exactly, or verification is theatre."""
+    entries = manifest_from_dir(mini_corpus)
+    path = tmp_path / "m.sha256"
+    write_manifest(entries, path, "test")
+    assert read_manifest(path) == entries
+
+
+def test_committed_manifest_covers_the_whole_shipped_archive():
+    """The manifest is the baseline; a truncated one silently verifies nothing."""
+    entries = read_manifest()
+    assert len(entries) == 341
+    assert all(len(d) == 64 for d in entries.values())
+    assert "wiki/the_iron_ring_cartel.md" in entries
+
+
+def test_manifest_rejects_a_malformed_line(tmp_path: Path):
+    """Fail loudly: a manifest parsed to {} would report a clean corpus."""
+    path = tmp_path / "bad.sha256"
+    path.write_text("# comment\nnot-a-valid-line\n", encoding="utf-8")
+    with pytest.raises(ValueError):
+        read_manifest(path)
+
+
+def test_clean_corpus_verifies_clean(mini_corpus: Path):
+    report = verify(mini_corpus, manifest_from_dir(mini_corpus))
+    assert report.is_clean and report.is_safe_to_ingest
+    assert report.verified == 2
+
+
+def test_real_corpus_matches_the_shipped_archive(corpus_root: Path):
+    """The corpus we measure against must be the corpus we were given."""
+    report = verify(corpus_root)
+    assert report.is_clean, report.summary()
+
+
+def test_newline_only_rewrite_is_detected_as_modified(mini_corpus: Path):
+    """The F-016 rewrite: identical text, different bytes.
+
+    Content-level checks cannot see this - the evidence-unit count did not move.
+    Only hashing catches it.
+    """
+    expected = manifest_from_dir(mini_corpus)
+    target = mini_corpus / "wiki" / "ederon_fellgard.md"
+    original = target.read_bytes()
+    target.write_bytes(original.replace(b"\r\n", b"\n"))
+
+    assert target.read_bytes().decode().splitlines() == original.decode().splitlines()
+    report = verify(mini_corpus, expected)
+    assert report.modified == ["wiki/ederon_fellgard.md"]
+    assert not report.is_safe_to_ingest
+
+
+def test_stray_ingested_file_is_flagged_as_unsafe(mini_corpus: Path):
+    """The F-016 note itself: empty, unexpected, and read by ingestion.
+
+    Zero bytes means zero evidence units, so it is invisible to every count the
+    pipeline prints except the document total.
+    """
+    expected = manifest_from_dir(mini_corpus)
+    (mini_corpus / "wiki" / "The Iron-Ring Cartel.md").write_bytes(b"")
+
+    report = verify(mini_corpus, expected)
+    assert report.extra_ingested == ["wiki/The Iron-Ring Cartel.md"]
+    assert not report.is_clean
+    assert not report.is_safe_to_ingest
+    assert "CORPUS DRIFT" in report.summary()
+
+
+def test_stray_ignored_file_is_drift_but_not_unsafe(mini_corpus: Path):
+    """An editor's config is reported, but does not invalidate measurements."""
+    expected = manifest_from_dir(mini_corpus)
+    vault = mini_corpus / "wiki" / ".obsidian"
+    vault.mkdir()
+    (vault / "workspace.json").write_text("{}", encoding="utf-8")
+
+    report = verify(mini_corpus, expected)
+    assert report.extra_ignored == ["wiki/.obsidian/workspace.json"]
+    assert report.extra_ingested == []
+    assert not report.is_clean
+    assert report.is_safe_to_ingest
+
+
+def test_missing_file_is_reported(mini_corpus: Path):
+    expected = manifest_from_dir(mini_corpus)
+    (mini_corpus / "wiki" / "ederon_fellgard.md").unlink()
+
+    report = verify(mini_corpus, expected)
+    assert report.missing == ["wiki/ederon_fellgard.md"]
+    assert not report.is_safe_to_ingest

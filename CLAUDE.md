@@ -159,9 +159,10 @@ it on a run you have not finished debugging. Everything is cached — reruns are
 ## Commands
 
 ```bash
+python -m src.ingest.integrity     # is the corpus the shipped corpus? (run first)
 python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
-python -m pytest                   # 83 tests
+python -m pytest                   # 92 tests
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.verify_key          # regenerate the answer-key review pack
@@ -184,6 +185,9 @@ These are graded — 30% of the rubric — and cannot be reconstructed at the en
   chat logs on 8 Sep — the logs are a mandatory deliverable that judges read.
 - **Do not commit the corpus** (~123 MB). `data/` is gitignored; the README documents
   the download.
+- **The corpus is read-only, and that is not enforced by anything but us.** Opening it
+  in an editor once cost us 36 rewritten files and a phantom document (F-016). Run
+  `python -m src.ingest.integrity` before trusting a measurement you did not expect.
 - **Export AI chat logs to `ai_usage/` as you go.**
 
 ## How to work here
