@@ -408,6 +408,12 @@ A Voyage account with no payment method on file is limited to **3 requests and
 Corpus scale: 3,364 chunks, ~962k tokens. That is 0.5% of the 200M free token
 allowance, so tokens were never the constraint. Throughput was.
 
+> **Correction, recorded rather than edited out.** The 3,364 figure was taken
+> before the chunker settled. Re-measured from the built index on 29 Aug 2026 -
+> 13,893,760 bytes / 1024 dimensions / 4 bytes per float - the corpus produces
+> **3,392 chunks**. The argument above is unaffected; the number is not the one
+> to quote.
+
 **Options considered**
 
 1. Reduce the batch size to a fixed smaller number.
@@ -754,3 +760,142 @@ condition, recorded in advance.
 
 *Status: accepted; hypothesis tested and NOT supported; layer retained on
 auditability grounds, with a stated deletion condition.*
+
+---
+
+## ADR-014 — Deterministic scoring, a response cache, and a provisional-until-verified answer key
+
+**Problem**
+
+The project's stated rule is *measure before asserting*. Its headline
+measurement — the Checkpoint 1 baseline, quoted in CLAUDE.md as 2/7 on 1B joins
+and 2/2 on 1C conflicts — existed only as prose in a commit message.
+`eval/results/` was empty and no harness existed. Nobody could re-derive the
+numbers, including us.
+
+Three separate decisions were needed to fix that honestly.
+
+### 1. Scoring is deterministic, not an LLM judge
+
+**Options considered**
+
+1. An LLM judge grading each answer against the key.
+2. Substring matching against the acceptable answers.
+3. Deterministic matching with an explicit negation guard.
+
+**Decision:** option 3.
+
+**Why not option 1.** Three reasons, in the order they decided it. *Quota*: a
+judged sweep costs one extra call per question, doubling spend on the scarcest
+resource in the project (~20 requests/day/model). *Reproducibility*: the entire
+point is that a number can be re-derived; a judge that may grade the same answer
+differently on two runs turns the baseline into an estimate. *Defensibility*: a
+teammate can read forty lines of matching rules and defend every verdict in the
+room. Nobody can defend a model's opinion under questioning.
+
+**Why not option 2.** `answer_key.json` warns about this in its own preamble,
+and it is not hypothetical. An answer reading
+
+    there is no mention of who the victors were
+
+contains the gold phrase and a substring scorer marks it **correct**. The guard
+is therefore the whole difference between a scoring function and a scoring
+function that works.
+
+**How the guard works.** Negation is scoped to the *sentence* containing the
+match, not to a character window. Two failures during implementation drove this:
+
+- A 90-character window marked a genuinely correct answer wrong, because an
+  unrelated denial two sentences later fell inside the window.
+- Splitting on semicolons as well as sentence enders marked a genuine refusal
+  correct, because `The forging date is not recorded; some accounts say 391 AS`
+  put the gold token in its own clause. Semicolons do not split — the negation
+  governs the whole statement.
+
+Both are regression tests in `tests/test_eval.py`.
+
+A third bug worth recording: the first `normalise()` ran the ASCII fold before
+typographic normalisation, which **deleted** U+2019 rather than converting it.
+`Sorrowfell's` folded to `sorrowfells` while `Sorrowfell's` folded to
+`sorrowfell s`, and the two could never match — on a corpus that uses U+2019
+throughout. Fixed by routing through the ingestion pipeline's existing
+`normalise_punctuation()`, which is what CLAUDE.md already instructs for any new
+text path.
+
+### 2. Gemini responses are cached
+
+**Problem**
+
+`gemini.py` documented a response cache in its module docstring — *"a cached
+answer costs no quota, and the demo must never be recorded against a cold
+cache"* — and did not implement one. Every evaluation sweep cost ~20 requests,
+so debugging the harness would have consumed a day's quota per attempt.
+
+**Decision**
+
+Content-addressed cache at `.cache/responses/`, sharded like the embeddings
+cache, keyed on **the prompt alone and not the model**.
+
+**Why not key by model.** Rotation means an identical prompt may be served by
+different models on different days. Keying by model forces a fresh request every
+time the rotation head changes — precisely when quota is scarcest. The stored
+record carries the model that produced the text, so provenance survives even
+though the key does not.
+
+**Trade-off.** A cached answer may come from a model no longer at the head of
+the rotation. Accepted and recorded, because the alternative is an evaluation
+that cannot be re-run. Image prompts are never cached here; OCR has its own
+committed cache.
+
+### 3. The answer key is provisional until two humans verify it
+
+**Problem**
+
+All nine traced entries carry `verified_by: null`. The key was produced by an AI
+assistant tracing the corpus — the same kind of process that produced three
+assumptions this project has already had to overturn. Scoring against it and
+reporting the result as fact would be exactly the failure the harness exists to
+prevent, dressed up as rigour.
+
+**Decision**
+
+Results are marked provisional per question, not per run. Every row in the
+Markdown report says whether its ground truth has been checked, so a number
+copied into a slide still carries its own health warning. `verified_by` must be
+a list of **two** names; a single reviewer does not clear it.
+
+`python -m eval.verify_key` generates `eval/verification/answer_key_review.md`:
+for each traced question it pulls the actual passage from the corpus at every
+cited location, so a reviewer reads what the document says instead of searching
+317 files.
+
+**The pack deliberately does not use `eval/probes/corpus_shape.py`.** The probe
+is our parser and may be wrong in the same way the key is wrong; checking one
+against the other would confirm nothing. Excerpts come from the ingestion
+pipeline — the same text the system itself sees — so a reviewer also sees it if
+ingestion is dropping something.
+
+**The one rule, recorded so it cannot be quietly relaxed:** never change an
+answer to make the system score better. If the system disagrees with a confirmed
+entry, the system is wrong. If review shows the key was wrong, fix the key and
+record it here.
+
+**Trade-offs**
+
+Verification is human time this team does not have much of — nine questions,
+two reviewers. Accepted, because every architectural decision from Checkpoint 2
+onward is scored against this key, and an unverified key silently invalidates
+all of them at once.
+
+**How we will validate it**
+
+`tests/test_eval.py` asserts the negation guard rejects the exact over-crediting
+string, that evidence recall is `None` rather than `0.0` for untraced questions,
+that unscored questions appear in the report rather than shrinking the
+denominator, and that a repeat prompt is served from cache with
+`total_calls == 0`. One test asserts that every key entry is still unverified —
+it fails deliberately when that changes, forcing whoever verifies the key to
+come back and update this ADR.
+
+*Status: accepted; harness validated by tests, baseline numbers provisional
+pending human verification of the key.*

@@ -80,14 +80,22 @@ def answer(
     pool: GeminiPool | None = None,
     *,
     k: int = TOP_K,
+    use_cache: bool = True,
 ) -> BaselineAnswer:
-    """Run the baseline pipeline for one question."""
+    """Run the baseline pipeline for one question.
+
+    Args:
+        use_cache: Serve an identical earlier prompt from the response cache.
+            False forces a fresh request and costs quota - used to confirm the
+            cache is returning what the API would have.
+    """
     pool = pool or GeminiPool()
     hits = index.search(question, k=k)
 
     text, model = pool.generate(
         [BASELINE_PROMPT.format(context=build_context(hits), question=question)],
         description="baseline synthesis",
+        use_cache=use_cache,
     )
 
     return BaselineAnswer(

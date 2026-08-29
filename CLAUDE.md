@@ -41,9 +41,9 @@ shapes no template matches, and writing prose from retrieved evidence.
 ### Deliberately not used
 
 - **No graph database.** 125 measured entities is a Python dict.
-- **No vector database.** ~3,400 chunks is a NumPy matrix multiply in milliseconds.
-  (ADR-008 says 3,364 and this file said 3,392; neither has been re-measured since the
-  chunker changed. Re-measure before either number goes in the report.)
+- **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
+  (Re-measured from the built index: 13,893,760 bytes / 1024 dims / 4 bytes = 3,392
+  exactly. ADR-008's 3,364 is the stale figure.)
 - **No agent framework.** LangChain/LangGraph/CrewAI would be code we did not write.
 
 If you are tempted to add one of these, the answer is almost certainly no. Say why it
@@ -61,6 +61,7 @@ The knowledge graph is the next major piece and is **not yet built**.
 | `src/clients/` | Done — retry, Gemini model rotation, Voyage embeddings |
 | `src/baseline/` | Done — chunker, vector index, naive RAG (Checkpoint 1) |
 | `eval/answer_key.json` | Drafted, **`verified_by` still null — needs human check** |
+| `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | **Not started** — next major piece |
 | `src/query/` | Not started |
 | `src/ui/` | Not started |
@@ -144,6 +145,8 @@ python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
 python -m pytest                   # 40 tests
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
+python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
+python -m eval.verify_key          # regenerate the answer-key review pack
 ```
 
 Use the project venv: `.venv/Scripts/python.exe` on Windows.
