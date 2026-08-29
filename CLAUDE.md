@@ -51,8 +51,12 @@ is needed and what it measurably improves, first.
 
 ## Current state
 
-Ingestion, OCR, authority ranking and the Checkpoint 1 baseline are done and measured.
-The knowledge graph is the next major piece and is **not yet built**.
+Ingestion, OCR, authority ranking, the Checkpoint 1 baseline and the deterministic
+graph are done and measured. The graph reaches **7/7 complete evidence** on the dev
+1B questions where the vector baseline reached 0/7 — but that is evidence coverage,
+not answer correctness: there is no query layer yet, so nothing selects among the
+candidate paths. `1b_007` returns five and needs a type filter; `1b_009` returns nine
+and needs conflict handling. The query layer is the next major piece.
 
 | Component | State |
 |---|---|
@@ -62,7 +66,7 @@ The knowledge graph is the next major piece and is **not yet built**.
 | `src/baseline/` | Done — chunker, vector index, naive RAG (Checkpoint 1) |
 | `eval/answer_key.json` | Drafted, **`verified_by` still null — needs human check** |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
-| `src/graph/` | **Not started** — next major piece |
+| `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016) |
 | `src/query/` | Not started |
 | `src/ui/` | Not started |
 
@@ -172,7 +176,8 @@ it on a run you have not finished debugging. Everything is cached — reruns are
 python -m src.ingest.integrity     # is the corpus the shipped corpus? (run first)
 python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
-python -m pytest                   # 96 tests
+python -m src.graph.build          # build the graph, print coverage
+python -m pytest                   # 117 tests
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.verify_key          # regenerate the answer-key review pack

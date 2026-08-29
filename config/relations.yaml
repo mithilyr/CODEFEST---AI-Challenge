@@ -1,0 +1,122 @@
+# Infobox field names -> canonical relations.
+#
+# 109 distinct field names express roughly a dozen relations. `Member of`,
+# `Membership`, `Affiliation` and `Allegiance` are one relation; `Housed in` and
+# `Place of housing` are another. A parser keyed on literal field names loses a
+# third of the membership edges and never says so.
+#
+# This lives in config rather than in code for the same reason authority.yaml
+# does (ADR-005): it is a claim about the corpus, and a judge should be able to
+# read it, disagree with a line, and change it without touching Python.
+#
+# direction:
+#   forward  the page's subject is the source of the edge
+#            `Member of | [[The Silent Choir]]` on a character page
+#   reverse  the page's subject is the TARGET; the cell names the source
+#            `Members | Ravena Stormwell; ...` on a faction page
+#
+# Reverse matters more than it looks. The Silent Choir's membership is recorded
+# in two disjoint places - 6 names on the faction page's `Members` row, 8 more on
+# individual character pages, with zero overlap. Reading only one direction loses
+# half the edges, and 1b_006 needs all fourteen.
+
+relations:
+  member_of:
+    inverse: has_member
+    fields:
+      forward: [Member of, Membership, Affiliation, Allegiance]
+      reverse: [Members, Member, Known members, Personnel, Known participant,
+                Notable fighter, Serving figure, Castellan]
+
+  ruled_by:
+    inverse: rules
+    fields:
+      forward: [Ruled by, Ruler, Ruling power]
+
+  lair_in:
+    inverse: lair_of
+    fields:
+      forward: [Lair]
+
+  in_region:
+    inverse: contains
+    fields:
+      forward: [Region, Core location, Location, Major setting, Seat]
+
+  housed_in:
+    inverse: houses
+    fields:
+      forward: [Housed in, Place of housing]
+
+  forged_at:
+    inverse: forge_of
+    fields:
+      forward: [Forged at, Place of forging]
+
+  serves_at:
+    inverse: served_by
+    fields:
+      forward: [Serves at, Service, Place of service, Place of Service,
+                Military service, Serves at Emberdeep, Serves at Greyfell Citadel,
+                Serves at the fortress, Serving at Crookvale,
+                Personnel serving at Hollowreach]
+
+  wields:
+    inverse: wielded_by
+    fields:
+      forward: [Wields, Wielded relic, Wielded weapon, Weapon, Weapon or Relic,
+                Relic, Later weapon record]
+
+  victor_of:
+    inverse: won_by
+    fields:
+      forward: [Victor of]
+      # `Victor` on a conflict page names who won *that* conflict, so the page
+      # is the target and the cell is the source.
+      reverse: [Victor]
+
+  belligerent_in:
+    inverse: had_belligerent
+    fields:
+      forward: [Belligerent, Belligerent in, Belligerencies, Conflict,
+                Military action, Military involvement, Military record,
+                Major fighting]
+
+  mentor_of:
+    inverse: mentored_by
+    fields:
+      forward: [Mentor of, Mentorship]
+      reverse: [Mentor]
+
+  rival_of:
+    inverse: rival_of          # symmetric
+    fields:
+      forward: [Rival, Rival of, Rivals]
+
+  devastated:
+    inverse: devastated_by
+    fields:
+      forward: [Devastated, Devastated sites, Major devastation]
+
+  waged_at:
+    inverse: hosted_conflict
+    fields:
+      forward: [Waged at, Unleashed in]
+
+  concealed_tie_to:
+    inverse: concealed_tie_from
+    fields:
+      forward: [Secret, Secret truth, Concealed truth, Historical association]
+
+# Field names that carry attributes, not edges. Listed explicitly rather than
+# left to fall through, so that a NEW field name appearing in the corpus is
+# reported as unmapped instead of being silently ignored.
+attributes:
+  [Name, Born, Died, Role, Status, Appearance, Demeanor, Doctrine, Era,
+   Threat rating, Garrison strength, Founded, Began, Ended, Forged, Forging date,
+   Habit, Classification, Artifact class, Attunement cost, Attack character,
+   Character, Creature, Danger, Nature, Outcome, Position, Primary function,
+   Casualties, Casualty figure, Command, Commands, Organization kind,
+   Organization type, Organizational kind, Holding classification,
+   Physical description, Physical traits, Visual identity, Type,
+   Related location and year, Related region and year, Secret keeper]

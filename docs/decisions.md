@@ -1146,3 +1146,90 @@ claim as fact is flagged while merely naming the entity is not.
 
 *Status: accepted, validated by tests. All nine entries remain unconfirmed —
 six `single_review`, one `unresolved`, two `draft` (1C was not reviewed).*
+
+## ADR-016 — The graph is infobox rows with provenance, in plain Python
+
+**Problem**
+
+Checkpoint 1 measured the thing the graph has to beat: the vector baseline
+answered 2 of 7 1B questions and assembled **complete evidence for none of
+them**. Three of seven reached neither required document. The question this ADR
+answers is whether explicit structure recovers the evidence similarity search
+could not assemble.
+
+**What we built**
+
+Five modules, no dependencies beyond PyYAML and the standard library:
+
+| Module | Job |
+|---|---|
+| `cells.py` | The twelve ADR-010 templates as named handlers |
+| `entities.py` | Canonical keys; exact match only (ADR-011) |
+| `schema.py` | `Node`, `Edge`, `Graph` - dicts and lists |
+| `build.py` | Row-by-row construction from `EvidenceUnit`s |
+| `traverse.py` | Bounded bidirectional BFS returning paths with evidence |
+
+The builder consumes ingested evidence rather than re-reading the corpus, so the
+document id, authority tier and locator attached once during ingestion travel
+onto every edge instead of being reconstructed.
+
+**Measured result**
+
+```
+entities 117  (95 page-backed, 22 edge-only, 0 isolated)
+edges    267  across 15 relations, 0 unmapped field names
+
+complete required evidence, 7 dev 1B questions:
+    graph   7/7
+    vector  0/7   (Checkpoint 1)
+```
+
+**This is evidence coverage, not answer correctness.** There is no query layer
+yet - no routing, no answer selection, no synthesis. What is measured is that a
+bounded traversal from the question's entity reaches the answer entity *and*
+touches every document the answer key requires. `1b_007` returns five candidate
+paths and needs a type filter to choose the accord; `1b_009` returns nine and
+needs conflict handling. "A path exists" and "the system answers correctly" are
+different claims and this ADR only supports the first.
+
+**Decisions**
+
+1. **Provenance is not optional.** Every edge carries `document`, `field_name`,
+   `row`, `raw`, `template`, `tier`, `assertion` and `extraction`. `Edge.why()`
+   renders one line a human can check against the page. An edge that cannot
+   explain itself is a citation we cannot defend.
+2. **`row` is part of the identity.** Five pages repeat a field name (F-018), so
+   edges are keyed by row index and never by field name.
+3. **Field-to-relation mapping lives in `config/relations.yaml`**, not in code,
+   for ADR-005's reason: it is a claim about the corpus and a judge should be
+   able to disagree with one line without touching Python. 109 field names
+   collapse to 15 relations.
+4. **Unmapped field names are reported, never swallowed.** A relation expressed
+   under an unmapped field is an edge that silently never exists, which looks
+   identical to the corpus not asserting it. Currently zero unmapped.
+5. **Plain-text entity references resolve by exact name match.** See F-020 -
+   this recovers 26 edges and connects 10 otherwise isolated entities. The
+   method is recorded on the edge (`extraction`) because a name match and a
+   `[[link]]` carry different confidence.
+6. **No graph database.** 117 nodes and 267 edges is a dict of lists. Neo4j
+   would be a dependency a teammate must defend to a judge in exchange for
+   nothing measurable at this size.
+
+**What the graph does not do**
+
+`1b_009`'s conflict is **not representable from infoboxes alone**. The purge
+page asserts the Cartel as victor in its `Victor` row. The Cartel's own page
+carries `Belligerent in` including the Purge, and a `Victor of` row that omits
+it. Under F-014 that omission is **silence, not denial** - and the actual denial
+("participation without assigning the Cartel the status of victor") is prose,
+reachable only by ADR-012's claim extractor. The graph correctly represents one
+assertion and one silence; it must not be read as having captured the
+contradiction.
+
+**Trade-offs**
+
+Infobox-only means prose relations are invisible. That is deliberate for this
+checkpoint - it keeps the measurement clean about what *structure* recovers -
+and it is why the number above is evidence coverage rather than a score.
+
+*Status: accepted, validated by 21 tests and the 7/7 coverage measurement.*

@@ -626,3 +626,96 @@ seven `Outcome` rows were checked: the Vanguard's names its own referent and the
 other six describe how a war ended. Row multiplicity is load-bearing; row order
 is not, on current evidence. We built for the first only rather than for the
 more interesting claim.
+
+## F-019 — A `seen` set that discarded the evidence, not just the route
+
+**Approach.** Standard BFS over the graph, marking nodes visited so the search
+terminates and does not revisit. This is the textbook shape and it looks obviously
+correct.
+
+**Result.** For `1b_009` - *"In what way is Halvard Crowhurst connected to the
+victors of the Purge of Blackport?"* - it returned exactly one two-hop path:
+
+```
+purge_of_blackport <-[belligerent_in]<- iron_ring_cartel <-[member_of]<- halvard_crowhurst
+    both hops sourced from wiki/the_iron_ring_cartel.md
+```
+
+The path is true. It is also the wrong one. The route the question needs is:
+
+```
+purge_of_blackport <-[victor_of]<- iron_ring_cartel <-[member_of]<- halvard_crowhurst
+    wiki/the_purge_of_blackport.md  +  wiki/the_iron_ring_cartel.md
+```
+
+Same length, same endpoints, **half the evidence**: one document instead of two.
+Evidence recall 0.50 rather than 1.00, on the question where the second document
+is the entire point, because it is the one making the contested victor claim.
+
+**Why it failed.** The `seen` set is a *node* filter, so the first path to reach
+`iron_ring_cartel` won and every alternative route to the same node was discarded
+unexamined. Which route wins is then decided by edge insertion order - that is,
+by the alphabetical order of filenames during the build.
+
+**Why this one is worth the entry.** Nothing was wrong with the answer, the code
+raised nothing, and the path printed with real citations attached. Had the
+traversal been written first and measured later, the system would have reported a
+correct-looking two-hop answer for `1b_009` with the disputed claim's source
+missing from the evidence - and the conflict layer, when it is built, would have
+had nothing to detect a conflict in. This is the §5 failure class arriving through
+a data structure rather than a parser.
+
+It also sharpens the distinction the coverage metric has to make: **a path
+existing is not the evidence existing.** Two paths of equal length can differ by
+a whole document.
+
+**What changed.** `find_paths` prunes cycles only - a node may not repeat *within
+one path*, but alternative routes to it are all enumerated. At 267 edges the cost
+is nothing. `test_traversal_returns_alternative_routes_not_just_the_first` pins
+it, asserting both relations appear and that the `victor_of` route carries both
+documents.
+
+---
+
+## F-020 — Reading only `[[links]]`, on a corpus that does not always use them
+
+**Approach.** Extract edges from wiki links in infobox cells. The corpus is a
+wiki; entity references are `[[Marrowwell Abbey]]`; harvesting them is the job.
+
+**Result.** `the_ashen_vanguard.md` produced **zero** `belligerent_in` edges. Its
+three `Belligerent` rows are plain text:
+
+```
+| Belligerent | The War of Drowned Light |
+| Belligerent | The Accord of Mournthrone |
+| Belligerent | The Leaden Accord |
+```
+
+No brackets. A link-driven parser reads the page as naming no conflicts at all.
+Corpus-wide, 26 edges were missing and **10 entities were completely isolated** -
+present as nodes, reachable by nothing.
+
+**Why it failed.** We inferred the convention from the pages we had looked at.
+The corpus is inconsistent about linking, and the inconsistency is invisible
+because an unlinked reference and a genuinely absent relation produce identical
+output: no edge, no error.
+
+**Compounding.** This is the same page as F-018, which has no `Victor of` row and
+records its only victory in an `Outcome` row. Two independent extraction
+assumptions both fail on `the_ashen_vanguard.md`, and the ADR-013 CORRECTION's
+treatment of the Accord of Mournthrone depends on that page being read correctly.
+
+**What changed.** A plain-text cell on a *mapped relation field* is resolved
+against known entity names by **exact match on the canonical key** - the same
+ladder as ADR-011, with no fuzzy rung. A value matching nothing yields no edge
+rather than a guess, and multi-valued cells resolve only if every part resolves.
+The method is recorded on the edge as `extraction="exact_name_match"`, because a
+name match and a link do not carry the same confidence and a reviewer should be
+able to filter on the difference.
+
+Result: 241 -> 267 edges, isolated entities 10 -> 0.
+
+**What we did not do.** Substring or similarity matching against entity names.
+That would resolve `The Purge of Blackport` inside prose and manufacture
+relations from descriptions - ADR-010's incidental-link failure by another route.
+Exact match only, on literal cells only.
