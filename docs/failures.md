@@ -466,3 +466,66 @@ and the graph would then have been "improved" until it stopped returning them.
 The evaluator would have taught the system to be worse, with every number
 looking healthy throughout. One reviewer, working carefully and reporting high
 confidence, is not a safety mechanism — the second reviewer is the mechanism.
+
+## F-016 — Trusting that a read-only corpus stayed read-only
+
+**Approach.** The corpus is documented as read-only competition data, held
+outside the repository and excluded from git. Every measurement since ingestion
+landed has been taken against whatever `CORPUS_PATH` happens to point at, with
+no check that it still matches what the competition shipped.
+
+**Result.** On 2026-08-29 a routine `python -m src.ingest.pipeline` reported:
+
+```
+files scanned       : 341      (documented: 340)
+canonical documents : 318      (documented: 317)
+evidence units      : 30553    (documented: 30553)  <- unchanged
+```
+
+Comparing every file against the pristine `Ashen_Era_Archive.zip`:
+
+```
+on disk but not in zip : 8    (7 x wiki/.obsidian/*, + wiki/The Iron-Ring Cartel.md, 0 bytes)
+in zip but missing     : 0
+content differs        : 36   -> all 36 CRLF->LF only, 0 real text changes
+```
+
+Someone had opened `wiki/` in Obsidian that evening (mtimes 21:31–22:37). It
+rewrote 36 files with Unix line endings and left behind an empty note.
+
+**Why this was dangerous.** No evidence was lost — the 36 files are
+byte-identical after newline normalisation, which is why the evidence-unit count
+never moved and nothing looked wrong. The damage was the empty file. It entered
+ingestion as canonical document #318 carrying **zero evidence units**, and it is
+titled *The Iron-Ring Cartel* — the entity at the centre of `1b_009`'s same-tier
+conflict, and one of only two nodes in the corpus that page-title-keyed entity
+resolution could confuse.
+
+Had this survived into graph work, `the_iron_ring_cartel.md` would have
+competed with an empty namesake node for every Cartel edge. The symptom would
+have been missing or halved membership edges appearing during graph
+construction — and we would have gone looking for the bug in the infobox parser,
+which is where the corpus has already burned us four times (F-004, F-005,
+F-006, F-008). The parser would have been correct.
+
+This is the §5 failure class exactly: not a crash, but a plausible wrong result
+with a healthy-looking number in front of it. The count that would have exposed
+it — 318 against a documented 317 — was printed on every pipeline run and is
+the kind of one-digit drift nobody reads.
+
+**What changed.** All 36 files were restored from the zip and the empty note
+deleted, each file re-checked as newline-only-different immediately before being
+overwritten so that a file with real edits could not be silently destroyed.
+Post-restore: 0 files differ, 0 missing, 7 extra (`.obsidian/`, which
+`discover()` already skips). Ingestion is back to 340 -> 317 -> 30,553; 83 tests
+pass; the baseline is unchanged at 1B 2/7, 1C 2/2.
+
+**What is still open.** Nothing prevents a recurrence, and a teammate or judge
+extracting the corpus fresh has no way to confirm they got the same bytes we
+measured against. A committed manifest of the 341 file hashes (~35 KB) would
+make "is this the real corpus?" a command rather than a coincidence. Not yet
+built — recorded here so the gap is visible.
+
+**What this cost.** Nothing, because the discrepancy was chased instead of
+rounded off. That is the only reason it is a log entry and not a week of graph
+debugging.
