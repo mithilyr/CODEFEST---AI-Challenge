@@ -98,7 +98,9 @@ def _evidence_for(
         if not document.needs_ocr or not document.format_variants:
             return [], None
         try:
-            blocks = transcribe(document.format_variants[0]).to_blocks()
+            blocks = transcribe(
+                document.format_variants[0], cache_only=True
+            ).to_blocks()
         except OCRUnavailableError:
             return [], None
         except Exception as error:  # noqa: BLE001 - reported, not swallowed

@@ -64,6 +64,16 @@ _PUNCTUATION_NORMALISATION = {
 _WHITESPACE_RE = re.compile(r"[ 	]+")
 
 
+def normalise_punctuation(text: str) -> str:
+    """Map typographic characters to ASCII. Shared with the OCR path.
+
+    Any text entering the evidence set goes through this, whichever route it
+    arrived by, so that a regex or entity lookup written with a plain apostrophe
+    matches consistently across the whole corpus.
+    """
+    return text.translate(_PUNCTUATION_NORMALISATION)
+
+
 def _clean(text: str) -> str:
     """Normalise typographic punctuation, collapse whitespace runs, and strip.
 
@@ -80,7 +90,7 @@ def load_markdown(path: Path) -> list[TextBlock]:
     and pipe tables out of it. Blocks are split on blank lines, and a heading is
     tagged as such so citations can say which section a fact came from.
     """
-    raw = path.read_text(encoding="utf-8").translate(_PUNCTUATION_NORMALISATION)
+    raw = normalise_punctuation(path.read_text(encoding="utf-8"))
     blocks: list[TextBlock] = []
     current_heading = "body"
 
