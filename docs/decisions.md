@@ -323,3 +323,128 @@ The clean-clone test: a team member who did not write the setup follows the
 README only and reaches a working query.
 
 *Status: accepted, unvalidated.*
+
+---
+
+## ADR-007 — Rotate across free-tier models instead of retrying one
+
+**Problem**
+
+Our first OCR run transcribed 4 of 17 scans and failed the other 13. The retry
+layer, which we had written specifically to survive rate limits, made things
+worse rather than better.
+
+**What we measured**
+
+The provider error names the quota exactly:
+
+```
+Quota exceeded for metric:
+  generativelanguage.googleapis.com/generate_content_free_tier_requests
+  limit: 20, model: gemini-3.7-flash
+quotaId: GenerateRequestsPerDayPerProjectPerModel-FreeTier
+```
+
+**~20 requests per day, per model, per project** — a daily cap, not the
+per-minute limit we had assumed. Two consequences:
+
+1. Exponential backoff cannot recover from it. We spent five attempts on each of
+   thirteen documents sleeping through a limit that resets tomorrow.
+2. Twenty requests is less than one evaluation run. Twenty dev questions plus
+   twenty-four held-out questions is 44 synthesis calls, before any development
+   iteration.
+
+**Options considered**
+
+1. Wait for the daily reset and run in stages across several days.
+2. Pay for quota.
+3. Rotate across models, since the quota is scoped per model.
+
+**Decision**
+
+Option 3, plus fail-fast detection so option 1 remains available as a fallback.
+
+**Why**
+
+The quota is per *model*, so each model in the rotation carries its own separate
+allowance — six free models give roughly six times the daily capacity, using
+nothing but each model's documented free tier. Option 1 alone would have made
+every evaluation run a multi-day affair with twelve days total. Option 2 is
+unnecessary and the challenge states the problem is solvable with free
+resources.
+
+Rotation took the OCR cache from 4/17 to 12/17 in a single run.
+
+**Trade-offs**
+
+Transcriptions may come from different models, so a multi-page document can span
+two. `OCRResult.model` records every model that contributed rather than
+pretending one did. Quality varies slightly across the rotation, which is
+acceptable for transcription of clean single-column scans and is why the
+strongest models are tried first.
+
+**How we will validate it**
+
+`tests/test_quota.py` holds a verbatim provider error and asserts that a daily
+quota fails immediately without sleeping. Per-model call counts are reported at
+the end of every run, so quota spend is visible rather than inferred.
+
+*Status: accepted, validated — 4/17 to 12/17 on the first rotating run.*
+
+---
+
+## ADR-008 — Size embedding batches by tokens, not by item count
+
+**Problem**
+
+The first index build was rejected outright by Voyage.
+
+**What we measured**
+
+A Voyage account with no payment method on file is limited to **3 requests and
+10,000 tokens per minute**. Our batches were 128 items of roughly 36,000 tokens
+— over triple the per-minute allowance in a single request.
+
+Corpus scale: 3,364 chunks, ~962k tokens. That is 0.5% of the 200M free token
+allowance, so tokens were never the constraint. Throughput was.
+
+**Options considered**
+
+1. Reduce the batch size to a fixed smaller number.
+2. Require every team member to add a payment card.
+3. Size batches by estimated token count and pace them with a rolling-window
+   limiter.
+
+**Decision**
+
+Option 3, with option 2 documented as the fast path.
+
+**Why**
+
+A fixed smaller batch size is a guess that breaks as soon as chunk lengths
+change — our chunks range from a short table row to 2,856 characters, so any
+constant is either wasteful or over the limit. Token-aware batching adapts.
+
+Requiring a card would work (and the challenge appendix recommends it: the card
+is identity verification, the 200M free tokens still apply) but the system
+should not *depend* on it, because any team member on a fresh account must be
+able to run the build.
+
+Throttled, the full index takes about two hours. With a card, a few minutes.
+`VOYAGE_TIER=paid` removes the throttle.
+
+**Trade-offs**
+
+Two hours is slow, but it is a one-time cost: embeddings are cached by content
+hash, so only edited documents are ever re-embedded, and evaluation runs cost
+nothing.
+
+**How we will validate it**
+
+Tests assert that every batch stays inside one minute's token budget, that no
+chunk is lost or duplicated during batching, and that the rolling window rolls
+forward so throttling is not permanent. The limiter takes an injectable clock —
+without one, a fake sleep that does not advance time spins forever, which is
+what happened on the first attempt.
+
+*Status: accepted, validated by tests; full index build in progress.*
