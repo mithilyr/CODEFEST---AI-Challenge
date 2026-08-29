@@ -13,10 +13,12 @@ on a fresh clone before the archive has been downloaded.
 
 from __future__ import annotations
 
+from collections import Counter
 from pathlib import Path
 
 import pytest
 
+from eval.probes.corpus_shape import infobox_rows
 from src.ingest.authority import assign_authority, load_authority_model
 from src.ingest.dedup import build_canonical_documents
 from src.ingest.integrity import (
@@ -358,3 +360,74 @@ def test_missing_file_is_reported(mini_corpus: Path):
     report = verify(mini_corpus, expected)
     assert report.missing == ["wiki/ederon_fellgard.md"]
     assert not report.is_safe_to_ingest
+
+
+# --- infobox row structure (F-017, F-018) -------------------------------------
+#
+# Corpus facts the graph parser has to obey, pinned before src/graph/ exists so
+# the rule fails a test rather than a demo. Both were found by re-running a
+# measurement a document claimed to have already made.
+
+
+def _rows(corpus_root: Path, page: str) -> list[tuple[str, str]]:
+    return infobox_rows((corpus_root / "wiki" / page).read_text(encoding="utf-8"))
+
+
+def test_field_name_census_is_not_heading_keyed(corpus_root: Path):
+    """109 field names exist; 107 is the heading-keyed subset (F-017).
+
+    ADR-009 forbids keying on `## Infobox`, then quoted a count produced by
+    doing exactly that. The two dropped fields include `Place of housing`, which
+    is hop 2 of `1b_003`.
+    """
+    pages = [(p.name, p.read_text(encoding="utf-8"))
+             for p in sorted((corpus_root / "wiki").glob("*.md"))]
+    everywhere = {f for _, text in pages for f, _ in infobox_rows(text)}
+    in_section = {
+        f for _, text in pages if "## Infobox" in text for f, _ in infobox_rows(text)
+    }
+
+    assert len(everywhere) == 109
+    assert len(in_section) == 107
+    assert everywhere - in_section == {"Place of forging", "Place of housing"}
+
+
+def test_repeated_field_names_are_not_collapsible_to_a_mapping(corpus_root: Path):
+    """A dict-keyed parser drops 7 cells corpus-wide, silently (F-018)."""
+    dropped = 0
+    collisions = 0
+    for page in sorted((corpus_root / "wiki").glob("*.md")):
+        rows = infobox_rows(page.read_text(encoding="utf-8"))
+        counts = Counter(field for field, _ in rows)
+        dropped += len(rows) - len(counts)
+        collisions += sum(1 for total in counts.values() if total > 1)
+
+    assert dropped == 7, "a mapping-based parser would lose this many cells"
+    assert collisions == 6, "distinct (page, field) pairs that repeat"
+
+
+def test_ashen_vanguard_has_three_belligerent_rows(corpus_root: Path):
+    """The worked example: three rows, one field name, no error on collapse."""
+    rows = _rows(corpus_root, "the_ashen_vanguard.md")
+    belligerents = [v for f, v in rows if f == "Belligerent"]
+
+    assert belligerents == [
+        "The War of Drowned Light",
+        "The Accord of Mournthrone",
+        "The Leaden Accord",
+    ]
+    assert len({f for f, _ in rows}) < len(rows)
+
+
+def test_ashen_vanguard_victor_claim_is_not_on_a_victor_field(corpus_root: Path):
+    """Silence is not denial, and this page is not silent (F-014, F-018).
+
+    The Vanguard carries no `Victor of` row. Its only victor designation is an
+    `Outcome` row. An extractor keyed on the field name reads the page as making
+    no victor claim, which is a stance, not an absence - and the ADR-013
+    CORRECTION's verdict for the Accord of Mournthrone depends on reading it.
+    """
+    rows = _rows(corpus_root, "the_ashen_vanguard.md")
+
+    assert not [f for f, _ in rows if "victor" in f.lower()]
+    assert ("Outcome", "Victor of The Accord of Mournthrone") in rows

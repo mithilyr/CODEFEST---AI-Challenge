@@ -474,6 +474,7 @@ that matter.
 | Pages with no `## Infobox` heading | **6 of 95** | A parser keyed on the heading loses them |
 | Pages whose title declares a category | **26 of 95** | Node type cannot be read off the title |
 | Distinct infobox field names | **107** | CLAUDE.md said 110; 107 is the measured count |
+| *(corrected 2026-08-29 — see amendment below)* | **109** | 107 was itself a heading-keyed count |
 
 The six headless pages are not incidental. Three of them —
 `the_cinder_wrought_aegis.md`, `gauntlet_of_sorrowfell.md`,
@@ -496,6 +497,92 @@ parses, and never from the wiki title.
 if a page ever led with a non-infobox table. No page does; the probe asserts it.
 Only two field names, `Place of forging` and `Place of housing`, appear outside
 a `## Infobox` section, and both are on a headless page's leading table.
+
+*Status: accepted, validated by probe.*
+
+### Amendment, 2026-08-29 — the field-name count was itself heading-keyed
+
+`python -m eval.probes.corpus_shape` reports **109** distinct field names, not
+the 107 in the table above. The 107 is the count of field names appearing
+**inside a `## Infobox` section**. The two it omits are exactly the two this
+ADR's own trade-offs paragraph names:
+
+```
+distinct infobox field names        : 109
+    of which inside a '## Infobox'  : 107
+    visible only on headless pages  : ['Place of forging', 'Place of housing']
+```
+
+The decision is unaffected and the argument is strengthened: the headline number
+of the ADR that exists to stop heading-keyed parsing was itself produced by
+heading-keyed parsing, and it dropped `Place of housing` — the row on
+`the_cinder_wrought_aegis.md` that supplies hop 2 of `1b_003`. The measurement
+lost precisely the field the ADR was written to protect.
+
+The original 107 is left in the table rather than overwritten, per the working
+rule on keeping overturned assumptions visible. The probe now prints both
+numbers so the distinction cannot silently drift again.
+
+### Amendment, 2026-08-29 — rows are a sequence, not a mapping
+
+ADR-009 settles *where* the infobox is. It does not say how rows are keyed, and
+the 651-cell census counted colliding rows without noticing they collide.
+
+`python -m eval.probes.corpus_shape` (PT-10) measures:
+
+| Finding | Measurement |
+|---|---|
+| Pages with a repeated field name | **5 of 95** |
+| Distinct (page, field) collisions | **6** |
+| Cells a dict-keyed parser drops | **7** |
+
+```
+wiki/the_ashen_vanguard.md | Belligerent x3
+    The War of Drowned Light
+    The Accord of Mournthrone
+    The Leaden Accord
+```
+
+Also `Rival` ×2 (`ignatz_ashgrove_the_oathless.md`), `Wielded relic` ×2
+(`sabelle_mournvale_the_twice_crowned.md`), `Waged at` ×2 and `Devastated` ×2
+(`the_accord_of_mournthrone.md`), `Serves at Emberdeep` ×2 (`emberdeep.md`).
+
+**Decision.** The parser must return infobox rows as an **ordered sequence of
+`(field, value)` pairs**. `fields[name] = value` is forbidden: it keeps the last
+row, drops the rest, raises nothing, and the page still parses.
+
+**Why this is load-bearing, not tidiness.** `the_ashen_vanguard.md` has **no
+`Victor of` row at all**. Its only victor claim is an `Outcome` row reading
+`Victor of The Accord of Mournthrone`. The probe measures the channels:
+
+```
+field names that DESIGNATE a victor:
+     6  Victor
+     2  Victor of
+     1  Outcome
+victor designations NOT on a 'Victor*' field : 1
+    wiki/the_ashen_vanguard.md | Outcome | <-- page has NO Victor* row at all
+```
+
+An extractor keyed on `Victor of` reads the Vanguard as **silent** on victories.
+Under F-014 and ADR-015, silence is not denial — so this would not merely lose an
+edge, it would misclassify the page's stance. The ADR-013 CORRECTION classified
+"Accord of Mournthrone" as *"Agree both ways"*, a verdict that holds only if that
+`Outcome` row was read.
+
+**What we did not conclude.** The spec that prompted this check also claimed an
+`Outcome` row can depend semantically on the `Belligerent` row above it. All
+seven `Outcome` rows in the corpus were checked: the Vanguard's names its own
+referent, and the other six are conflict-page descriptions of how a war ended,
+not victor designations. Row *order* is not load-bearing on current evidence;
+row *multiplicity* is. We are building for the second only.
+
+Two victor *mentions* were excluded as prose rather than designations —
+`Concealed truth` and `Secret truth`, both reading "The victors poisoned the
+wells of their own allies". The probe prints its exclusions.
+
+**Validation.** PT-10 in `eval/probes/corpus_shape.py`. The victor-channel check
+existed only as a table in this file before now; it is runnable code.
 
 *Status: accepted, validated by probe.*
 

@@ -109,10 +109,13 @@ All measured. Several overturned an assumption we had already written down.
    work as `.docx` and `.pdf` (similarity 1.000 and 0.989). `ephemera/` same-stem files
    are **different documents** (similarity 0.019–0.048) — collapsing them deletes real
    evidence. Plates in `images/` and `codex/images/` are byte-identical.
-2. **107 distinct infobox field names express ~12 relations.** `Member of` / `Membership`
+2. **109 distinct infobox field names express ~12 relations.** `Member of` / `Membership`
    / `Affiliation` are one relation; `Housed in` / `Place of housing` are another. A
    parser keyed on literal field names loses a third of the membership edges silently.
-   (Measured 107, not the 110 previously written here — see ADR-009.)
+   (109, not the 107 written here until 29 Aug and not the 110 before that. 107 was
+   the count *inside* `## Infobox` sections — a heading-keyed number in the ADR that
+   exists to forbid heading-keyed parsing. It dropped `Place of forging` and
+   `Place of housing`, and the second is hop 2 of `1b_003`. See ADR-009's amendment.)
 3. **The graph is asymmetric and bidirectional.** The Iron-Ring Cartel records its own
    victories; The Silent Choir does not. The Silent Choir's members are recorded in
    **two disjoint places** — 6 on the faction page's `Members` row, 8 more on individual
@@ -143,6 +146,13 @@ All measured. Several overturned an assumption we had already written down.
     (`fellgard` ×5); `caedmon_fellgard` and `ederon_fellgard` are 0.839 similar and
     `ederon_fellgard` is the subject of `1b_007`. Entity resolution is exact-match only
     — fuzzy matching may never silently pick a winner (ADR-011).
+12. **Field names repeat within one infobox, so rows are a sequence, not a mapping.**
+    5 of 95 pages, 6 collisions, **7 cells** that `fields[name] = value` drops without
+    raising. `the_ashen_vanguard.md` carries `Belligerent` ×3. Worse, that page has no
+    `Victor of` row at all — its only victor claim is an `Outcome` row, so an extractor
+    keyed on `Victor of` reads it as *silent* on victories, and silence is not denial
+    (F-014). The ADR-013 CORRECTION's "Agree both ways" verdict for the Accord of
+    Mournthrone depends on that row being read. Probe: PT-10.
 
 ## Free-tier quotas — plan around these
 
@@ -162,7 +172,7 @@ it on a run you have not finished debugging. Everything is cached — reruns are
 python -m src.ingest.integrity     # is the corpus the shipped corpus? (run first)
 python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
-python -m pytest                   # 92 tests
+python -m pytest                   # 96 tests
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.verify_key          # regenerate the answer-key review pack

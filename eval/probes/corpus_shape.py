@@ -146,6 +146,20 @@ def report_structure(corpus: Path) -> None:
     print(f"  wiki pages                          : {len(pages)}")
     print(f"  infobox cells                       : {len(cells)}")
     print(f"  distinct infobox field names        : {len(fields)}")
+    # The heading-keyed count is printed alongside because ADR-009's original
+    # table quoted it as though it were the total. It is 2 short: 'Place of
+    # forging' and 'Place of housing' live only on headless pages, and the
+    # second supplies hop 2 of 1b_003. Losing them is the exact failure this
+    # ADR exists to prevent, so both numbers stay visible.
+    in_section = {
+        field
+        for name, text in pages
+        if "## Infobox" in text
+        for field, _ in infobox_rows(text)
+    }
+    print(f"      of which inside a '## Infobox'  : {len(in_section)}")
+    print(f"      visible only on headless pages  : "
+          f"{sorted(set(fields) - in_section)}")
     print(f"  pages WITHOUT a '## Infobox' heading: {len(no_heading)}")
     for name in no_heading:
         print(f"      {name}")
@@ -366,9 +380,85 @@ def report_conflicts(corpus: Path) -> None:
     print(f"  of those, the codex announces it : {announced}/{decided_by_tier}")
 
 
+def report_repeated_fields(corpus: Path) -> None:
+    """Field names that repeat within one infobox, and where victor claims live.
+
+    A parser that stores `fields[name] = value` keeps the last row and silently
+    drops the rest. Measured here because the loss cannot be seen from the
+    output: the page parses, the edge count is merely lower than the corpus
+    supports, and nothing raises.
+
+    The second half checks which field names actually carry a victor claim. That
+    is the input to the ADR-013 CORRECTION, and it was previously recorded only
+    as a table in decisions.md with no runnable check behind it.
+    """
+    pages = wiki_pages(corpus)
+    by_page = dict(pages)
+    repeated: list[tuple[str, str, list[str]]] = []
+    lost = 0
+
+    for name, text in pages:
+        rows = infobox_rows(text)
+        seen: dict[str, list[str]] = collections.defaultdict(list)
+        for field, value in rows:
+            seen[field].append(value)
+        lost += len(rows) - len(seen)
+        repeated += [
+            (name, field, values) for field, values in seen.items() if len(values) > 1
+        ]
+
+    print("\n" + "=" * 72)
+    print("PT-10  repeated field names: infobox rows are a sequence, not a mapping")
+    print("=" * 72)
+    print(f"  pages with a repeated field name  : {len({n for n, _, _ in repeated})}"
+          f"/{len(pages)}")
+    print(f"  distinct (page, field) collisions : {len(repeated)}")
+    print(f"  cells a dict-keyed parser drops   : {lost}")
+    for name, field, values in repeated:
+        print(f"      wiki/{name} | {field} x{len(values)}")
+        for value in values:
+            print(f"          {value}")
+    print("      -> keying on the field name keeps the last row and loses the rest")
+
+    # A victor *designation* names who won. Prose that merely uses the word -
+    # "The victors poisoned the wells of their own allies" - is not a
+    # designation, and counting it would overstate the finding.
+    mentions = [
+        (name, field, value)
+        for name, text in pages
+        for field, value in infobox_rows(text)
+        if re.search(r"victor", f"{field} {value}", re.I)
+    ]
+    designations = [
+        (name, field, value)
+        for name, field, value in mentions
+        if "victor" in field.lower() or re.search(r"\bvictor of\b", value, re.I)
+    ]
+    channels = collections.Counter(field for _, field, _ in designations)
+
+    print("\n  field names that DESIGNATE a victor:")
+    for field, count in channels.most_common():
+        print(f"      {count:4d}  {field}")
+    for name, field, value in mentions:
+        if (name, field, value) not in designations:
+            print(f"      (excluded, prose not designation) wiki/{name} | {field}")
+
+    off_channel = [r for r in designations if "victor" not in r[1].lower()]
+    print(f"\n  victor designations NOT on a 'Victor*' field : {len(off_channel)}")
+    for name, field, value in off_channel:
+        silent = not any(
+            "victor" in f.lower() for f, _ in infobox_rows(by_page[name])
+        )
+        flag = "   <-- page has NO Victor* row at all" if silent else ""
+        print(f"      wiki/{name} | {field} | {value}{flag}")
+    print("      -> an extractor keyed on 'Victor of' reads such a page as silent,")
+    print("         and silence is not denial (F-014)")
+
+
 def main() -> None:
     corpus = get_settings().require_corpus()
     report_structure(corpus)
+    report_repeated_fields(corpus)
     report_entities(corpus)
     report_conflicts(corpus)
 

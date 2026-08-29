@@ -540,3 +540,89 @@ fail, which is how we know the test is load-bearing and not decorative.
 **What this cost.** Nothing, because the discrepancy was chased instead of
 rounded off. That is the only reason it is a log entry and not a week of graph
 debugging.
+
+## F-017 — Counting a corpus with the bug the ADR was written to forbid
+
+**Approach.** ADR-009 established that the infobox is the first pipe table in the
+file, not the `## Infobox` section, because six pages have no such heading and
+one of them supplies hop 2 of `1b_003`. Its headline census reported **107**
+distinct infobox field names, marked *"validated by probe"*.
+
+**Result.** Running the probe it cites reports **109**:
+
+```
+distinct infobox field names        : 109
+    of which inside a '## Infobox'  : 107
+    visible only on headless pages  : ['Place of forging', 'Place of housing']
+```
+
+The 107 was the count *inside* `## Infobox` sections. The ADR's headline number
+was produced by heading-keyed parsing — the exact practice the ADR exists to
+forbid.
+
+**Why it failed.** The census was written before the headless-page finding and
+never re-run against it. ADR-009's own trade-offs paragraph names both missing
+fields, so the two halves of the document disagreed with each other in plain
+sight for a day and nobody re-ran the command in between. "Validated by probe"
+was true of the decision and untrue of the number.
+
+The sting is which two fields were dropped: `Place of housing` is the row on
+`the_cinder_wrought_aegis.md` that answers `1b_003`. The measurement lost exactly
+the evidence the ADR was written to protect.
+
+**What changed.** ADR-009 amended, with the original 107 left in the table rather
+than overwritten. `CLAUDE.md` corpus fact 2 corrected 107 -> 109 with the history
+kept visible. The probe now prints the total, the heading-keyed subset, and the
+names of the difference, so the two numbers cannot silently diverge again.
+
+**Why this belongs next to F-016.** Both are the same failure at different
+layers: a number that looked healthy because nothing re-derived it. F-016 was a
+corpus that drifted from the bytes we measured; this is a document that drifted
+from the command it cites. The fix in both cases was not judgement, it was
+re-running the check.
+
+---
+
+## F-018 — A dict-keyed infobox parser, caught before it was written
+
+**Approach.** Not ours — this one was caught in specification review, before
+`src/graph/` existed. The natural shape for an infobox parser is
+`fields[name] = value`, and every design sketch so far had assumed it.
+
+**Result.** Measured across 95 wiki pages: **5 pages** carry a repeated field
+name, **6** distinct (page, field) collisions, **7 cells** that a dict-keyed
+parser drops with no error raised.
+
+```
+wiki/the_ashen_vanguard.md              | Belligerent   x3
+wiki/the_accord_of_mournthrone.md       | Waged at      x2
+wiki/the_accord_of_mournthrone.md       | Devastated    x2
+wiki/ignatz_ashgrove_the_oathless.md    | Rival         x2
+wiki/sabelle_mournvale_the_twice_crowned.md | Wielded relic x2
+wiki/emberdeep.md                       | Serves at Emberdeep x2
+```
+
+**Why it would have failed silently.** The page parses. Nothing raises. The edge
+count is simply lower than the corpus supports, and there is no output from which
+the loss is visible — the same shape as F-008 and the reason ADR-012 exists.
+
+**The part that is worse than lost edges.** `the_ashen_vanguard.md` has no
+`Victor of` row at all. Its sole victor claim is an `Outcome` row reading
+`Victor of The Accord of Mournthrone`. An extractor keyed on `Victor of` reads
+the Vanguard as **silent** on victories — and under F-014, silence is not denial.
+The ADR-013 CORRECTION classified the Accord of Mournthrone as "Agree both ways";
+that verdict holds only because the row was read by a human. There was no
+runnable check behind it until now.
+
+**What changed.** ADR-009 amended: the parser must return rows as an ordered
+sequence of `(field, value)` pairs; `fields[name] = value` is forbidden. PT-10 in
+`eval/probes/corpus_shape.py` measures the collisions and the victor channels.
+`tests/test_ingest.py` pins the Vanguard's three `Belligerent` rows and its
+`Outcome`-only victor claim, so the rule fails a test rather than a demo.
+
+**What we did not conclude.** The review that prompted this also claimed an
+`Outcome` row can depend semantically on the `Belligerent` row above it. All
+seven `Outcome` rows were checked: the Vanguard's names its own referent and the
+other six describe how a war ended. Row multiplicity is load-bearing; row order
+is not, on current evidence. We built for the first only rather than for the
+more interesting claim.
