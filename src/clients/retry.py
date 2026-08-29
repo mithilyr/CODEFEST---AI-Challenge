@@ -13,6 +13,7 @@ any part of the system on demand.
 from __future__ import annotations
 
 import random
+import re
 import time
 from collections.abc import Callable
 from typing import TypeVar
@@ -39,8 +40,49 @@ RETRYABLE_SIGNALS = (
 )
 
 
+#: Signals that a *daily* quota is gone. Backoff cannot recover from these -
+#: waiting 8 seconds for a limit that resets tomorrow just burns attempts - so
+#: they are raised immediately for the caller to handle (usually by switching to
+#: a different model, which carries its own separate quota).
+DAILY_QUOTA_SIGNALS = (
+    "perday",
+    "per day",
+    "requestsperday",
+    "generaterequestsperdayperprojectpermodel",
+)
+
+_RETRY_AFTER_RE = re.compile(
+    r"(?:retry(?:delay|_delay)?[\"':\s]*|retry in\s*)(\d+(?:\.\d+)?)\s*s", re.I
+)
+
+
 class RetriesExhausted(RuntimeError):
     """Raised when every attempt failed, preserving the last error."""
+
+
+class DailyQuotaExhausted(RuntimeError):
+    """Raised when a provider reports the daily request quota is spent."""
+
+
+def is_daily_quota_error(error: Exception) -> bool:
+    """True if the provider says the *daily* allowance is gone.
+
+    Distinguished from an ordinary 429 because the remedies differ completely:
+    a per-minute limit wants a short wait, a daily limit wants a different model
+    or tomorrow.
+    """
+    text = f"{type(error).__name__}: {error}".lower().replace("-", "")
+    return any(signal in text for signal in DAILY_QUOTA_SIGNALS)
+
+
+def retry_after_seconds(error: Exception) -> float | None:
+    """Extract the provider's own retry hint, if it gave one.
+
+    Google returns a RetryInfo with a concrete delay. Honouring it is both more
+    polite and more effective than guessing with exponential backoff.
+    """
+    match = _RETRY_AFTER_RE.search(str(error))
+    return float(match.group(1)) if match else None
 
 
 def is_retryable(error: Exception) -> bool:
@@ -88,13 +130,23 @@ def with_retry(
     for attempt in range(attempts):
         try:
             return operation()
-        except Exception as error:  # noqa: BLE001 - classified by is_retryable
+        except Exception as error:  # noqa: BLE001 - classified below
+            # A spent daily quota is not transient. Fail fast so the caller can
+            # switch models rather than sleeping through attempts that cannot
+            # succeed today.
+            if is_daily_quota_error(error):
+                raise DailyQuotaExhausted(f"{description}: {error}") from error
             if not is_retryable(error):
                 raise
             last_error = error
             if attempt == attempts - 1:
                 break
-            delay = min(base_delay * (2**attempt), max_delay)
+
+            # Prefer the provider's own hint over our guess.
+            hinted = retry_after_seconds(error)
+            delay = min(
+                hinted if hinted is not None else base_delay * (2**attempt), max_delay
+            )
             sleep(delay + random.uniform(0, delay * 0.1))
 
     raise RetriesExhausted(
