@@ -131,13 +131,23 @@ def test_cache_key_tracks_file_contents(a_scan: Path):
 
 
 def test_missing_cache_and_missing_key_explains_both_remedies(
-    a_scan: Path, monkeypatch
+    a_scan: Path, monkeypatch, tmp_path: Path
 ):
-    """The error a judge sees must say what to do about it."""
-    get_settings.cache_clear()
-    monkeypatch.delenv("GOOGLE_API_KEY", raising=False)
+    """The error a judge sees must say what to do about it.
+
+    Settings are patched directly rather than via the environment: a developer
+    with a real key in .env would otherwise have this test silently pass through
+    to a live API call.
+    """
+    import dataclasses
+
+    keyless = dataclasses.replace(get_settings(), google_api_key=None)
+    monkeypatch.setattr("src.ingest.ocr.get_settings", lambda: keyless)
+    # Point the cache at a path inside tmp_path. Using a bare relative filename
+    # here once let a failing run write its result into the repo root, which then
+    # satisfied the cache check on every later run and masked the real failure.
     monkeypatch.setattr(
-        "src.ingest.ocr.cache_file_for", lambda _: Path("nonexistent.json")
+        "src.ingest.ocr.cache_file_for", lambda _: tmp_path / "absent.json"
     )
 
     with pytest.raises(OCRUnavailableError) as error:
@@ -146,7 +156,6 @@ def test_missing_cache_and_missing_key_explains_both_remedies(
     message = str(error.value)
     assert "GOOGLE_API_KEY" in message
     assert "ocr_cache/" in message
-    get_settings.cache_clear()
 
 
 def test_transcription_converts_to_citable_blocks():
