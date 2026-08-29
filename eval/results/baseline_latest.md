@@ -13,8 +13,8 @@
 > the review pack.
 
 
-- run at `2026-08-29T22:39:22` in 0.7s
-- commit `8ab2e22`, Python 3.11.16
+- run at `2026-08-29T23:00:01` in 0.7s
+- commit `7251073`, Python 3.11.16
 - schema version 2
 - **0 LLM call(s)**, 20 served from cache
 
