@@ -161,7 +161,7 @@ it on a run you have not finished debugging. Everything is cached — reruns are
 ```bash
 python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
-python -m pytest                   # 40 tests
+python -m pytest                   # 83 tests
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.verify_key          # regenerate the answer-key review pack
