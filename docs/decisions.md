@@ -448,3 +448,309 @@ without one, a fake sleep that does not advance time spins forever, which is
 what happened on the first attempt.
 
 *Status: accepted, validated by tests; full index build in progress.*
+
+---
+
+## ADR-009 — The infobox parser keys on table position, not on headings or field names
+
+**Problem**
+
+Before writing `src/graph/`, we pressure-tested the assumption that the wiki
+infobox is a regular `field | value` table. It is not regular in the two ways
+that matter.
+
+**What we measured**
+
+`python -m eval.probes.corpus_shape`, over 95 wiki pages and 651 infobox cells:
+
+| Finding | Measurement | Consequence |
+|---|---|---|
+| Pages with no `## Infobox` heading | **6 of 95** | A parser keyed on the heading loses them |
+| Pages whose title declares a category | **26 of 95** | Node type cannot be read off the title |
+| Distinct infobox field names | **107** | CLAUDE.md said 110; 107 is the measured count |
+
+The six headless pages are not incidental. Three of them —
+`the_cinder_wrought_aegis.md`, `gauntlet_of_sorrowfell.md`,
+`the_thrice_bound_lantern.md` — are artifact pages, and
+`the_cinder_wrought_aegis.md` supplies hop 2 of dev question `1b_003` via its
+`Place of housing` row. A heading-keyed parser answers `1b_003` with nothing at
+all, and the failure is silent: the page parses, it simply yields no edges.
+
+**Decision**
+
+The infobox is **the first pipe table in the file**, wherever it appears and
+whether or not a heading precedes it. Node type is derived from the image
+filename taxonomy (`plate_NN_<category>_<subject>`,
+`atmo_<style>_<category>_<subject>`), which `src/ingest/metadata.py` already
+parses, and never from the wiki title.
+
+**Trade-offs**
+
+"First table" is a positional rule rather than a semantic one, and would break
+if a page ever led with a non-infobox table. No page does; the probe asserts it.
+Only two field names, `Place of forging` and `Place of housing`, appear outside
+a `## Infobox` section, and both are on a headless page's leading table.
+
+*Status: accepted, validated by probe.*
+
+---
+
+## ADR-010 — Infobox cells are sentences, and the sentence set is closed
+
+**Problem**
+
+We had assumed a cell holds an entity, a literal, or a `;`-separated list of
+those. The multi-valued case was already recorded
+(`Victor of | The Winter Reckoning; The Leaden Accord`). The measurement found
+four further shapes, one of which corrupts edges rather than merely missing them.
+
+**What we measured**
+
+All 651 cells fall into **12 templates**:
+
+| Template | Count | Note |
+|---|---|---|
+| literal prose | 224 | attribute, not an edge |
+| bare link | 181 | the easy case |
+| literal year / number | 114 | attribute |
+| verb + link | 38 | `Member of [[X]]`, `Commands [[X]] since 285 AS` |
+| abstention | 24 | `Contested; consult the Annals and Codex` |
+| prose containing an incidental link | 23 | **must not become an edge** |
+| link + year pairs | 14 | `[[Greyfell Citadel]] in 337 AS; [[Palewell Abbey]] in 338 AS` |
+| **two-argument clause** | **11** | **`Fought in [[Conflict]] for [[Faction]]`** |
+| link list | 11 | `;` and, once, `,` |
+| secret / association relation | 6 | `Secretly sells intelligence to [[X]]` |
+| link + since-qualifier | 5 | `[[The Cinder-Wrought Aegis]], since 356 AS` |
+
+Three of these are load-bearing:
+
+1. **Two-argument clauses are ternary facts.** `Fought in [[The Purge of
+   Blackport]] for [[House Morvain]]` is one fact with two objects. Emitting two
+   edges from the subject asserts that the person was "belligerent in House
+   Morvain", which is false. Word order also varies — both `Fought for X in Y`
+   and `Fought in X for Y` occur — so the arguments must be resolved by type,
+   not by position.
+2. **`since <year>` qualifiers are load-bearing.** Dev question `1b_003` asks
+   for the relic borne "since 356 AS". The qualifier belongs on the edge as an
+   attribute; leaving it in the value produces the node
+   `silent_psalter_since_341_as`.
+3. **Incidental links are not edges.** `Appearance | Hardened visual identity of
+   a garrisoned settlement in the [[Ash Wastes]]` links a region inside a prose
+   attribute. Extracting every link indiscriminately manufactures relations.
+
+**Decision**
+
+A cell parser of twelve named template handlers, each with its own test. No LLM.
+
+**Why**
+
+Twelve regexes cover 100% of 651 cells. An LLM call here would be slower, cost
+quota we cannot spare, be less reliable than the string operation it replaces,
+and — decisively — could not be defended by a teammate to a judge as well as a
+named handler with a test can.
+
+**How we will validate it**
+
+The probe prints the template histogram and the eleven two-argument cells by
+name. If a template handler is deleted or a new corpus shape appears, the
+histogram moves.
+
+*Status: accepted, validated by probe.*
+
+---
+
+## ADR-011 — Entity resolution is exact-match; fuzzy matching may never pick a winner
+
+**Problem**
+
+A wrong entity produces a structurally perfect traversal to a confidently wrong
+answer, with real citations attached. This is the worst failure mode the system
+has, because the evidence panel makes it look right.
+
+**What we measured**
+
+Across 125 distinct entity names in the wiki:
+
+- **20 given names** are shared by more than one entity — `ignatz` x5,
+  `morwenna` x4, `halvard` x4, `isolde` x4, `ossric` x3.
+- **19 surnames** are shared — `fellgard` x5, `ashgrove` x5, `wrenfield` x4,
+  `hollowmere` x4.
+- **6 pairs of genuinely distinct entities** sit at >= 0.80 string similarity:
+  `caedmon_fellgard ~ ederon_fellgard` (0.839),
+  `gloaming_reach ~ gloamreach` (0.833),
+  `morwenna_morvain ~ morwenna_vane` (0.828),
+  `caedmon_hollowmere ~ lucan_hollowmere` (0.824),
+  `greyfell_citadel ~ ironfell_citadel` (0.812),
+  `gloammarch ~ gloamreach` (0.800).
+
+The name space appears to be adversarial by construction. `gloamreach`,
+`gloammarch` and `The Gloaming Reach` are three different places — a settlement,
+a settlement and a region.
+
+**Options considered**
+
+1. Fuzzy match on the closest name above a threshold.
+2. Embedding-similarity match.
+3. Exact match on the normalised name; on failure, escalate — never guess.
+
+**Decision**
+
+Option 3. Normalisation is: lowercase, collapse non-alphanumerics to `_`, drop a
+leading `the_`. Nothing else. An unresolved mention escalates to disambiguation
+against the candidate list and, failing that, abstains.
+
+**Why**
+
+Options 1 and 2 both resolve `caedmon_fellgard` to `ederon_fellgard` at any
+threshold loose enough to be useful, and `ederon_fellgard` is the subject of
+`1b_007`. A threshold tight enough to separate them is tight enough that exact
+match would have succeeded anyway, so the fuzzy layer buys nothing and risks the
+one failure we cannot detect from the output.
+
+Dropping the leading article was verified rather than assumed: it merges exactly
+**5** name pairs across the corpus (`iron_ring_cartel`, `ash_wastes`,
+`gloaming_reach`, `pale_coast`, `weeping_marshes`), every one of which is
+genuinely the same entity, and collides nothing else. `1b_009` needs this merge —
+`the_purge_of_blackport.md` writes `[[Iron-Ring Cartel]]` while every other page
+writes `[[The Iron-Ring Cartel]]`.
+
+**Trade-offs**
+
+The system will abstain on a misspelled question where a fuzzy matcher would
+have guessed right. Accepted: an abstention is recoverable and honest, a
+confidently wrong sourced answer is neither.
+
+*Status: accepted, validated by probe.*
+
+---
+
+## ADR-012 — Claims are extracted structurally, and emphasis is stripped first
+
+**Problem**
+
+Conflict resolution needs competing claims. Getting the *extraction* wrong
+breaks the layer in both directions, and the two failures are not symmetric.
+
+**What we measured**
+
+Three extraction strategies over the same 30,553 evidence units:
+
+| Strategy | Contested keys | Failure mode |
+|---|---|---|
+| Proximity window (entity within 140 chars of a dated claim) | ~20 | **False positives.** Attributed Hollowvale's 286 AS to Vharencrag Fortress because both appear in one decree; produced four competing "founding years" for regions like `The Ash Wastes` that are merely named near other places' foundings. |
+| Subject-anchored, no emphasis handling | **0** | **Silent total failure**, see below. |
+| Subject-anchored + emphasis stripped + entity-resolved anaphora | **7** | — |
+
+The silent failure is the important one. **Every competing claim in the corpus is
+wrapped in Markdown emphasis and every authoritative one is not:**
+
+```
+codex     : Gloamreach's founded is 246 AS.
+ephemera  : Gloamreach was founded in **286 AS**.
+codex     : Gauntlet of Sorrowfell's forged is 391 AS.
+ephemera  : Its forged year is **360 AS**.
+```
+
+An extractor that does not strip `**` sees zero competing claims, finds no
+conflict anywhere in the archive, and reports full confidence. A conflict layer
+that silently never fires is worse than no conflict layer, because nothing in
+the output distinguishes the two.
+
+The decoys are also **anaphoric** — "Its forged year is 360 AS" — and the
+referent must be resolved. Two obvious resolutions are both wrong, and were
+caught by measurement rather than by reasoning:
+
+- *By filename subject*: `sermon_concerning_malchior_cindervale...` is about a
+  character, but the sentence concerns the Gauntlet of Sorrowfell named in the
+  sentence before. Files the claim against the wrong entity.
+- *By nearest capitalised phrase*: the sentence preceding "Its forged year is
+  354 AS" ends on "the Sundering". Also wrong.
+
+Nearest preceding mention of a **known graph entity** resolves both correctly.
+
+**Decision**
+
+Extract a claim only where the entity is the grammatical subject, or is the
+nearest preceding known entity for an anaphoric subject. Strip inline emphasis
+before matching. Never use a proximity window.
+
+**Trade-offs**
+
+Structural extraction under-detects relative to a proximity window — it finds
+claims it can attribute, and stays silent otherwise. That is the correct
+direction to fail for a layer whose output is "these sources disagree".
+
+*Status: accepted, validated by probe.*
+
+---
+
+## ADR-013 — Tier alone resolves every measured conflict, so the authority model stays as it is
+
+**Problem**
+
+Checkpoint 1 found the naive baseline scoring **2/2** on the 1C conflict
+questions, because the codex announces its own authority in prose and the model
+follows that signal. CLAUDE.md recorded the open question honestly: *the
+authority layer may still matter where a source does not announce itself — that
+is now a hypothesis to test, not a demonstrated result.*
+
+This ADR tests it.
+
+**What we measured**
+
+Structure-anchored extraction (ADR-012) finds **7 contested attribute keys**
+across the whole archive:
+
+| Key | Authoritative | Competing | Tier split | Codex announces? |
+|---|---|---|---|---|
+| `gauntlet_of_sorrowfell.forged` | 391 AS | 360 AS | 1 vs 4 | yes |
+| `gloamreach.founded` | 246 AS | 286 AS | 1 vs 4 | yes |
+| `ashreach.founded` | 122 AS | 134 AS | 1 vs 4 | yes |
+| `emberdeep.founded` | 65 AS | 34 AS | 1 vs 4 | yes |
+| `mournwatch.founded` | 232 AS | 244 AS | 1 vs 4 | yes |
+| `edge_of_gloamreach.forged` | 303 AS | 326 AS | 1 vs 4 | yes |
+| `cinder_wrought_aegis.forged` | 342 AS | 354 AS | 1 vs 4 | yes |
+
+- **Tier resolves 7 of 7.** Every conflict is codex (tier 1) against ephemera
+  (tier 4). There is not one tie at the winning tier.
+- **The codex announces itself in 7 of 7.** We could not find a single conflict
+  where the authoritative source is silent.
+
+**What this means, stated plainly**
+
+The hypothesis is **not supported**. On this corpus there is no measured case
+where the tier model is needed and prose-following would fail. Two apparent
+counter-examples were checked and both dissolved: Vharencrag Fortress showed a
+"conflict" that was Hollowvale's year captured by a proximity window, and
+Blackford's was Edge of Gloamreach's forging site.
+
+**Decision**
+
+Keep the authority model exactly as ADR-005 specifies. Do not extend it, and do
+not claim in the report or the video that it rescues answers the baseline gets
+wrong — on the 1C dev questions it demonstrably does not.
+
+**Why keep it at all**
+
+Three reasons that survive the measurement, none of which is "it improves the
+1C score":
+
+1. **It is what makes the answer auditable.** The conflict panel shows a judge
+   which sources disagreed and why one won. Prose-following produces the same
+   answer with no account of the alternatives.
+2. **It generalises past the announcement.** The tier ordering and the
+   announcement agree on all 7 measured conflicts, so tier costs nothing and
+   covers the case where the corpus stops announcing. The held-out set is 24
+   unseen questions over the same archive; 5 of these 7 conflicts are untested
+   by the dev set.
+3. **It is a config file, not a subsystem.** `config/authority.yaml` is 100
+   lines of declaration applied by dumb code. The cost of keeping it is close to
+   zero, which is the only reason a layer with an unproven score benefit is
+   allowed to stay.
+
+If a checkpoint later shows the conflict layer changing no answer *and* the
+conflict panel proving unpersuasive in the demo, delete it. That is the
+condition, recorded in advance.
+
+*Status: accepted; hypothesis tested and NOT supported; layer retained on
+auditability grounds, with a stated deletion condition.*
