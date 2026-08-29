@@ -42,8 +42,8 @@ PACK_DIR = Path(__file__).resolve().parent / "verification"
 EXCERPT_CHARS = 700
 
 
-def corpus_passages(doc_id: str, locator: str | None) -> list[tuple[str, str]]:
-    """Return (evidence_id, text) for a cited document, narrowed by locator.
+def _units(doc_id: str):
+    """Evidence units for one canonical document, as ingestion produced them.
 
     Ingestion is the only reader of the corpus in this project, so the review
     pack shows exactly the text the system itself sees. If ingestion is dropping
@@ -51,29 +51,74 @@ def corpus_passages(doc_id: str, locator: str | None) -> list[tuple[str, str]]:
     """
     from src.ingest.pipeline import ingest_cached
 
-    units = [u for u in ingest_cached().evidence if u.canonical_doc_id == doc_id]
-    if not units:
-        return []
+    return [u for u in ingest_cached().evidence if u.canonical_doc_id == doc_id]
 
+
+def corpus_passages(doc_id: str, locator: str | None = None) -> list[tuple[str, str]]:
+    """(evidence_id, text) for a cited document, narrowed by locator if it matches."""
+    units = _units(doc_id)
     if locator:
         wanted = re.sub(r"\s+", " ", locator.strip().lower())
         exact = [u for u in units if u.locator.lower() == wanted]
         if exact:
             return [(u.evidence_id, u.text) for u in exact]
-
     return [(u.evidence_id, u.text) for u in units]
 
 
+def find_hop_evidence(
+    doc_id: str, field: str | None, target: str | None, limit: int = 2
+) -> list[tuple[str, str]]:
+    """The passages that actually carry a claimed edge, best first.
+
+    A naive "first passage mentioning the target" is useless here: every wiki
+    page opens with an image whose alt text is the subject's own name, so the
+    first two matches are the illustration and the title. The reviewer needs
+    the infobox row.
+
+    Ranked: the table row naming both the field and the target, then any
+    passage naming both, then the field alone, then the target alone.
+    """
+    units = _units(doc_id)
+    field_key = (field or "").lower().strip()
+    target_key = (target or "").lower().strip()
+
+    def rank(unit) -> int:
+        text = unit.text.lower()
+        has_field = bool(field_key) and field_key in text
+        has_target = bool(target_key) and target_key in text
+        is_row = unit.kind == "table_row"
+        if is_row and has_field and has_target:
+            return 0
+        if has_field and has_target:
+            return 1
+        if is_row and has_target:
+            return 2
+        if has_field:
+            return 3
+        if has_target:
+            return 4
+        return 9
+
+    ranked = sorted(
+        ((rank(u), i, u) for i, u in enumerate(units)), key=lambda t: (t[0], t[1])
+    )
+    return [(u.evidence_id, u.text) for score, _, u in ranked if score < 9][:limit]
+
+
 def find_supporting(doc_id: str, needles: list[str], limit: int = 2) -> list[tuple[str, str]]:
-    """Passages in a document containing any of the given strings."""
-    out: list[tuple[str, str]] = []
-    for evidence_id, text in corpus_passages(doc_id, None):
-        haystack = text.lower()
-        if any(needle.lower() in haystack for needle in needles if needle):
-            out.append((evidence_id, text))
-        if len(out) >= limit:
-            break
-    return out
+    """Passages containing any of the given strings, shortest first.
+
+    Shortest first because a claimed value is usually stated in a table row or a
+    single sentence, and a 2,800-character chapter that merely contains the
+    string is the least useful thing to show a reviewer.
+    """
+    matches = [
+        (evidence_id, text)
+        for evidence_id, text in corpus_passages(doc_id)
+        if any(needle.lower() in text.lower() for needle in needles if needle)
+    ]
+    matches.sort(key=lambda pair: len(pair[1]))
+    return matches[:limit]
 
 
 def _excerpt(text: str, focus: list[str]) -> str:
@@ -121,8 +166,7 @@ def render_question(entry: dict) -> str:
             lines.append(f"  note: {hop['note']}")
         lines.append("")
 
-        passages = corpus_passages(hop["source"], hop.get("field"))
-        if not passages:
+        if not corpus_passages(hop["source"]):
             lines += [
                 "> **NO TEXT FOUND at this citation.** Ingestion returns nothing "
                 "for this document. Flag this - the citation may be wrong, or the "
@@ -131,10 +175,17 @@ def render_question(entry: dict) -> str:
             ]
             continue
 
+        shown = find_hop_evidence(hop["source"], hop.get("field"), hop.get("to"))
+        if not shown:
+            lines += [
+                f"> **Could not locate a passage naming both `{hop.get('field')}` "
+                f"and `{hop.get('to')}` in `{hop['source']}`.** The citation may be "
+                "wrong. Open the file and check before confirming.",
+                "",
+            ]
+            continue
+
         focus_strings = [hop.get("to", ""), hop.get("field", "")] + focus
-        shown = passages[:1] if len(passages) == 1 else find_supporting(
-            hop["source"], [hop.get("to", ""), hop.get("from", "")]
-        ) or passages[:1]
         for evidence_id, text in shown:
             lines += [
                 f"> Corpus text at `{evidence_id}`:",
@@ -158,14 +209,26 @@ def render_question(entry: dict) -> str:
                 )
                 if record.get("quote"):
                     lines.append(f"  - key quotes: \"{record['quote']}\"")
-                found = find_supporting(
-                    record.get("source", ""), [str(record.get("value", ""))], limit=1
-                )
+
+                # An abstention has no value to search for - the whole point is
+                # that the source declines to state one - so fall back to
+                # distinctive words from the quoted text.
+                value = str(record.get("value", "")).strip()
+                needles = [value] if value and value != "not recorded" else []
+                if not needles and record.get("quote"):
+                    needles = [
+                        word
+                        for word in re.findall(r"[A-Za-z]{6,}", record["quote"])[:3]
+                    ]
+                found = find_supporting(record.get("source", ""), needles, limit=1)
                 if found:
-                    lines.append(f"  - corpus says: \"{_excerpt(found[0][1], [str(record.get('value', ''))])}\"")
+                    lines.append(
+                        f"  - corpus says: \"{_excerpt(found[0][1], needles)}\""
+                    )
                 else:
                     lines.append(
-                        "  - **could not locate this value in that document** - check it"
+                        "  - **could not locate this in that document** - open the "
+                        "file and check the citation before confirming"
                     )
         lines.append("")
 
