@@ -2,17 +2,18 @@
   "_about": {
     "purpose": "Ground truth for the 20 supplied dev questions, traced by hand through the corpus. Both the baseline (Checkpoint 1) and every later checkpoint score against this file.",
     "status": "DRAFT - derived by tracing the corpus. Every entry must be independently re-checked by a team member before it is used for reporting. Set verified_by when you have confirmed an entry against the cited sources yourself.",
-    "convention": "expected_path records the hops a correct system should traverse. It is scored separately from the answer: a right answer reached by the wrong route is still a retrieval failure, and we want to see that.",
+    "convention": "expected_path records the hops a correct system should traverse. It is scored separately from the answer: a right answer reached by the wrong route is still a retrieval failure, and we want to see that. Set-valued questions list every valid answer; scoring accepts any one. Note that substring matching over-credits: an answer saying 'there is no mention of who the victors were' still contains the phrase we look for, so the harness must check the claim, not just the presence of a string.",
     "tracks_covered": "1B and 1C are traced. 1A questions require reading values off figure plates and are recorded as untraced - see _untraced_1a."
   },
-
   "questions": [
     {
       "qid": "1b_003",
       "track": "1B",
       "question": "To which shadowed redoubt must one journey to examine the relic long borne by Cerys Sablewood the Ashen since 356 AS?",
       "answer": "Gloamreach",
-      "acceptable": ["Gloamreach"],
+      "acceptable": [
+        "Gloamreach"
+      ],
       "expected_path": [
         {
           "from": "Cerys Sablewood the Ashen",
@@ -39,7 +40,10 @@
       "track": "1B",
       "question": "Which war was won by the organization that included Isolde Mournvale as one of its members?",
       "answer": "The War of Drowned Light",
-      "acceptable": ["The War of Drowned Light", "War of Drowned Light"],
+      "acceptable": [
+        "The War of Drowned Light",
+        "War of Drowned Light"
+      ],
       "expected_path": [
         {
           "from": "Isolde Mournvale",
@@ -69,7 +73,18 @@
       "acceptable": [
         "Ravena Stormwell",
         "Isolde Mournvale",
-        "Maelis Harrowick the Pale"
+        "Maelis Harrowick the Pale",
+        "Corvus Hollowmere the Pale",
+        "Morwenna Morvain",
+        "Morwenna Vosgard",
+        "Ossric Ravensmoor",
+        "Ossric Wrenfield",
+        "Ignatz Fellgard",
+        "Brannoc Palefroth",
+        "Thessaly Coldwater",
+        "Lucan Hollowmere",
+        "Tamsin Greyfen",
+        "Ossric Ashgrove"
       ],
       "expected_path": [
         {
@@ -89,7 +104,7 @@
         }
       ],
       "template": "affiliation_outcome",
-      "notes": "SET-VALUED. At least three characters are members of the Silent Choir, so several answers are correct. Scoring accepts any one. A strong system should say it found several rather than silently picking one - worth checking in the held-out set.",
+      "notes": "SET-VALUED, 14 valid answers, and membership is recorded in TWO disjoint places with no overlap between them: the faction page's 'Members' row lists 6 people, while 8 separate character pages carry 'Member of -> The Silent Choir'. Neither list mentions anyone from the other. A graph builder that reads only one direction loses more than half the membership edges. Found when the baseline answered 'Brannoc Palefroth' and our key wrongly scored it wrong - the key was reading only the character-page direction.",
       "verified_by": null
     },
     {
@@ -97,7 +112,10 @@
       "track": "1B",
       "question": "Which accord was ultimately won by the faction of which Ederon Fellgard is a member?",
       "answer": "The Leaden Accord",
-      "acceptable": ["The Leaden Accord", "Leaden Accord"],
+      "acceptable": [
+        "The Leaden Accord",
+        "Leaden Accord"
+      ],
       "expected_path": [
         {
           "from": "Ederon Fellgard",
@@ -153,7 +171,10 @@
       "track": "1B",
       "question": "Whose dominion encompasses the lair of the Gravemaw Wyrm?",
       "answer": "The Bleeding Crown",
-      "acceptable": ["The Bleeding Crown", "Bleeding Crown"],
+      "acceptable": [
+        "The Bleeding Crown",
+        "Bleeding Crown"
+      ],
       "expected_path": [
         {
           "from": "Gravemaw Wyrm",
@@ -179,7 +200,10 @@
       "track": "1B",
       "question": "Which war did Ravena Stormwell's own faction ultimately win?",
       "answer": "The War of Drowned Light",
-      "acceptable": ["The War of Drowned Light", "War of Drowned Light"],
+      "acceptable": [
+        "The War of Drowned Light",
+        "War of Drowned Light"
+      ],
       "expected_path": [
         {
           "from": "Ravena Stormwell",
@@ -201,13 +225,15 @@
       "notes": "Same answer and same second hop as 1b_005, reached from a different character. Good pair for checking that traversal generalises rather than memorises.",
       "verified_by": null
     },
-
     {
       "qid": "1c_000",
       "track": "1C",
       "question": "State the precise year in the Age of Shadows that marks the true founding of Gloamreach.",
       "answer": "246 AS",
-      "acceptable": ["246 AS", "246"],
+      "acceptable": [
+        "246 AS",
+        "246"
+      ],
       "expected_path": [
         {
           "from": "Gloamreach",
@@ -249,7 +275,10 @@
       "track": "1C",
       "question": "In which year was the 'Gauntlet of Sorrowfell' actually forged?",
       "answer": "391 AS",
-      "acceptable": ["391 AS", "391"],
+      "acceptable": [
+        "391 AS",
+        "391"
+      ],
       "expected_path": [
         {
           "from": "Gauntlet of Sorrowfell",
@@ -293,7 +322,6 @@
       "verified_by": null
     }
   ],
-
   "_untraced_1a": {
     "reason": "The 11 remaining dev questions are sub-track 1A. Their answers are readable only from figure plates and illustration art - verified for three of them that the value is absent from, or contradicted by, the text.",
     "examples": [
