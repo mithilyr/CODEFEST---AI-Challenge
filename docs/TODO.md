@@ -4,14 +4,19 @@ Updated 2026-08-30. Deadline: 9 Sep 2026, 11:30 PM.
 
 ## Blocking — before push/share
 
-- [ ] Add a git remote (none configured yet) and push `main`
-- [ ] Commit or discard the working-tree diff on `src/graph/traverse.py` /
-      `tests/test_graph.py` (currently uncommitted — see `git status`)
+Nothing blocking, measured 30 Aug 2026. Both items this section used to carry
+are done: `origin` is configured
+(`github.com/mithilyr/CODEFEST---AI-Challenge`), and the `src/graph/traverse.py`
+/ `tests/test_graph.py` working-tree diff it named landed in `2775add`.
+`git status` is clean.
 
 ## Must do
 
-- [ ] Human-verify `eval/answer_key.json` (`verified_by` is still `null`) —
-      two people, per `eval/verification/answer_key_review.md`. Recall is now
+- [ ] Human-verify `eval/answer_key.json` — two people, per
+      `eval/verification/answer_key_review.md`. Measured `verification.status`:
+      `single_review` ×6, `draft` ×2, `unresolved` ×1, all seven reviewed
+      entries by the same reviewer (F-015). There is no `verified_by` field;
+      this line named one until 30 Aug. Recall is now
       independently corroborated (`eval/completeness.py`, 0 defects); what's
       left is precision/semantic review. Provisional only for that reason —
       not blocking implementation.

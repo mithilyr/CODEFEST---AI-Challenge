@@ -974,6 +974,24 @@ two reviewers. Accepted, because every architectural decision from Checkpoint 2
 onward is scored against this key, and an unverified key silently invalidates
 all of them at once.
 
+**Amendment, 30 Aug 2026 — the field was never called `verified_by`.**
+
+The paragraphs above are kept as written because the decision they record still
+stands. The *implementation* diverged: `eval/answer_key.json` has no
+`verified_by` key at all (`grep -c verified_by` returns 0). Each question
+instead carries a `verification` object whose `status` is one of `draft`,
+`single_review` or `unresolved`, with a `reviewers` list beside it. Measured
+today:
+
+    single_review  6      all seven reviewed entries name the same one reviewer
+    draft          2      no review at all
+    unresolved     1
+
+So the gate is unchanged — nothing has cleared two reviewers — but the state is
+worse than "null" suggested: two entries have never been looked at. CLAUDE.md,
+README.md and docs/TODO.md all repeated the wrong field name until today and
+have been corrected. The single-reviewer half of this is F-015.
+
 **How we will validate it**
 
 `tests/test_eval.py` asserts the negation guard rejects the exact over-crediting

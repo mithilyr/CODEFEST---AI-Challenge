@@ -176,7 +176,10 @@ Everything is cached. Re-running costs no API quota.
 > defects** across all 9 scoreable questions, corroborating `1b_006`'s fourteen
 > answers by a route independent of the graph. *Precision* review (is each answer
 > right?) is still outstanding, so the harness continues to warn and we are not
-> quoting these numbers as final.
+> quoting these numbers as final. Per-entry state lives in each question's
+> `verification.status`, measured 30 Aug: **`single_review` ×6, `draft` ×2,
+> `unresolved` ×1** — and all seven reviewed entries name the same single
+> reviewer, which is the failure mode `docs/failures.md` F-015 records.
 
 ### Checkpoint 1 — vector RAG baseline
 

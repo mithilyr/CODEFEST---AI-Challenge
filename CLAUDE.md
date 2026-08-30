@@ -63,7 +63,7 @@ of the seven hard-coded (ADR-017). `src/ui/` is the next major piece.
 | `src/ingest/ocr.py` | Done — all 17 scans transcribed, cache committed |
 | `src/clients/` | Done — retry, Gemini model rotation, Voyage embeddings |
 | `src/baseline/` | Done — chunker, vector index, naive RAG (Checkpoint 1) |
-| `eval/answer_key.json` | Drafted, **`verified_by` still null — needs human check** (precision/semantic review only; recall independently corroborated, `eval/completeness.py`) |
+| `eval/answer_key.json` | Drafted, **not two-person verified** — measured `verification.status`: `single_review` ×6, `draft` ×2, `unresolved` ×1, and all seven reviewed entries name the same single reviewer, which is F-015 exactly. (There is no `verified_by` field; this row named one until 30 Aug.) Precision/semantic review is what is outstanding; recall is independently corroborated, `eval/completeness.py` |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016) |
 | `src/query/` | Done — resolution, routing, traversal, evidence sufficiency, conflict detection — **7/7 dev 1B answered correctly** (ADR-017) |
