@@ -13,6 +13,7 @@ numpy==2.4.6            # the whole vector index: 3,392 x 1024 matmul, no DB
 
 # --- AI providers ----------------------------------------------------------
 google-genai==1.2.0     # Gemini vision, used once to OCR the 17 scanned PDFs
+voyageai==0.5.0         # embeddings for the Checkpoint 1 baseline index
 
 # --- Configuration ----------------------------------------------------------
 PyYAML==6.0.2           # config/authority.yaml
