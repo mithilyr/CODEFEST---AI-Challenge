@@ -267,9 +267,10 @@ ordering.
 
 ## Status
 
-Ingestion, OCR, authority ranking, the Checkpoint 1 baseline and the deterministic
-graph are built and measured. The query layer (`src/query/`) and UI (`src/ui/`)
-are not yet started. Answer-key verification and the frozen held-out set are the
-gating work — every number here stays provisional until they land.
+Ingestion, OCR, authority ranking, the Checkpoint 1 baseline, the deterministic
+graph and the query layer (`src/query/`) are built and measured — 7/7 dev 1B
+questions answered correctly through generic mechanisms (ADR-017). `src/ui/` is
+not yet started. Answer-key precision/semantic review and the frozen held-out
+set are the gating work — every number here stays provisional until they land.
 
 See `docs/TODO.md` for the current sprint.

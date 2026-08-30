@@ -1233,3 +1233,143 @@ checkpoint - it keeps the measurement clean about what *structure* recovers -
 and it is why the number above is evidence coverage rather than a score.
 
 *Status: accepted, validated by 21 tests and the 7/7 coverage measurement.*
+
+---
+
+## ADR-017 — The query layer: four templates, no planner, one prose-reading rule
+
+**Problem**
+
+ADR-016 measured evidence coverage, not answers: `1b_007` returns five candidate
+paths and needs a type filter; `1b_009` returns nine and needs conflict
+handling; nothing yet resolves a question's own text to a graph key or a
+relation chain. This ADR is the query layer that closes that gap -
+`question -> entity -> route -> bounded traversal -> sufficient evidence ->
+answer` - built and measured against all seven dev 1B questions as regression
+cases, none of them hard-coded.
+
+**What we built**
+
+Five modules, still no dependency beyond the standard library:
+
+| Module | Job |
+|---|---|
+| `resolve.py` | Mention -> key: exact, normalised, alias, fuzzy candidates (never a winner) |
+| `route.py` | Question text -> relation chain, by trigger phrase, not by entity |
+| `evidence.py` | Names the eight-plus sufficiency states a traversal can end in |
+| `conflict.py` | Same-tier contradiction detection - the piece `authority.yaml` promised |
+| `engine.py` | `answer_question()`: wires the above into one call |
+
+**The four templates.** Measured on the seven dev 1B questions, not designed in
+advance: `lair_dominion` (`lair_in -> ruled_by`), `relic_custody` (`wields ->
+housed_in`), `victory_membership` (`member_of <-> victor_of`, direction read off
+the resolved entity's *type*, not the question), and `victor_connection`
+(`victor_of -> member_of` with a fixed goal, plus a conflict check). Three
+questions - `1b_005`, `1b_022`, `1b_006` - are one template exercised in both
+directions, which is the generalisation test the instructions asked for: the
+same trigger phrase and the same code path answer "which war did X's faction
+win" and "who was a member of the faction that won war Y" because the graph
+already stores both directions.
+
+**Entity resolution adds two tiers ADR-011 stopped short of.** Alias resolution
+is a measured naming pattern, not a lookup table: ten wiki characters are named
+`"<name> the <Epithet>"` (`Corvus Hollowmere the Pale`, `Aldous Wrenfield the
+Last Warden` - the second needed the epithet rule to accept multiple words,
+caught writing the test for the first). Fuzzy candidate generation reuses
+ADR-011's own measurement (`caedmon_fellgard` ~ `ederon_fellgard` at 0.839) to
+justify never selecting a winner - `resolve("Caedmon Fellgardd")` always returns
+`AMBIGUOUS` with candidates, even though one candidate is a near-exact match.
+An escalation hook exists and is counted, but is not wired to a live model: none
+of the seven dev questions need it, and CLAUDE.md's rule is that an LLM call
+must be justified by a measured gap, not added speculatively.
+
+**Type-aware traversal, proven on `1b_007` specifically.** `filter_endpoints`
+applies two filters in sequence with *different* fallback rules - see F-021,
+which records the version that made this dead code. The coarse `entity_type`
+filter is unconditional (already permissive to unknown types, so a further
+empty result is a real signal); the lexical filter against the question's head
+noun falls back when it would empty the set, because a hint like "redoubt" not
+appearing in "Gloamreach" is a wording gap, not a corpus gap. `1b_007`'s three
+genuine victories collapse to one exact match on the word "accord" - the graph
+never sees the literal string "Leaden Accord" as a special case.
+
+**Evidence sufficiency, named rather than inferred.** Nine states:
+`no_template_match`, `unresolved_entity`, `ambiguous_entity`,
+`outside_structured_coverage`, `relation_unavailable`, `no_path`,
+`path_missing_attribute`, `sufficient`, `abstention`, `conflicting_evidence`.
+Two are worth explaining because the corpus does not hand them over easily:
+
+- **`outside_structured_coverage` vs `unresolved_entity`.** Measured, not
+  invented: `Halvard Cindervale` is a real, richly described character - tier-1
+  codex prose, an ephemera contract, a birth year, a faction membership - with
+  **no wiki page**, so the wiki-infobox-only graph has no node for him at all.
+  That is `OUTSIDE_STRUCTURED_COVERAGE`: a genuine corpus entity the graph's
+  own deliberate limit (ADR-016) does not reach. A name that appears nowhere in
+  the corpus (`mentioned_in_corpus` over all 30,553 evidence units returns
+  false) is `UNRESOLVED_ENTITY` instead - a different remedy (fix a typo vs.
+  extend the graph past infoboxes).
+- **`relation_unavailable` vs `no_path`.** `walk_relations` itself returns an
+  empty list either way, by its own design (its docstring is explicit that
+  this is deliberate). The distinction is reconstructed by checking whether
+  any edge of the *first* relation in the chain touches the start entity at
+  all: zero means this entity's page never expresses that relation kind; at
+  least one, with the chain still failing, means the relation exists but does
+  not lead where the question needs (`Ederon Coldwater` is a member of House
+  Morvain, which never records a victory - `NO_PATH`; `Gravemaw Wyrm` has no
+  membership of anything - `RELATION_UNAVAILABLE`).
+
+**`1b_009`'s conflict, and why it needed a prose rule.** The graph alone cannot
+tell `1b_009` apart from `1b_005`/`1b_022` - all three have the identical edge
+shape (a `belligerent_in` edge on the faction's own page, a `victor_of` edge
+only on the conflict's page), because ADR-016 never extracts a `denies` edge
+from prose. What differs is one sentence on `wiki/the_iron_ring_cartel.md`:
+*"This record establishes participation without assigning the Cartel the
+status of victor."* `conflict.py`'s `_DENIAL_RE` is a small, closed regex over
+paragraphs of the *claimed subject's own page* - a negation within ~80
+characters of a victory word - in the same spirit as `cells.py`'s abstention
+pattern, not a general claim extractor. Verified against both sides: it fires
+on the Cartel's page (same tier, 2, as the assertion - `unresolved_same_tier`,
+`must_surface: True`) and does not fire on `wiki/the_silent_choir.md`, which
+never uses any victory word at all in connection with The War of Drowned
+Light - silence, correctly read as silence, not a denial.
+
+**Measured result**
+
+```
+7/7 dev 1B questions answered correctly through the generic mechanism, none
+hard-coded:
+    1b_013  The Bleeding Crown            (vertical slice)
+    1b_005  The War of Drowned Light      (reverse traversal)
+    1b_022  The War of Drowned Light      (same mechanism, different character)
+    1b_007  The Leaden Accord             (type filter over 3 genuine victories)
+    1b_003  Gloamreach                    (qualified custody chain)
+    1b_006  14 members, exact match to the answer key's set (any_of, not forced to 1)
+    1b_009  Halvard Crowhurst + CONFLICTING_EVIDENCE, must_surface: True
+
+41 new tests, 184 total (was 143). Every required scenario from the task has a
+named test: exact/normalised/alias/ambiguous resolution, reverse traversal,
+multi-valued relationships, type filtering, repeated field names, a contextual
+qualifier, explicit abstention, no-path, path-with-insufficient-evidence,
+complete evidence, same-tier contradiction, a silent source, and provenance
+preservation.
+```
+
+**What we did not do**
+
+No LLM planner - four trigger-phrase templates covered every dev question, so
+CLAUDE.md's "measure insufficiency before building the fallback" gate was never
+crossed. No vector fallback - same reasoning, and no dev question produced an
+explicit insufficiency that would justify one. No general claim extractor for
+`1b_009` - one closed regex, tested against both the page it must fire on and
+the page it must not.
+
+**Trade-offs**
+
+The four templates are trigger-phrase matches on English wording, which is
+exactly as brittle as that sounds outside this dev set - a fifth genuinely new
+question shape will log a `NO_TEMPLATE_MATCH` miss rather than being answered.
+That miss is the intended signal for when a fifth template (or, if the miss
+rate justifies it, an LLM router) earns its place; CLAUDE.md's rule is to let
+that number accumulate before reaching for either.
+
+*Status: accepted, validated by 41 tests and the 7/7 dev-question measurement above.*

@@ -11,11 +11,14 @@ Updated 2026-08-30. Deadline: 9 Sep 2026, 11:30 PM.
 ## Must do
 
 - [ ] Human-verify `eval/answer_key.json` (`verified_by` is still `null`) —
-      two people, per `eval/verification/answer_key_review.md`. All scores
-      are provisional until this is done.
-- [ ] Build `src/query/` — selects among candidate graph paths.
-      Known gaps to fix: `1b_007` needs a type filter, `1b_009` needs
-      conflict handling.
+      two people, per `eval/verification/answer_key_review.md`. Recall is now
+      independently corroborated (`eval/completeness.py`, 0 defects); what's
+      left is precision/semantic review. Provisional only for that reason —
+      not blocking implementation.
+- [x] Build `src/query/` — resolution, routing, traversal, evidence
+      sufficiency, conflict detection. `1b_007`'s type filter and `1b_009`'s
+      conflict handling are both done and tested (ADR-017). 7/7 dev 1B
+      questions answered correctly.
 - [ ] Build `src/ui/` — not started.
 - [ ] Rotate all API keys before 8 Sep (chat-log export day) — logs are a
       mandatory deliverable judges read.

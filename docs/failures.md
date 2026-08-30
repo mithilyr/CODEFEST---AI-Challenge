@@ -750,3 +750,39 @@ Result: 241 -> 267 edges, isolated entities 10 -> 0.
 That would resolve `The Purge of Blackport` inside prose and manufacture
 relations from descriptions - ADR-010's incidental-link failure by another route.
 Exact match only, on literal cells only.
+
+---
+
+## F-021 — A "never let this filter empty the set" rule applied to both filters
+
+**Approach.** `src/query/evidence.py`'s type-aware filter for `1b_007`'s answer
+narrows candidate paths by two hints in sequence: a coarse `entity_type` check,
+then a lexical check against the question's head noun. The first version gave
+both filters the same fallback - "if applying this filter would leave nothing,
+skip it and keep what we had" - reasoning that a hint extracted from free text
+should never be trusted enough to manufacture a failure on its own.
+
+**Result.** `PATH_MISSING_ATTRIBUTE`, the sufficiency state that exists
+specifically to name "a type filter ran out of candidates," was unreachable.
+`candidates` starts as the non-empty input and is only ever reassigned when a
+filter's result is *also* non-empty - so the final `if not candidates` check
+could never fire. Caught writing the regression test for that status, not by
+inspection: the test constructed a deliberate type mismatch and got `SUFFICIENT`
+back with the original, unfiltered set.
+
+**Why it failed.** The two filters are not the same kind of hint, and giving
+them the same fallback erased the distinction. The lexical filter is genuinely
+soft - `1b_003`'s "redoubt" not appearing in "Gloamreach" is a wording mismatch,
+not evidence the corpus lacks the location. The coarse type filter is not soft
+in the same way: it already has its own leniency built in (`entity_type is
+None` counts as a pass, because `1b_006`'s edge-only nodes mostly carry no
+recorded type at all). If applying that *already-permissive* filter still
+empties the set, every remaining candidate carries a type the corpus explicitly
+recorded as a mismatch - a real finding, not a hint that merely didn't help.
+
+**What changed.** The coarse type filter now applies unconditionally, with no
+"undo if empty" fallback; only the lexical filter keeps the fallback.
+`test_path_missing_attribute_when_both_filters_genuinely_exclude_everything` and
+`test_type_filter_falls_back_when_the_lexical_hint_matches_nothing`
+(`tests/test_query.py`) pin both halves of the distinction so the same mistake
+can't come back as a "simplification."

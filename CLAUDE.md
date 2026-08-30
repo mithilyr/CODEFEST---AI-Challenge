@@ -51,12 +51,11 @@ is needed and what it measurably improves, first.
 
 ## Current state
 
-Ingestion, OCR, authority ranking, the Checkpoint 1 baseline and the deterministic
-graph are done and measured. The graph reaches **7/7 complete evidence** on the dev
-1B questions where the vector baseline reached 0/7 — but that is evidence coverage,
-not answer correctness: there is no query layer yet, so nothing selects among the
-candidate paths. `1b_007` returns five and needs a type filter; `1b_009` returns nine
-and needs conflict handling. The query layer is the next major piece.
+Ingestion, OCR, authority ranking, the Checkpoint 1 baseline, the deterministic
+graph and the query layer are done and measured. The query layer answers **7/7
+dev 1B questions correctly** through four generic templates — entity resolution,
+routing, bounded traversal, type filtering and same-tier conflict detection, none
+of the seven hard-coded (ADR-017). `src/ui/` is the next major piece.
 
 | Component | State |
 |---|---|
@@ -64,10 +63,10 @@ and needs conflict handling. The query layer is the next major piece.
 | `src/ingest/ocr.py` | Done — all 17 scans transcribed, cache committed |
 | `src/clients/` | Done — retry, Gemini model rotation, Voyage embeddings |
 | `src/baseline/` | Done — chunker, vector index, naive RAG (Checkpoint 1) |
-| `eval/answer_key.json` | Drafted, **`verified_by` still null — needs human check** |
+| `eval/answer_key.json` | Drafted, **`verified_by` still null — needs human check** (precision/semantic review only; recall independently corroborated, `eval/completeness.py`) |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016) |
-| `src/query/` | Not started |
+| `src/query/` | Done — resolution, routing, traversal, evidence sufficiency, conflict detection — **7/7 dev 1B answered correctly** (ADR-017) |
 | `src/ui/` | Not started |
 
 ### Checkpoint 1 results (reproducible, not just measured)
@@ -177,7 +176,9 @@ python -m src.ingest.integrity     # is the corpus the shipped corpus? (run firs
 python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
 python -m src.graph.build          # build the graph, print coverage
-python -m pytest                   # 143 tests
+python -m src.query.engine "<question>"   # answer one question end-to-end
+                                           # (no arg: runs the 1b_013 vertical slice)
+python -m pytest                   # 184 tests
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.completeness        # independent answer-key completeness check
