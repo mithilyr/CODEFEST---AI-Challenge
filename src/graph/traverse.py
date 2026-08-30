@@ -16,6 +16,7 @@ shorter path).
 from __future__ import annotations
 
 from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass
 
 from src.graph.entities import canonical_key
@@ -134,3 +135,74 @@ def _resolve(graph: Graph, name: str | None) -> str | None:
         return None
     key = canonical_key(name)
     return key if key in graph.nodes else None
+
+
+def walk_relations(
+    graph: Graph,
+    start: str,
+    relations: Sequence[str],
+) -> list[Path]:
+    """Follow one specific relation per hop, in order.
+
+    WHY THIS EXISTS, AND WHY `find_paths` IS NOT ENOUGH
+    ---------------------------------------------------
+    `find_paths` answers "what can I reach", which is the wrong question once you
+    know what you are looking for. Measured on the seven dev 1B questions, an
+    unconstrained two-hop search returns between 5 and 87 candidate paths, and
+    the shortest path that lands on the right answer is frequently wrong about
+    *why*.
+
+    `1b_005`, `1b_007` and `1b_022` all ask which conflict a faction won. The
+    shortest path reaching the correct conflict goes through `belligerent_in` -
+    the faction fought in it - while the answer key requires `victor_of`. Both
+    edges exist, both are two hops, and both end on the same node. A selector
+    that reads only the endpoint scores those correct while having retrieved
+    evidence that does not support the claim: fighting in a war is not winning
+    it.
+
+    Constraining each hop to a named relation collapses 5-87 candidates to 1-14
+    and makes the route auditable, because the relation sequence *is* the claim
+    being made.
+
+    Direction is deliberately not specified. The graph is asymmetric (the Silent
+    Choir records no victories of its own, so its `victor_of` edge exists only on
+    the conflict's page), and forcing a direction would lose exactly the reverse
+    lookups sub-track 1B is about. The edge itself records which way it was
+    written, so provenance survives.
+
+    Args:
+        graph: The graph to walk.
+        start: Entity name or canonical key to begin from.
+        relations: One relation name per hop, in order.
+
+    Returns:
+        Every path following that exact sequence. Empty when the sequence does
+        not apply to this entity, which is a usable signal rather than an error:
+        the sufficiency layer reads it as "the corpus does not assert this
+        shape", distinct from "the entity is unknown".
+    """
+    start_key = _resolve(graph, start)
+    if start_key is None or not relations:
+        return []
+
+    frontier: list[tuple[str, tuple[str, ...], tuple[Edge, ...]]] = [
+        (start_key, (start_key,), ())
+    ]
+
+    for relation in relations:
+        advanced: list[tuple[str, tuple[str, ...], tuple[Edge, ...]]] = []
+        for node, visited, edges in frontier:
+            for edge in graph.neighbours(node, relation):
+                nxt = edge.target if edge.source == node else edge.source
+                # Prune cycles only. Two edges may legitimately connect the same
+                # pair - the Cartel's victory over the Leaden Accord is asserted
+                # on both the Cartel's page and the Accord's - and dropping the
+                # second would discard corroboration the conflict layer needs.
+                if nxt in visited:
+                    continue
+                advanced.append((nxt, visited + (nxt,), edges + (edge,)))
+        frontier = advanced
+        if not frontier:
+            return []
+
+    return [Path(start_key, edges) for _, _, edges in frontier]

@@ -19,7 +19,7 @@ import pytest
 from src.graph.build import build_graph, infobox_rows, load_relation_map
 from src.graph.cells import parse_cell
 from src.graph.entities import canonical_key, display_name, slugify
-from src.graph.traverse import find_paths
+from src.graph.traverse import find_paths, walk_relations
 from src.settings import get_settings
 
 
@@ -336,3 +336,91 @@ def test_every_dev_1b_question_links_at_least_one_entity(graph):
             unlinked.append(question["qid"])
 
     assert unlinked == [], f"no entity linked for {unlinked}"
+
+
+# --------------------------------------------------------------------------
+# Relation-sequence traversal
+#
+# The measurement behind this: an unconstrained two-hop search returns 5-87
+# candidates per dev 1B question, and the shortest path landing on the right
+# answer is often wrong about why it got there.
+# --------------------------------------------------------------------------
+
+
+def test_walk_follows_the_named_relation_not_a_shorter_wrong_one(graph):
+    """The failure this function exists to prevent.
+
+    Isolde Mournvale is in The Silent Choir, which both *fought in* and *won*
+    The War of Drowned Light. Two two-hop routes reach the same node, and an
+    unconstrained search returns the `belligerent_in` one. Fighting in a war is
+    not winning it, so an answer citing that edge is unsupported even though the
+    endpoint is right.
+    """
+    won = walk_relations(graph, "Isolde Mournvale", ["member_of", "victor_of"])
+    assert {graph.nodes[p.end].name for p in won} == {"The War of Drowned Light"}
+    assert [e.relation for e in won[0].edges] == ["member_of", "victor_of"]
+
+
+def test_walk_traverses_reverse_edges(graph):
+    """The Silent Choir records no victories of its own.
+
+    Its `victor_of` edge is written on the conflict's page, so this hop is a
+    reverse lookup - the capability similarity search lacks and sub-track 1B is
+    about. Constraining the relation must not accidentally constrain direction.
+    """
+    victor_edge = next(
+        e
+        for e in graph.out_edges("silent_choir", "victor_of")
+        if e.document == "wiki/the_war_of_drowned_light.md"
+    )
+    assert victor_edge.document != "wiki/the_silent_choir.md"
+    assert walk_relations(graph, "Ravena Stormwell", ["member_of", "victor_of"])
+
+
+def test_walk_returns_every_endpoint_for_a_set_valued_question(graph):
+    """1b_006 has 14 valid answers and the walk must not silently pick one."""
+    members = walk_relations(
+        graph, "The War of Drowned Light", ["victor_of", "member_of"]
+    )
+    names = {graph.nodes[p.end].name for p in members}
+    assert len(names) > 5
+    assert "Brannoc Palefroth" in names
+
+
+def test_walk_keeps_corroborating_edges_between_the_same_pair(graph):
+    """The Cartel's win of the Leaden Accord is asserted on both pages.
+
+    Deduplicating by endpoint would discard the second assertion, which is
+    exactly the corroboration the conflict layer needs to weigh.
+    """
+    paths = walk_relations(graph, "Ederon Fellgard", ["member_of", "victor_of"])
+    to_accord = [p for p in paths if graph.nodes[p.end].name == "The Leaden Accord"]
+    documents = {p.edges[-1].document for p in to_accord}
+    assert len(documents) == 2, documents
+
+
+def test_walk_returns_empty_when_the_shape_does_not_apply(graph):
+    """Distinct from an unknown entity, and the sufficiency layer needs both."""
+    assert walk_relations(graph, "Gravemaw Wyrm", ["member_of", "victor_of"]) == []
+    assert walk_relations(graph, "No Such Entity", ["member_of"]) == []
+
+
+def test_walk_narrows_candidates_far_below_an_unconstrained_search(graph):
+    """5-87 candidates unconstrained; 1-14 constrained. Measured on 1b_007."""
+    unconstrained = find_paths(graph, "Ederon Fellgard", max_hops=2)
+    constrained = walk_relations(graph, "Ederon Fellgard", ["member_of", "victor_of"])
+    assert len(constrained) < len(unconstrained) / 3
+    assert {graph.nodes[p.end].name for p in constrained} == {
+        "The Leaden Accord",
+        "The Purge of Blackport",
+        "The Winter Reckoning",
+    }
+
+
+def test_every_hop_carries_auditable_provenance(graph):
+    """An edge that cannot explain itself is a citation we cannot defend."""
+    path = walk_relations(graph, "Gravemaw Wyrm", ["lair_in", "ruled_by"])[0]
+    for edge in path.edges:
+        assert edge.document and edge.field_name and edge.raw and edge.template
+        assert edge.row >= 0 and edge.tier >= 1
+        assert edge.document in edge.why()
