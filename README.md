@@ -83,7 +83,7 @@ keys are only required to re-transcribe scans or rebuild the embedding index.
 
 ```bash
 python -m src.ingest.integrity   # is your corpus the corpus we measured against?
-python -m pytest                 # 133 tests
+python -m pytest                 # 143 tests
 python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
 python -m src.graph.build        # 117 entities, 267 edges
 ```
@@ -141,7 +141,7 @@ src/graph/      cell parsers, entity keys, schema+provenance, build, traversal
 eval/           answer key, deterministic scorer, harness, corpus probes
 config/         authority.yaml, relations.yaml, corpus_manifest.sha256
 docs/           ADRs, failure log, limitations, roadmap
-tests/          133 tests
+tests/          143 tests
 ```
 
 Two configuration files are deliberately *not* code, so a judge can disagree with
@@ -161,7 +161,8 @@ python -m src.graph.build                        # build graph, print coverage
 python -m eval.probes.corpus_shape               # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline    # reproduce Checkpoint 1
 python -m eval.verify_key                        # regenerate answer-key review pack
-python -m pytest                                 # 133 tests
+python -m eval.completeness                      # is the key narrower than the corpus?
+python -m pytest                                 # 143 tests
 ```
 
 Everything is cached. Re-running costs no API quota.
@@ -170,9 +171,12 @@ Everything is cached. Re-running costs no API quota.
 
 ## Measured results
 
-> **All scores below are PROVISIONAL.** 0 of 9 answer-key entries have cleared
-> two-reviewer verification (`eval/verification/`). The harness prints this
-> warning itself and we are not quoting these numbers as final.
+> **All scores below are PROVISIONAL.** The answer key has cleared independent
+> *completeness* checking — `python -m eval.completeness` reports **0 recall
+> defects** across all 9 scoreable questions, corroborating `1b_006`'s fourteen
+> answers by a route independent of the graph. *Precision* review (is each answer
+> right?) is still outstanding, so the harness continues to warn and we are not
+> quoting these numbers as final.
 
 ### Checkpoint 1 — vector RAG baseline
 

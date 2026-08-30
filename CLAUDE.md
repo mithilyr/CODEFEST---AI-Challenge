@@ -177,9 +177,10 @@ python -m src.ingest.integrity     # is the corpus the shipped corpus? (run firs
 python -m src.ingest.pipeline      # ingest corpus, print summary
 python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_KEY)
 python -m src.graph.build          # build the graph, print coverage
-python -m pytest                   # 117 tests
+python -m pytest                   # 143 tests
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
+python -m eval.completeness        # independent answer-key completeness check
 python -m eval.verify_key          # regenerate the answer-key review pack
 ```
 

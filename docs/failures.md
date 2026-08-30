@@ -467,6 +467,37 @@ The evaluator would have taught the system to be worse, with every number
 looking healthy throughout. One reviewer, working carefully and reporting high
 confidence, is not a safety mechanism — the second reviewer is the mechanism.
 
+### Amendment, 2026-08-30 — the conclusion did not follow from the evidence
+
+The sentence above is wrong, and the evidence contradicting it is in this entry.
+
+**No second reviewer ever ran.** The fourteen names were found by *corpus
+enumeration* — the code block at the top of this entry. This entry diagnosed a
+mechanical problem and prescribed a human remedy.
+
+The diagnosis was right: membership is recorded in two disjoint places, so a
+reviewer reading from the character-page direction sees one half. That is a
+**systematic recall failure**, not a lapse in care. A second human reading the
+same direction inherits the same blind spot, so a second reviewer is not the
+mitigation — it is the same instrument applied twice.
+
+**Corrected conclusion.** The demonstrated failure is systematic recall failure
+in manual verification. The appropriate mitigation is **independent corpus
+enumeration that reads every direction by construction**. Human review is
+reserved for what enumeration genuinely cannot do: precision (is this answer
+*right*?) and semantic disputes (which of several true facts does the question
+select?).
+
+`eval/completeness.py` implements this. Run against the current key it finds
+**14 for `1b_006` — 6 from the faction page's `Members` row, 8 from character
+pages, zero overlap** — independently corroborating the key by a different route
+than the one that built it. Across all nine scoreable questions it reports **0
+recall defects**.
+
+The original conclusion is kept above rather than deleted, because the shape of
+this mistake is the point: we drew a conclusion about *process* from evidence
+about *instrument*, and did it inside the entry that contains the disproof.
+
 ## F-016 — Trusting that a read-only corpus stayed read-only
 
 **Approach.** The corpus is documented as read-only competition data, held
