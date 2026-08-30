@@ -52,10 +52,15 @@ is needed and what it measurably improves, first.
 ## Current state
 
 Ingestion, OCR, authority ranking, the Checkpoint 1 baseline, the deterministic
-graph and the query layer are done and measured. The query layer answers **7/7
-dev 1B questions correctly** through four generic templates — entity resolution,
-routing, bounded traversal, type filtering and same-tier conflict detection, none
-of the seven hard-coded (ADR-017). `src/ui/` is the next major piece.
+graph, the query layer and the demo UI are done and measured. The query layer
+answers **7/7 dev 1B questions correctly** through four generic templates —
+entity resolution, routing, bounded traversal, type filtering and same-tier
+conflict detection, none of the seven hard-coded (ADR-017). `src/ui/` renders
+that result and adds no reasoning of its own (ADR-018).
+
+**The query engine is Checkpoint 2, not a finished reasoning system.** The next
+piece of work is measuring where it is weak — routing robustness on
+differently-worded questions first — not visual polish and not an LLM.
 
 | Component | State |
 |---|---|
@@ -67,7 +72,7 @@ of the seven hard-coded (ADR-017). `src/ui/` is the next major piece.
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016) |
 | `src/query/` | Done — resolution, routing, traversal, evidence sufficiency, conflict detection — **7/7 dev 1B answered correctly** (ADR-017) |
-| `src/ui/` | Not started |
+| `src/ui/` | Done (first version) — stdlib `http.server`, no new dependency; renders all nine demo surfaces; thinness enforced by three architectural tests (ADR-018) |
 
 ### Checkpoint 1 results (reproducible, not just measured)
 
@@ -178,7 +183,8 @@ python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_
 python -m src.graph.build          # build the graph, print coverage
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 184 tests
+python -m pytest                   # 203 tests
+python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.completeness        # independent answer-key completeness check

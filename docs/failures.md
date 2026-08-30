@@ -786,3 +786,74 @@ recorded as a mismatch - a real finding, not a hint that merely didn't help.
 `test_type_filter_falls_back_when_the_lexical_hint_matches_nothing`
 (`tests/test_query.py`) pin both halves of the distinction so the same mistake
 can't come back as a "simplification."
+
+
+---
+
+## F-022 - Asserting the type filter was invisible in the UI, without rendering the page
+
+**Approach.** Before writing `src/ui/`, I probed what `Answer` carries about
+`1b_007` and measured that `filter_endpoints` discards what it eliminates: the
+traversal returns **5 candidate paths**, the filter keeps **2**, and the 3
+dropped ones - along with the type hint that dropped them (`accord` ->
+`conflict`) - appear nowhere on the returned `Answer`. I reported to the team
+that `1b_007`'s differentiator therefore could not be shown in the UI without
+extending the response contract, and wrote a regression test asserting
+`"The Winter Reckoning" not in html`.
+
+**Result.** That test failed on the real rendered page. `The Winter Reckoning`
+*is* on the page - in the `raw` cell of the surviving `victor_of` hop, which
+reads `[[The Winter Reckoning]]; [[The Leaden Accord]]`.
+
+**Why it failed.** The measurement was right and the conclusion drawn from it
+was wrong. I checked what the *endpoints* carried and generalised to what the
+*page* could show, forgetting that ADR-010's multi-valued cell keeps both
+values in one string, and that the UI renders each hop's cell verbatim. The
+multi-valued relationship is visible in the evidence panel already, sitting
+directly above an answer that names one of its two values - which is most of
+the differentiator, obtained for free.
+
+**The residual gap is narrower than claimed, and is real.** What the page still
+cannot show is the *filter decision*: that a type hint ran, which word it was,
+and which candidates it removed. `1b_007`'s other two dropped paths
+(`The Purge of Blackport`, and the second `Winter Reckoning` route) are not
+represented at all. Closing that needs three additive fields on `Answer`
+(`type_hint_word`, `type_hint_entity_type`, `filtered_out`) - not a behaviour
+change - and it is deliberately **not** done yet: the instruction for this
+checkpoint was to build against the existing contract, and doing so surfaced
+the true size of the gap instead of the assumed one.
+
+**What changed.** `tests/test_ui.py::test_1b_007_multi_valued_cell_is_visible_in_the_evidence`
+now asserts the opposite of what I first wrote, and says why in its docstring.
+The general lesson is the one CLAUDE.md already states and I still skipped:
+render the thing before describing what it cannot do.
+
+---
+
+## F-023 - An architectural guard that matched bare substrings
+
+**Approach.** `src/ui/` is only defensible as "a thin presentation layer" if
+that stays true, so `tests/test_ui.py` checks the UI source for the names of
+every reasoning entry point (`walk_relations`, `check_conflict`,
+`filter_endpoints`, `route(`, ...) and fails if one appears. The first version
+used a plain `name in code` substring test.
+
+**Result.** It failed immediately on the code it was written to protect.
+`"route("` matched the view's own private `_route(...)` helper. Loosening the
+needle to `"route"` then matched `view["routes"]` and render.py's `.route` CSS
+class as well.
+
+**Why it failed.** `route` is a word this layer legitimately owns - the view's
+whole job is to arrange route *data* for display. A substring guard cannot tell
+"holds a route" from "computes a route", so it flags honest code, and a guard
+that cries wolf on honest code is a guard someone deletes.
+
+**What changed.** Two checks instead of one. The name list is matched on a word
+boundary (`route` no longer hits `_route`), and `route` is dropped from it
+entirely, replaced by
+`test_view_imports_only_the_response_contract`, which parses the view's AST and
+asserts its `src.*` imports are exactly `{src.graph.schema, src.query.engine,
+src.query.evidence}` - and that only `EvidenceStatus` comes from the last.
+That states the real constraint: the view cannot import the modules that
+decide things. It is both stricter and quieter than the substring test.
+

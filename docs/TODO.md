@@ -24,7 +24,14 @@ are done: `origin` is configured
       sufficiency, conflict detection. `1b_007`'s type filter and `1b_009`'s
       conflict handling are both done and tested (ADR-017). 7/7 dev 1B
       questions answered correctly.
-- [ ] Build `src/ui/` — not started.
+- [x] Build `src/ui/` — stdlib `http.server`, no new dependency, all nine
+      demo surfaces rendered, thinness pinned by three architectural tests
+      (ADR-018). 19 new tests, 203 total.
+- [ ] **Next: measure the query layer's weaknesses, not polish the UI.**
+      Routing robustness on re-worded questions is the first measurement —
+      template hit rate, entity resolution, evidence completeness, answer
+      correctness, `NO_TEMPLATE_MATCH` and ambiguous-resolution frequency.
+      Do not add an LLM planner before that number exists (ADR-017's gate).
 - [ ] Rotate all API keys before 8 Sep (chat-log export day) — logs are a
       mandatory deliverable judges read.
 - [ ] Export AI chat logs to `ai_usage/` as work happens, not at the end.
@@ -43,5 +50,5 @@ are done: `origin` is configured
 ## Assign
 
 - [ ] Owner for `src/query/`
-- [ ] Owner for `src/ui/`
+- [x] Owner for `src/ui/` — first version built; needs a reviewer
 - [ ] Two verifiers for the answer key

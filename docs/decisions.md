@@ -1391,3 +1391,110 @@ rate justifies it, an LLM router) earns its place; CLAUDE.md's rule is to let
 that number accumulate before reaching for either.
 
 *Status: accepted, validated by 41 tests and the 7/7 dev-question measurement above.*
+
+
+---
+
+## ADR-018 - The demo UI: stdlib http.server, and a presentation layer with a test to keep it one
+
+**Problem**
+
+The query layer answers 7/7 dev 1B questions but has no surface. The
+competition needs 3-4 minutes of unedited live demo, and the thing being
+demonstrated is not the answer string - a vector baseline can produce
+"The Bleeding Crown" - it is the evidence path, the tiers, and what the system
+does when sources disagree. Nine surfaces have to be visible at once.
+
+**Decision 1: stdlib `http.server`, no framework**
+
+Streamlit was the obvious alternative and was rejected. CLAUDE.md's binding
+constraint is that every team member can explain and modify any part of the
+submission on demand; Streamlit's rerun model and session state are behaviour a
+teammate would have to defend to a judge in exchange for nothing this page
+needs. There is no client-side state here - the whole interaction is a GET with
+a query string. The result is 3 modules a Python programmer reads top to bottom
+and **zero new entries in requirements.txt**.
+
+The graph is built once at startup (~5.5s measured) and held. Rebuilding per
+request would make the demo feel broken and prove nothing.
+
+**Decision 2: the UI renders the contract; it does not compose an answer**
+
+`src/ui/view.py` turns one `Answer` into a plain dict; `src/ui/render.py` turns
+that dict into HTML and imports nothing from `src.query` or `src.graph` at all.
+The line drawn, and enforced:
+
+- reading a property the engine already computed (`EvidenceStatus.is_answerable`,
+  `ConflictReport.status`, `.must_surface`) and printing it verbatim - allowed;
+- grouping edges by path, collecting the tiers those edges already carry, and
+  looking a node's display name up by key - allowed;
+- comparing two tiers to decide a winner, re-running a traversal, re-applying a
+  type filter, or writing a sentence from `values` + `status` + `conflict` -
+  **absent**.
+
+That last one is the interesting constraint. `1b_009`'s expected answer in the
+key is prose, and `Answer` carries no prose field. The UI does **not**
+manufacture the sentence. It shows the supported hop, the disputed hop, and
+both sources at their tiers, and lets the reader draw the conclusion. Composing
+that sentence would be answer generation in presentation code, which is exactly
+the layering this project refuses.
+
+**One join, deliberately allowed and named.** `_is_disputed` marks a hop when
+its relation and its two endpoints match the ones `check_conflict` already
+reported. It locates the engine's finding among the hops being drawn; it never
+decides that something is in dispute. With no report, or one the engine did not
+flag `must_surface`, nothing is ever marked - pinned by
+`test_disputed_marking_ignores_a_report_the_engine_did_not_flag`.
+
+**Decision 3: the thinness is a test, not a promise**
+
+Three architectural tests, because "it's a thin layer" is worth nothing to a
+judge if the next commit can quietly make it false:
+
+| Test | Asserts |
+|---|---|
+| `test_view_imports_only_the_response_contract` | the view's `src.*` imports are exactly `{graph.schema, query.engine, query.evidence}`, and only `EvidenceStatus` from the last |
+| `test_render_does_not_import_the_engine_at_all` | render.py sees plain dicts only |
+| `test_view_and_render_import_no_reasoning_code` | no reasoning entry point is named in either module's code |
+
+F-023 records the version of the third that false-positived on the view's own
+`_route` helper.
+
+**Measured result**
+
+```
+19 new tests, 203 total (was 184). All four demo questions render every
+surface they have:
+
+  1b_013  sufficient            1 route,   2 hops,  2 docs   tier 2
+  1b_007  sufficient            2 routes,  4 hops,  3 docs   tier 2
+  1b_006  sufficient           14 routes, 28 hops, 10 docs   tier 2
+  1b_009  conflicting_evidence  1 route,   2 hops,  2 docs   tier 2 vs tier 2
+          -> exactly 1 hop marked disputed, and it is the victor_of hop;
+             the member_of hop is not marked.
+
+Plus the two shapes a live demo hits by accident:
+  no_template_match  -> the engine's own miss reason, printed verbatim
+  ambiguous_entity   -> candidates listed with similarities, none selected
+```
+
+**What we did not do**
+
+No LLM anywhere in this path - the page is the deterministic engine's output
+and nothing else. No CSS beyond legibility: the instruction for this checkpoint
+was that the evidence and explanation surfaces work before anything is made
+pretty. No change to `src/query/` or `src/graph/` to make the UI easier - the
+one place that pinched (`1b_007`'s filter decision is not on `Answer`) is
+recorded as F-022 and left alone rather than fixed by widening the contract
+mid-checkpoint.
+
+**Trade-offs**
+
+`1b_009`'s page requires the viewer to read two panels and draw the conclusion,
+where a synthesised sentence would state it. That is the honest trade and it is
+the right one for a judge audience: the sentence would be the system's least
+verifiable output on the question whose whole point is that the evidence does
+not settle itself.
+
+*Status: accepted, validated by 19 tests and the four-question render above.*
+
