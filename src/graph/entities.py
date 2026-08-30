@@ -55,12 +55,35 @@ def canonical_key(name: str) -> str:
     return _LEADING_ARTICLE.sub("", slugify(name))
 
 
+#: Markup that wraps a name without being part of it.
+#:
+#: Measured: 32 of 117 node names carried `[[ ]]` through to display, because a
+#: page's `Name` row is often written `| Name | [[Cerys Sablewood the Ashen]] |`.
+#: Keys were never affected - `slugify` collapses brackets to `_` and trims - so
+#: this was invisible to traversal and would have surfaced only in the UI
+#: evidence trail and in any attempt to match a name against question text.
+_MARKUP = re.compile(r"^[\[\*\s]+|[\]\*\s]+$")
+
+#: A trailing disambiguator the wiki appends to 26 of its 95 H1 headings,
+#: e.g. `# Ashfall Colossus (creature)`. Part of the heading, not of the name.
+_TYPE_SUFFIX = re.compile(r"\s*\((?:character|faction|location|creature|conflict|artifact)\)\s*$", re.I)
+
+
 def display_name(name: str) -> str:
-    """The name as written, with whitespace tidied. Never reconstructed.
+    """The name as written, with markup and whitespace stripped. Never rebuilt.
 
     Slugification is one-way - "The Thrice-Bound Edge" becomes
     "the_thrice_bound_edge" and the hyphen cannot be recovered. So a display name
-    is always carried through from the source text rather than rebuilt from a
-    key, and comparisons always happen on keys.
+    is always carried through from the source text rather than reconstructed from
+    a key, and comparisons always happen on keys.
+
+    What is removed here is markup only: `[[wiki link]]` brackets, `**emphasis**`
+    and a trailing `(type)` disambiguator. None of those are part of the name, and
+    leaving them in breaks both display and any match against question text.
     """
-    return re.sub(r"\s+", " ", name).strip()
+    # Order matters. A heading is written `# [[Mournwatch]] (location)`, so the
+    # disambiguator sits *between* the name and its closing brackets: strip
+    # markup first and the trailing `]]` is not at the end of the string to be
+    # matched, leaving `Mournwatch]]` behind. Suffix first, then markup.
+    stripped = _MARKUP.sub("", _TYPE_SUFFIX.sub("", name))
+    return re.sub(r"\s+", " ", stripped).strip()

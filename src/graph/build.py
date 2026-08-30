@@ -176,8 +176,8 @@ def build_graph(
         found = _first_table_block(units)
         if found is None:
             continue
-        name = _subject_name(infobox_rows(found[1]), doc_id)
-        known[canonical_key(name)] = display_name(name)
+        name = _subject_name(infobox_rows(found[1]), doc_id, units)
+        known[canonical_key(name)] = name
 
     graph = Graph()
     unmapped: dict[str, int] = {}
@@ -189,12 +189,12 @@ def build_graph(
         unit, text = found
         rows = infobox_rows(text)
 
-        subject_name = _subject_name(rows, doc_id)
+        subject_name = _subject_name(rows, doc_id, units)
         subject_key = canonical_key(subject_name)
         graph.add_node(
             Node(
                 key=subject_key,
-                name=display_name(subject_name),
+                name=subject_name,
                 entity_type=types.get(subject_key),
                 page=doc_id,
             )
@@ -280,16 +280,38 @@ def _resolve_unlinked(cell, known: dict[str, str]) -> tuple[Reference, ...]:
     return tuple(Reference(known[canonical_key(p)]) for p in resolved)
 
 
-def _subject_name(rows: list[tuple[str, str]], doc_id: str) -> str:
-    """The page's own entity, from its `Name` row or failing that its filename.
+def _subject_name(rows: list[tuple[str, str]], doc_id: str, units: list | None = None) -> str:
+    """The page's own entity name, in the corpus's own spelling.
 
-    Slugification is one-way, so the `Name` row is strongly preferred: recovering
-    "The Thrice-Bound Edge" from `the_thrice_bound_edge.md` is not possible.
+    Three sources, in decreasing fidelity:
+
+    1. **The H1 heading.** Present on all 95 wiki pages, and the only source that
+       preserves spelling the other two lose - `the_iron_ring_cartel.md` has no
+       `Name` row at all, so it previously fell through to the filename and
+       became "the iron ring cartel", dropping both the capitals and the hyphen
+       the corpus actually writes.
+    2. **A `Name`-like infobox row**, for the pages that carry one.
+    3. **The filename**, de-slugged. Lossy and last: slugification is one-way, so
+       "The Thrice-Bound Edge" cannot be recovered from `the_thrice_bound_edge`.
+
+    The result is passed through `display_name`, which strips `[[ ]]`, `**` and a
+    trailing `(type)` disambiguator. That ordering matters: the key is derived
+    from this return value, and `canonical_key("Ashfall Colossus (creature)")`
+    would otherwise be `ashfall_colossus_creature` - a second node for an entity
+    every link calls `[[Ashfall Colossus]]`.
     """
+    if units:
+        for unit in units:
+            if unit.kind == "heading" and unit.text.startswith("# "):
+                heading = display_name(unit.text[2:])
+                if heading:
+                    return heading
+
     for field_name, value in rows:
         if field_name in _SELF_FIELDS and value.strip():
-            return value.strip()
-    return Path(doc_id).stem.replace("_", " ")
+            return display_name(value)
+
+    return display_name(Path(doc_id).stem.replace("_", " "))
 
 
 def main() -> None:

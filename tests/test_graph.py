@@ -11,12 +11,14 @@ Tests needing the corpus skip cleanly when it is absent.
 from __future__ import annotations
 
 import collections
+import json
+from pathlib import Path
 
 import pytest
 
 from src.graph.build import build_graph, infobox_rows, load_relation_map
 from src.graph.cells import parse_cell
-from src.graph.entities import canonical_key, slugify
+from src.graph.entities import canonical_key, display_name, slugify
 from src.graph.traverse import find_paths
 from src.settings import get_settings
 
@@ -238,3 +240,99 @@ def test_relation_map_loads_and_covers_the_core_relations():
     assert relations.lookup("Members") == ("member_of", "reverse")
     assert relations.lookup("Ruled by") == ("ruled_by", "forward")
     assert relations.lookup("Appearance") is None
+
+
+# --------------------------------------------------------------------------
+# Display names (F-021)
+#
+# Node keys were always correct - `slugify` collapses brackets to `_` and trims -
+# so this defect was invisible to traversal and surfaced only where a name is
+# read by a human or matched against text. That is exactly the UI evidence trail
+# and the query layer's entity linker, which is how it was found: deterministic
+# linking resolved 4 of 7 dev 1B questions, and the three misses were entities
+# whose names carried `[[ ]]`.
+# --------------------------------------------------------------------------
+
+
+def test_display_name_strips_wiki_link_markup():
+    """32 of 117 node names carried brackets, because `Name` rows are links."""
+    assert display_name("[[Cerys Sablewood the Ashen]]") == "Cerys Sablewood the Ashen"
+
+
+def test_display_name_strips_emphasis():
+    """The ephemera wrap values in `**`; a name must not inherit them."""
+    assert display_name("**The Leaden Accord**") == "The Leaden Accord"
+
+
+def test_display_name_strips_the_type_disambiguator():
+    """26 of 95 H1 headings carry one, e.g. `# Ashfall Colossus (creature)`."""
+    assert display_name("Ashfall Colossus (creature)") == "Ashfall Colossus"
+
+
+def test_display_name_handles_a_suffix_inside_the_brackets():
+    """The ordering bug this test exists for.
+
+    A heading is written `# [[Mournwatch]] (location)`, so the disambiguator sits
+    *between* the name and its closing brackets. Stripping markup first leaves
+    the trailing `]]` no longer at the end of the string, and removing the suffix
+    afterwards orphans it - producing `Mournwatch]]`. Suffix must come first.
+    """
+    assert display_name("[[Mournwatch]] (location)") == "Mournwatch"
+
+
+def test_display_name_leaves_a_real_name_alone():
+    """Stripping must not eat hyphens, articles or capitals."""
+    assert display_name("The Iron-Ring Cartel") == "The Iron-Ring Cartel"
+
+
+def test_type_suffix_must_be_stripped_before_the_key_is_derived():
+    """Otherwise 26 pages split into two nodes each.
+
+    `canonical_key("Ashfall Colossus (creature)")` is `ashfall_colossus_creature`,
+    which no `[[Ashfall Colossus]]` link would ever resolve to.
+    """
+    assert canonical_key(display_name("Ashfall Colossus (creature)")) == canonical_key(
+        "[[Ashfall Colossus]]"
+    )
+
+
+def test_no_node_name_carries_markup(graph):
+    """A name reaching the UI with `[[ ]]` in it is a citation we cannot show."""
+    dirty = [n.name for n in graph.nodes.values() if any(c in n.name for c in "[]*|")]
+    assert dirty == [], f"{len(dirty)} node name(s) carry markup: {dirty[:5]}"
+
+
+def test_subject_name_prefers_the_heading_over_the_filename(graph):
+    """`the_iron_ring_cartel.md` has no `Name` row at all.
+
+    It previously fell through to the de-slugged filename and became "the iron
+    ring cartel", losing both the capitals and the hyphen the corpus writes. The
+    H1 heading is the only source that preserves them, and all 95 wiki pages
+    have one.
+    """
+    assert graph.nodes["iron_ring_cartel"].name == "The Iron-Ring Cartel"
+
+
+def test_every_dev_1b_question_links_at_least_one_entity(graph):
+    """Deterministic entity linking, measured on the questions that matter.
+
+    Exact substring match of a known node name against the question text. This
+    was 4/7 while names carried markup; the three misses were Cerys Sablewood
+    the Ashen, Isolde Mournvale and Ravena Stormwell, all bracketed.
+    """
+    key = json.loads(
+        (Path(__file__).resolve().parent.parent / "eval" / "answer_key.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    names = [n.name for n in graph.nodes.values()]
+
+    unlinked = []
+    for question in key["questions"]:
+        if question["track"] != "1B":
+            continue
+        text = question["question"].lower()
+        if not any(name.lower() in text for name in names):
+            unlinked.append(question["qid"])
+
+    assert unlinked == [], f"no entity linked for {unlinked}"
