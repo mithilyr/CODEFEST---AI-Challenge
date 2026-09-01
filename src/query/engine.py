@@ -28,6 +28,7 @@ from src.query.evidence import (
     resolution_status,
 )
 from src.query.fallback import route_by_cues
+from src.query.planner import plan_and_walk
 from src.query.resolve import EntityResolver, Resolution
 from src.query.route import RouteMiss, build_gazetteer, route
 from src.settings import get_settings
@@ -80,8 +81,34 @@ def answer_question(
     corpus_path: FsPath | None = None,
     relation_map: RelationMap | None = None,
     evidence_units: list | None = None,
+    use_fallback: bool = True,
+    use_planner: bool = False,
+    planner_pool: object | None = None,
 ) -> Answer:
-    """Answer one question deterministically, or say precisely why not."""
+    """Answer one question, or say precisely why not.
+
+    Three routing tiers, tried in order, each running only if the previous one
+    declined: four deterministic templates (ADR-017), deterministic cue
+    matching (ADR-019), then an LLM that proposes a relation chain which is
+    validated against the graph and walked deterministically (ADR-020).
+
+    Args:
+        use_fallback: Set False to run the four templates alone. Exists so
+            ADR-019's templates-only column stays reproducible now that the
+            fallback tier ships inside this function - an ADR that tells a
+            reader to run a command must keep producing the number it quotes.
+        use_planner: **Defaults to False.** The two deterministic tiers are the
+            product; the LLM tier is opted into, never out of. That is
+            CLAUDE.md's "deterministic-first, an LLM is a fallback" stated as a
+            default rather than as a comment, and it has two concrete
+            consequences: no test and no eval sweep can silently spend daily
+            quota or depend on a model being reachable, and a measured number
+            is reproducible by construction. `src/ui/server.py` and the CLI
+            opt in; the harness does not.
+        planner_pool: Injected client for tests; built from
+            `OPENROUTER_API_KEY` when omitted, and skipped entirely if that key
+            is absent.
+    """
     resolver = resolver or EntityResolver(graph)
     gazetteer = gazetteer if gazetteer is not None else build_gazetteer(graph, resolver)
     corpus_path = corpus_path or get_settings().require_corpus()
@@ -90,9 +117,18 @@ def answer_question(
     routed = route(question, graph, resolver, gazetteer)
 
     if isinstance(routed, RouteMiss):
-        fallback = _fallback_answer(question, graph, relation_map)
-        if fallback is not None:
-            return fallback
+        # Tier 2: deterministic cue routing. Tier 3: an LLM plan, validated
+        # then walked deterministically. Each runs only when the one before it
+        # declined, and each declines rather than guessing - so a question none
+        # of them can route still ends at the template stage's honest miss.
+        if use_fallback:
+            fallback = _fallback_answer(question, graph, relation_map)
+            if fallback is not None:
+                return fallback
+        if use_planner:
+            planned = _planned_answer(question, graph, relation_map, planner_pool)
+            if planned is not None:
+                return planned
         return _unrouted(question, routed, resolver, evidence_units)
 
     paths = walk_relations(graph, routed.start_key, list(routed.chain))
@@ -200,6 +236,55 @@ def _fallback_answer(question: str, graph: Graph, relation_map: RelationMap) -> 
             f"relation(s) {', '.join(route_result.cued) or 'n/a'}. This tier is "
             "measured at lower precision than template routing (ADR-019) - "
             "check the evidence trail."
+        ),
+    )
+
+
+def _planned_answer(
+    question: str, graph: Graph, relation_map: RelationMap, pool: object | None
+) -> Answer | None:
+    """Third tier: an LLM plan, validated, then walked deterministically.
+
+    Returns None whenever the planner declines - no API key, an exhausted
+    rotation, a rejected plan, or a valid plan that reaches nothing. All four
+    leave the caller reporting the deterministic tiers' own result, because a
+    model failing to help is not new information about the corpus.
+
+    Nothing the model said reaches the answer. It chose which chain to walk;
+    `walk_relations` walked it and the evidence is the graph's.
+    """
+    outcome = plan_and_walk(question, graph, relation_map, pool=pool)
+    if not outcome.answered or outcome.plan is None:
+        return None
+
+    ends = {p.end for p in outcome.paths}
+    status = (
+        EvidenceStatus.PLANNED_AMBIGUOUS
+        if len(ends) > 1
+        else EvidenceStatus.PLANNED_SUFFICIENT
+    )
+    values = tuple(
+        dict.fromkeys(
+            graph.nodes[p.end].name if p.end in graph.nodes else p.end
+            for p in outcome.paths
+        )
+    )
+    return Answer(
+        question=question,
+        status=status,
+        values=values,
+        template="llm_plan",
+        chain=outcome.plan.relations,
+        start_key=outcome.plan.start_key,
+        paths=outcome.paths,
+        documents=tuple(dict.fromkeys(d for p in outcome.paths for d in p.documents)),
+        note=(
+            "No deterministic tier matched. A model proposed the chain "
+            f"{' -> '.join(outcome.plan.relations)} from "
+            f"{graph.nodes[outcome.plan.start_key].name}"
+            f"{f' (model: {outcome.model})' if outcome.model else ''}; every name in it "
+            "was checked against the graph before traversal, and the evidence "
+            "below is the graph's, not the model's."
         ),
     )
 

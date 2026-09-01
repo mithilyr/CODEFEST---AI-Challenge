@@ -82,6 +82,14 @@ STATUS_GLOSS: dict[str, str] = {
         "Fallback routing reached more than one endpoint and could not "
         "separate them from the question's wording. Every candidate is shown "
         "rather than one being picked.",
+    EvidenceStatus.PLANNED_SUFFICIENT.value:
+        "No deterministic tier matched, so a model proposed which relations to "
+        "follow. Every name in that plan was checked against the graph before "
+        "anything was traversed, and the evidence below is the graph's, not "
+        "the model's - but the choice of route was not deterministic (ADR-020).",
+    EvidenceStatus.PLANNED_AMBIGUOUS.value:
+        "A model-proposed route reached more than one endpoint. All are shown; "
+        "none was picked.",
 }
 
 #: Shown beside a hop so a reader knows what the number means without

@@ -63,6 +63,15 @@ class EvidenceStatus(str, Enum):
     #: does have fourteen valid answers.
     FALLBACK_AMBIGUOUS = "fallback_ambiguous"
 
+    #: Routed by `src/query/planner.py` - a model proposed the relation chain,
+    #: `validate_plan` checked every name in it against the graph, and
+    #: `walk_relations` walked it. The evidence is still the graph's; only the
+    #: choice of which chain to walk came from a model. Kept distinct because a
+    #: reader is entitled to know that, and because CLAUDE.md requires every
+    #: LLM fallback to be countable.
+    PLANNED_SUFFICIENT = "planned_sufficient"
+    PLANNED_AMBIGUOUS = "planned_ambiguous"
+
     @property
     def is_answerable(self) -> bool:
         return self in {
@@ -70,20 +79,42 @@ class EvidenceStatus(str, Enum):
             EvidenceStatus.CONFLICTING_EVIDENCE,
             EvidenceStatus.FALLBACK_SUFFICIENT,
             EvidenceStatus.FALLBACK_AMBIGUOUS,
+            EvidenceStatus.PLANNED_SUFFICIENT,
+            EvidenceStatus.PLANNED_AMBIGUOUS,
         }
 
     @property
     def is_fallback(self) -> bool:
-        """True when the answer came from the second routing tier.
+        """True when the answer did not come from the template tier.
 
         Callers that present an answer should surface this - see
         `src/ui/view.py`, which labels it rather than rendering it identically
         to a template-routed answer.
         """
-        return self in {
+        return self.routing_tier not in (None, "template")
+
+    @property
+    def routing_tier(self) -> str | None:
+        """Which tier produced this, or None if nothing was routed.
+
+        The three tiers have measured precision of 91%, 40% and (unmeasured,
+        pending a key) respectively. They are never collapsed into one status,
+        because that would let the weaker ones borrow the strongest one's
+        credibility.
+        """
+        if self in (EvidenceStatus.SUFFICIENT, EvidenceStatus.CONFLICTING_EVIDENCE):
+            return "template"
+        if self in (
             EvidenceStatus.FALLBACK_SUFFICIENT,
             EvidenceStatus.FALLBACK_AMBIGUOUS,
-        }
+        ):
+            return "cue_fallback"
+        if self in (
+            EvidenceStatus.PLANNED_SUFFICIENT,
+            EvidenceStatus.PLANNED_AMBIGUOUS,
+        ):
+            return "llm_plan"
+        return None
 
 
 def resolution_status(resolution) -> EvidenceStatus | None:

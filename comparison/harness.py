@@ -134,7 +134,7 @@ def _paths_to_outcome(
 # --------------------------------------------------------------------------
 
 
-def run_arm_a(question: str, ctx: "Context") -> Outcome:
+def run_arm_a(question: str, ctx: "Context", *, use_fallback: bool = False) -> Outcome:
     answer = answer_question(
         question,
         ctx.graph,
@@ -142,6 +142,11 @@ def run_arm_a(question: str, ctx: "Context") -> Outcome:
         gazetteer=ctx.gazetteer,
         corpus_path=ctx.corpus,
         relation_map=ctx.relation_map,
+        use_fallback=use_fallback,
+        # Deterministic only. A comparison number that silently depends on a
+        # model being reachable is not reproducible, and this harness exists to
+        # produce reproducible numbers.
+        use_planner=False,
     )
     routes = tuple(
         dict.fromkeys(tuple(e.relation for e in p.edges) for p in answer.paths)
@@ -456,10 +461,15 @@ def main(argv: list[str] | None = None) -> None:
     ctx = build_context()
     questions = json.loads(FsPath(args.set).read_text(encoding="utf-8"))["questions"]
 
-    rows_a, rows_b = [], []
+    # Three arms, not two. Arm A is the four templates ALONE - the fallback
+    # tier now ships inside `answer_question`, so reproducing ADR-019's
+    # templates-only column requires switching it off explicitly. Arm C is the
+    # system as it actually ships.
+    rows_a, rows_b, rows_c = [], [], []
     for q in questions:
-        rows_a.append(score(q, run_arm_a(q["question"], ctx), ctx))
+        rows_a.append(score(q, run_arm_a(q["question"], ctx, use_fallback=False), ctx))
         rows_b.append(score(q, run_arm_b(q["question"], ctx), ctx))
+        rows_c.append(score(q, run_arm_a(q["question"], ctx, use_fallback=True), ctx))
 
     outdir = FsPath(args.out)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -467,6 +477,7 @@ def main(argv: list[str] | None = None) -> None:
         "set": args.set,
         "arm_a": {"per_question": rows_a, "summary": summarise(rows_a)},
         "arm_b": {"per_question": rows_b, "summary": summarise(rows_b)},
+        "arm_c_integrated": {"per_question": rows_c, "summary": summarise(rows_c)},
         "by_group": {
             g: {
                 "arm_a": summarise([r for r in rows_a if r["group"] == g]),
@@ -479,11 +490,29 @@ def main(argv: list[str] | None = None) -> None:
         json.dumps(payload, indent=2), encoding="utf-8"
     )
 
-    print(f"{'metric':<30} {'arm A (templates)':>18} {'arm B (cues)':>14}")
-    print("-" * 64)
-    sa, sb = payload["arm_a"]["summary"], payload["arm_b"]["summary"]
-    for m in METRICS + ("would_escalate",):
-        print(f"{m:<30} {sa.get(m, 0):>18} {sb.get(m, 0):>14}   / {sa['n']}")
+    answerable = [q["rid"] for q in questions if q.get("expected_answerable", True)]
+
+    def only(rows):
+        return [r for r in rows if r["rid"] in answerable]
+
+    print(f"Answerable questions: {len(answerable)} of {len(questions)}\n")
+    print(f"{'metric':<28}{'A templates':>13}{'B cues':>9}{'C shipped':>12}")
+    print("-" * 62)
+    for metric in METRICS:
+        a = sum(1 for r in only(rows_a) if r[metric])
+        b = sum(1 for r in only(rows_b) if r[metric])
+        c = sum(1 for r in only(rows_c) if r[metric])
+        print(f"{metric:<28}{a:>13}{b:>9}{c:>12}")
+
+    def refusals(rows):
+        return sum(
+            1 for r in rows if r["rid"] not in answerable and r["answer_correct"]
+        )
+
+    print(
+        f"\n{'honest refusal (of 6)':<28}"
+        f"{refusals(rows_a):>13}{refusals(rows_b):>9}{refusals(rows_c):>12}"
+    )
     print(f"\nwrote {outdir / 'router_comparison.json'}")
 
 

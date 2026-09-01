@@ -29,7 +29,9 @@ from src.graph.schema import Graph
 from src.query.engine import answer_question
 from src.query.resolve import EntityResolver
 from src.query.route import build_gazetteer
-from src.ui.render import page_answer, page_error, page_index
+from src.query.synthesis import synthesise
+from src.ui.graphview import layout, legend_html, render_svg
+from src.ui.render import page_answer, page_error, page_graph, page_index
 from src.ui.view import build_view
 
 
@@ -43,10 +45,33 @@ class Engine:
     itself when they are not passed.
     """
 
-    def __init__(self, graph: Graph | None = None) -> None:
+    def __init__(
+        self,
+        graph: Graph | None = None,
+        *,
+        use_planner: bool = False,
+        use_model_phrasing: bool = False,
+    ) -> None:
         self.graph = graph if graph is not None else build_graph()
         self.resolver = EntityResolver(self.graph)
         self.gazetteer = build_gazetteer(self.graph, self.resolver)
+        #: Both default OFF, matching `answer_question`'s own default. The demo
+        #: is deterministic unless someone asks for otherwise, so an unattended
+        #: run cannot spend daily quota and a cold network cannot break it.
+        #: `--with-model` turns both on.
+        self.use_planner = use_planner
+        self.use_model_phrasing = use_model_phrasing
+        self._svg: str | None = None
+
+    def graph_svg(self) -> str:
+        """Render the graph once and hold it.
+
+        The layout costs ~0.8s and is deterministic, so recomputing it per
+        request would spend time to produce a byte-identical result.
+        """
+        if self._svg is None:
+            self._svg = render_svg(self.graph, layout(self.graph))
+        return self._svg
 
     def ask(self, question: str) -> dict:
         answer = answer_question(
@@ -54,8 +79,19 @@ class Engine:
             self.graph,
             resolver=self.resolver,
             gazetteer=self.gazetteer,
+            use_planner=self.use_planner,
         )
-        return build_view(answer, self.graph)
+        # Phrasing is additive and never replaces the evidence trail - the page
+        # renders both, so a viewer can always check the sentence against the
+        # hops that produced it.
+        synthesis = synthesise(
+            answer, self.graph, use_model=self.use_model_phrasing
+        )
+        view = build_view(answer, self.graph)
+        view["prose"] = synthesis.text
+        view["phrasing"] = synthesis.phrasing
+        view["phrasing_model"] = synthesis.model
+        return view
 
 
 def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
@@ -74,6 +110,16 @@ def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
             parsed = urlparse(self.path)
             if parsed.path == "/":
                 self._send(page_index())
+                return
+            if parsed.path == "/graph":
+                self._send(
+                    page_graph(
+                        engine.graph_svg(),
+                        legend_html(),
+                        len(engine.graph.nodes),
+                        len(engine.graph.edges),
+                    )
+                )
                 return
             if parsed.path != "/ask":
                 self._send(page_error(f"No such page: {parsed.path}"), status=404)
@@ -99,10 +145,17 @@ def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
     return Handler
 
 
-def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
+def serve(
+    host: str = "127.0.0.1", port: int = 8000, *, with_model: bool = False
+) -> None:
     print("building the graph ...")
-    engine = Engine()
+    engine = Engine(use_planner=with_model, use_model_phrasing=with_model)
     print(f"  {len(engine.graph.nodes)} entities, {len(engine.graph.edges)} edges")
+    print(
+        "  model tiers: ON (planner + phrasing)"
+        if with_model
+        else "  model tiers: off - fully deterministic (pass --with-model to enable)"
+    )
     httpd = ThreadingHTTPServer((host, port), make_handler(engine))
     print(f"\n  Ashen Era assistant on http://{host}:{port}\n  Ctrl-C to stop\n")
     try:
@@ -117,8 +170,17 @@ def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Serve the Ashen Era demo UI.")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument(
+        "--with-model",
+        action="store_true",
+        help=(
+            "enable the LLM planner tier and model phrasing. Off by default so "
+            "an unattended demo cannot spend daily quota or break on a cold "
+            "network; needs OPENROUTER_API_KEY."
+        ),
+    )
     args = parser.parse_args(argv)
-    serve(args.host, args.port)
+    serve(args.host, args.port, with_model=args.with_model)
 
 
 if __name__ == "__main__":
