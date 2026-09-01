@@ -339,6 +339,8 @@ def score(q: dict, outcome: Outcome, ctx: Context) -> dict:
     routed = outcome.status in (
         "answered", "any_of", EvidenceStatus.SUFFICIENT.value,
         EvidenceStatus.CONFLICTING_EVIDENCE.value,
+        EvidenceStatus.FALLBACK_SUFFICIENT.value,
+        EvidenceStatus.FALLBACK_AMBIGUOUS.value,
     )
 
     # Scored with the project's own `eval/scoring.py`, not a bespoke

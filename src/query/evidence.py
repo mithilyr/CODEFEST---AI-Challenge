@@ -47,9 +47,43 @@ class EvidenceStatus(str, Enum):
     ABSTENTION = "abstention"
     CONFLICTING_EVIDENCE = "conflicting_evidence"
 
+    #: Answered by `src/query/fallback.py` after no template matched. Kept
+    #: distinct from SUFFICIENT on purpose. Measured (ADR-019), the two tiers
+    #: have very different precision: a template that fires is right 91% of the
+    #: time; a cue-routed answer is right 40% of the time. Collapsing them into
+    #: one status would let the weaker tier borrow the stronger one's
+    #: credibility, and the project's whole claim is that an answer carries how
+    #: it was reached. The dominant fallback failure is not a miss but a
+    #: confident wrong answer - it stops one hop short and returns the waypoint
+    #: with a real evidence trail attached - which is exactly why a reader has
+    #: to be able to see which tier produced it.
+    FALLBACK_SUFFICIENT = "fallback_sufficient"
+    #: Fallback routing reached more than one end node and the tie-break could
+    #: not separate them. Reported, not resolved by picking: `1b_006` really
+    #: does have fourteen valid answers.
+    FALLBACK_AMBIGUOUS = "fallback_ambiguous"
+
     @property
     def is_answerable(self) -> bool:
-        return self in {EvidenceStatus.SUFFICIENT, EvidenceStatus.CONFLICTING_EVIDENCE}
+        return self in {
+            EvidenceStatus.SUFFICIENT,
+            EvidenceStatus.CONFLICTING_EVIDENCE,
+            EvidenceStatus.FALLBACK_SUFFICIENT,
+            EvidenceStatus.FALLBACK_AMBIGUOUS,
+        }
+
+    @property
+    def is_fallback(self) -> bool:
+        """True when the answer came from the second routing tier.
+
+        Callers that present an answer should surface this - see
+        `src/ui/view.py`, which labels it rather than rendering it identically
+        to a template-routed answer.
+        """
+        return self in {
+            EvidenceStatus.FALLBACK_SUFFICIENT,
+            EvidenceStatus.FALLBACK_AMBIGUOUS,
+        }
 
 
 def resolution_status(resolution) -> EvidenceStatus | None:

@@ -27,6 +27,7 @@ from src.query.evidence import (
     mentioned_in_corpus,
     resolution_status,
 )
+from src.query.fallback import route_by_cues
 from src.query.resolve import EntityResolver, Resolution
 from src.query.route import RouteMiss, build_gazetteer, route
 from src.settings import get_settings
@@ -89,6 +90,9 @@ def answer_question(
     routed = route(question, graph, resolver, gazetteer)
 
     if isinstance(routed, RouteMiss):
+        fallback = _fallback_answer(question, graph, relation_map)
+        if fallback is not None:
+            return fallback
         return _unrouted(question, routed, resolver, evidence_units)
 
     paths = walk_relations(graph, routed.start_key, list(routed.chain))
@@ -146,6 +150,57 @@ def answer_question(
         question=question, status=status, values=values, template=routed.template,
         chain=routed.chain, start_key=routed.start_key, goal_key=routed.goal_key,
         paths=tuple(paths), documents=documents, conflict=conflict,
+    )
+
+
+def _fallback_answer(question: str, graph: Graph, relation_map: RelationMap) -> Answer | None:
+    """Second routing tier: cue-based, run only after a template miss.
+
+    Returns None whenever the fallback declines, so the caller reports the
+    template stage's own miss rather than a weaker-looking failure invented
+    here. Measured (ADR-019): this adds 7 correct answers and 13
+    complete-evidence retrievals over templates alone, across 49 answerable
+    questions, and regresses none of them - templates run first, so every
+    answer they already produced is untouched.
+
+    The status is deliberately not SUFFICIENT. See
+    `EvidenceStatus.FALLBACK_SUFFICIENT` for why the two tiers must stay
+    distinguishable to a reader.
+    """
+    route_result = route_by_cues(graph, question, relation_map)
+    if not route_result.answered:
+        return None
+
+    status = (
+        EvidenceStatus.FALLBACK_AMBIGUOUS
+        if route_result.ambiguous
+        else EvidenceStatus.FALLBACK_SUFFICIENT
+    )
+    values = tuple(
+        dict.fromkeys(
+            graph.nodes[p.end].name if p.end in graph.nodes else p.end
+            for p in route_result.paths
+        )
+    )
+    documents = tuple(
+        dict.fromkeys(d for p in route_result.paths for d in p.documents)
+    )
+    first = route_result.paths[0]
+    return Answer(
+        question=question,
+        status=status,
+        values=values,
+        template="cue_fallback",
+        chain=tuple(e.relation for e in first.edges),
+        start_key=route_result.start.key if route_result.start else None,
+        paths=route_result.paths,
+        documents=documents,
+        note=(
+            "No template matched. Answered by cue-based fallback routing on "
+            f"relation(s) {', '.join(route_result.cued) or 'n/a'}. This tier is "
+            "measured at lower precision than template routing (ADR-019) - "
+            "check the evidence trail."
+        ),
     )
 
 

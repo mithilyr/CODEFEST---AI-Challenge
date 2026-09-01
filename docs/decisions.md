@@ -1498,3 +1498,123 @@ not settle itself.
 
 *Status: accepted, validated by 19 tests and the four-question render above.*
 
+
+---
+
+## ADR-019 — Cue-based fallback routing, adopted from a measured comparison, not from a sister repo's say-so
+
+**Context**
+
+ADR-017 built four templates and set an explicit gate: measure routing
+robustness on differently-worded questions before building anything more
+general. A teammate's parallel repo (`github.com/YasiruRF/delphi`) had
+meanwhile adopted our architecture wholesale and built a template-free,
+cue-based router on top of it. That made the gate answerable by measurement
+rather than by preference, and made it necessary — adopting their design
+because it exists, or refusing it because it is theirs, would both be
+decisions made without a number.
+
+**What we measured**
+
+A 55-question set was authored by a party with no access to either router, to
+`src/query/route.py`/`engine.py`/`resolve.py`, or to `config/relations.yaml`.
+That last file was withheld specifically because it is the cue router's own
+vocabulary source: an author who read it would have written questions in its
+words and handed that router the result. The set was frozen, with its sha256
+recorded in the file, before either router ran against it
+(`eval/robustness/routing_robustness_v1.json`). It holds 28 paraphrases of our
+dev questions across four axes, 21 novel multi-hop questions, and 6 that should
+be refused.
+
+Only path *selection* differed between arms. Same graph, same `find_paths`,
+same corpus, same scorer (`eval/scoring.py`, negation guard included). Both
+arms ran with LLM escalation disabled, so the comparison measures routing and
+not "has a model".
+
+```
+                     routed   correct   complete evidence   precision
+four templates        11/49       10           11              91%
+cue-based             30/49       12           20              40%
+templates, then cues  32/49       17           24              53%
+```
+
+**The number that closed ADR-017's gate**
+
+The four templates match no route shape on **35 of 49** answerable questions.
+On the 21 *novel* questions they match **one**. That is not a defect — they do
+exactly what ADR-017 said they would — but it settles the question the gate was
+about: our 7/7 on the dev questions measures fit, not routing capability. A
+template set fitted to seven questions does not generalise past re-wordings of
+them, and now we have the number rather than the suspicion.
+
+**Decision**
+
+Add cue-based routing as a **second tier**, never a replacement
+(`src/query/fallback.py`). Templates run first, so every answer they already
+produced is unchanged and nothing regresses; the fallback only ever sees a
+`RouteMiss`. Measured on the integrated engine: **17 correct and 26 complete
+evidence, against 10 and 11 for templates alone.**
+
+Its answers get their own statuses — `FALLBACK_SUFFICIENT` and
+`FALLBACK_AMBIGUOUS` — rather than reusing `SUFFICIENT`. The two tiers measure
+91% and 40% precision, and collapsing them would let the weaker one borrow the
+stronger one's credibility. `EvidenceStatus.is_fallback` exists so the UI can
+say which tier answered, and `src/ui/view.py` does.
+
+**What we took, and what we refused**
+
+The sister router carries four guards. Ablated individually against the frozen
+set (`python -m comparison.ablations`):
+
+| guard | effect when removed | decision |
+|---|---|---|
+| coverage-over-length | correct 12 → **2** | ported |
+| irregular verbs | correct 12 → 9 | ported |
+| consecutive-repeat | correct 12 → 12 | **not ported** |
+| tie-break stopwords | +1 correct, −1 complete evidence | kept, flagged as below our resolution |
+
+Coverage-over-length carries the router almost entirely. Consecutive-repeat
+prevention was added against a measured failure in *their* stack that does not
+reproduce in ours; a guard with no measured advantage here is code we could not
+justify to a judge, so it stayed out. We also did not import their folder
+structure, their ADR numbering, their conflict detector, their model list, or
+Flask and Docker.
+
+One defect in their implementation was fixed rather than copied: their stemmer
+folds `ruled`/`rules`/`ruling` to `rul` but leaves the base form `rule` alone,
+so "falls under whose rule?" never cues `ruled_by` while "which power rules..."
+does. Worth one question, measured.
+
+**Four harness bugs, and why they are recorded here**
+
+The first numbers this comparison produced were wrong, and all four causes were
+ours (F-024). The worst used our paragraph-scoped `find_denial` as a per-edge
+filter, which excluded the Iron-Ring Cartel's *uncontested* Leaden Accord edge
+and turned `1b_007` and `1b_022` into false `not_found`s for the sister arm —
+a result that, published, would have understated a teammate's work by two
+questions. The calibration that caught it: with all four fixed, arm A
+reproduces ADR-017's 7/7 exactly. A comparison harness that cannot reproduce
+the result you already know is not measuring what you think it is.
+
+**Trade-offs, stated plainly**
+
+Precision falls from 91% to 57% and honest refusals from 6/6 to 5/6. We are
+trading abstentions for a mix of right and wrong answers, and the fallback's
+dominant failure is not a miss but a **confident wrong answer**: it stops one
+hop short and returns the waypoint — "The Cinder-Wrought Aegis" where the
+answer is "Gloamreach" — with a real evidence trail attached. That is worse
+than a miss for a project whose claim is that answers are checkable. The
+separate status, the UI label, and the tests that pin the declining behaviour
+are what we are relying on to keep that trade honest. If it stops being
+honest, the fallback tier comes out.
+
+**What would overturn this**
+
+49 answerable questions is small, and differences of one or two (the stemming
+fix, tie-break stopwords) are not resolvable at that size. Group A is
+paraphrases of questions the templates were fitted to, which flatters arm A
+rather than the fallback. A larger, differently-authored set could move any of
+these numbers.
+
+*Status: accepted, validated by 13 new tests (216 total) and reproducible via
+`python -m comparison.harness` and `python -m comparison.ablations`.*
