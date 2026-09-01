@@ -33,12 +33,17 @@ are done: `origin` is configured
       A cue-based fallback tier now runs on a template miss: 17 correct /
       26 complete evidence vs 10 / 11 for templates alone. Reproduce with
       `python -m comparison.harness` and `python -m comparison.ablations`.
-- [ ] **Next: decide whether an LLM planner is warranted.** ADR-017's gate is
-      cleared, but the deterministic failure rate is now known and is the
-      input to that decision: 19/49 answerable questions still reach no route
-      at all, and the fallback tier answers at 40% precision. A planner, if
-      added, emits a constrained plan that deterministic traversal validates
-      and walks — it never answers directly.
+- [x] **Decide whether an LLM planner is warranted.** Done 2026-09-01
+      (ADR-020). 19/49 answerable questions reached no route, which cleared
+      the gate. Built as a third tier emitting a validated plan, never an
+      answer, off by default. F-025 records the live fabrication it produced
+      before the grounding guard existed.
+- [ ] **Measure the planner tier.** It is currently unmeasured on the frozen
+      set — running it there spends daily quota and gives a number that moves
+      with OpenRouter's free lineup. Decide whether to spend one measured
+      sweep (and cache it) before the report, or to report it as unmeasured.
+- [ ] Re-verify the OpenRouter model rotations before the demo:
+      `python -m src.clients.openrouter --verify`.
 - [ ] Compare the sister repo's conflict detector against `src/query/conflict.py`
       (Phase 2 of the comparison; not yet measured — F-024 showed ours
       over-fires when used as a general per-edge filter).

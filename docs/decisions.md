@@ -1618,3 +1618,118 @@ these numbers.
 
 *Status: accepted, validated by 13 new tests (216 total) and reproducible via
 `python -m comparison.harness` and `python -m comparison.ablations`.*
+
+---
+
+## ADR-020 — OpenRouter as a second provider, a plan-emitting third routing tier, and phrasing with counted provenance
+
+**Context**
+
+ADR-019 left two numbers on the table. After both deterministic tiers run, 19
+of 49 answerable questions (39%) still reach no route at all, and the system
+had no way to turn a verified chain into a sentence. The written plan for this
+work set an explicit gate: introduce a planner *only* if neither deterministic
+approach handles novel question structures adequately, and then only as a
+fallback that emits a constrained plan — never as the primary reasoning engine,
+and never answering directly.
+
+39% is inadequate. The gate is cleared, and this ADR records what was built
+against it.
+
+**Decision 1 — a second provider, with a verified model list**
+
+`src/clients/openrouter.py`. Gemini's ~20 requests/day/model is survivable for
+OCR, which runs once and is cached forever, and not survivable for anything
+invoked per question. Gemini stays the OCR client, untouched.
+
+The sister repo's model list was *not* inherited. Checked live against
+`https://openrouter.ai/api/v1/models` on 2026-09-01: 420 models, 18 free-tier,
+and all four of their ids still exist. Re-verify with
+`python -m src.clients.openrouter --verify`, which fails loudly if a
+configured model has disappeared.
+
+That check earned a correction their version does not have: **only 4 of the 18
+free models advertise `structured_outputs`.** A planner whose output is not
+schema-checkable is a planner we would have to trust, so the rotations are
+split — `PHRASING_MODELS` (any free model) and `PLANNER_MODELS` (schema-capable
+only).
+
+Both of the sister repo's live-found bugs are kept as regression tests rather
+than rediscovered: OpenRouter answering HTTP 200 with an error body, and a
+host with no outbound route raising an `OSError` that `retry.py` does not
+classify as retryable. Each crashed a live request in their stack.
+
+**Decision 2 — the planner emits a plan, never an answer**
+
+`src/query/planner.py`. The model receives the entity and relation
+vocabularies and the question, and returns `{start_entity, relations,
+answer_type}` under a strict JSON schema. It never sees the corpus, never
+receives evidence, and has no tools.
+
+    question -> [template] -> [cue fallback] -> LLM plan -> VALIDATE -> walk_relations
+
+`validate_plan` is the entire safety boundary and rejects rather than repairs.
+
+**Decision 3 — deterministic by default**
+
+`answer_question(use_planner=...)` defaults to **False**. Deterministic-first
+is stated as a default rather than as a comment, with two concrete
+consequences: no test and no eval sweep can silently spend daily quota or
+depend on a model being reachable, and every measured number stays
+reproducible. `src/ui/server.py --with-model` opts in.
+
+This was not the original design. It became obvious when the test suite went
+from 200s to over 420s because an API key had appeared in `.env` and every
+test hitting a routing miss started making live calls (F-025).
+
+**Decision 4 — phrasing, with provenance as a field**
+
+`src/query/synthesis.py` turns a verified chain into prose.
+`Synthesis.phrasing` records `model | template | none`, so the report can state
+what fraction of demo answers needed a model — and so the honest answer to
+"did the AI write this?" is a field, not a claim. The template path is the
+default, uses identical evidence, and is what runs with no key or no network.
+The evidence trail is always rendered alongside the prose, never replaced by
+it.
+
+**Decision 5 — the graph visualiser is ours, not vis-network**
+
+`src/ui/graphview.py` draws all 117 entities and 267 edges as one static SVG:
+~60 lines of Fruchterman-Reingold, seeded from node keys so the drawing is
+byte-identical every run. No CDN, no JavaScript, no dependency.
+
+The sister repo's vis-network version adds no *Python* dependency, which is how
+it would pass a rule like ours — but it needs the network at demo time, which
+CLAUDE.md's "never record the demo against a cold cache" exists to prevent, and
+nobody here could modify it under questioning.
+
+Tuning it was itself a measurement: the textbook `k = sqrt(area/n)` pressed 42
+of 117 nodes against the boundary clamp with overlapping labels. Sweeping the
+scale (0.35/0.5/0.65/0.8) gave 0.5 as both least-clamped and least-crowded — 2
+nodes on the boundary, closest pair 17.7px. A regression test pins it.
+
+**What we did NOT build**
+
+No Docker, and no launcher. The written plan says to consider them only after
+the core evaluation is stable and not to add them merely because the sister
+repo has them. There is no measured problem they solve for a team that runs
+`python -m src.ui.server`, and under this project's own critical-evaluation
+rule — *what measured failure does this fix?* — the answer is none. Revisit if
+a judge cannot start the app.
+
+**Trade-offs**
+
+The planner is the first component where model output influences what gets
+traversed. `validate_plan` bounds that, but it bounds *well-formedness*, and
+F-025 records the day it turned out that was not enough. The mitigations are a
+grounding check, an explicit decline channel, a distinct `EvidenceStatus`, and
+a UI that labels which tier answered.
+
+The planner is also unmeasured on the frozen set. Running it there would spend
+daily quota and produce a number that changes with the provider's free lineup;
+it is deliberately excluded, and the routing numbers in ADR-019 remain
+deterministic-only. That means the 39% figure this ADR is justified by is a
+measurement of what the planner is *for*, not of how well it does it.
+
+*Status: accepted. 269 tests, 66 of them new. Model list re-verifiable with
+`python -m src.clients.openrouter --verify`.*

@@ -905,3 +905,68 @@ rather than reimplementing scoring. Each fix is documented at its site in
 penalised the other. None was deliberate, and that is the point: when you build
 the instrument that measures your work against someone else's, the errors do not
 distribute randomly. The calibration step is not a formality.
+
+---
+
+## F-025 — A validated plan that was well-formed, relevant to nothing, and confidently wrong
+
+**What we tried.** An LLM planner tier (ADR-020) that proposes a relation chain
+which `validate_plan` checks against the graph before anything is traversed.
+The validation rule was: the start entity must exist, every relation must be
+defined in `config/relations.yaml`, and the chain must be within the hop bound.
+
+**What killed it.** Asked *"What color is the sky in the Ashen Era?"* — a
+question the corpus cannot answer at all — a live free model returned:
+
+```json
+{"start_entity": "The Ashen Vanguard", "relations": ["in_region"],
+ "answer_type": "plan"}
+```
+
+It picked **The Ashen Vanguard** because the question contains the word
+"Ashen". Validation accepted it: that faction is real and `in_region` is real.
+The engine walked it and returned `planned_sufficient` with a genuine evidence
+trail attached — a confident, well-cited answer to a question nobody asked,
+which is the precise failure this whole project exists to prevent. The second
+nonsense probe, *"What did the Gravemaw Wyrm eat for breakfast?"*, also
+returned a confident answer.
+
+**The lesson.** *Well-formedness is not relevance.* Every check we had asked
+"is this plan constructible?" and none asked "is this plan about the question?"
+A schema, a name check and a hop bound all passed a plan that shared a single
+word with the prompt. `answer_type: "plan"` in the same response is the tell —
+the model was not reasoning about the corpus at all, and nothing in the
+pipeline noticed.
+
+**What we do instead.** Three guards, each with its own regression test:
+
+1. **Grounding** (`planner.is_grounded`). Every significant token of the
+   entity's name must appear in the question. "Ashen Vanguard" needs both
+   "ashen" and "vanguard"; sharing one word is not naming it. Deliberately
+   looser than `fallback.find_mentions`' contiguous-run rule, because handling
+   rephrasing is the planner's whole purpose.
+2. **An explicit decline channel.** The prompt now tells the model to return an
+   empty plan when no relation can express the question — naming colour, diet,
+   appearance, feelings and motive as examples — and says plainly that
+   declining is correct. `validate_plan` reports an empty relation list as a
+   decline, not an error.
+3. **A closed answer-type vocabulary.** An unrecognised word becomes "no type
+   hint" rather than a filter.
+
+Verified after the fix: both nonsense questions return `no_template_match`, and
+*"Tell me where the Gravemaw Wyrm sleeps at night"* still routes correctly to
+Marrowwell Abbey.
+
+**A second failure found the same hour.** The suite went from ~200s to over
+420s with no test added. Cause: an `OPENROUTER_API_KEY` had appeared in `.env`,
+and every test whose question reached a routing miss was making live model
+calls — spending daily quota to produce results that depended on a provider
+being up. Fixed by making `use_planner` default to **False**: the LLM tier is
+opted into, never out of. Deterministic-first as a default rather than as a
+comment.
+
+**Kept, because it will recur.** Both failures are the same shape: a component
+that is correct in isolation becomes wrong once it is wired to something real.
+Neither showed up in a unit test. Both showed up within minutes of running the
+thing against the actual world — which is the same lesson the sister team wrote
+down after Docker (ADR-022 in their repo), arrived at independently here.

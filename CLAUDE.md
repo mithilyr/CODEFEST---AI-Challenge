@@ -59,10 +59,17 @@ conflict detection, none of the seven hard-coded (ADR-017). `src/ui/` renders
 that result and adds no reasoning of its own (ADR-018).
 
 **The query engine is Checkpoint 2, not a finished reasoning system.**
-Routing robustness has now been measured (ADR-019) and the four templates match
-no route shape on **35 of 49** realistic questions — on 21 *novel* ones they
-match **one**. Our 7/7 measures fit, not routing capability. A cue-based second
-tier closes part of that gap; do not quote 7/7 without the 35/49 beside it.
+Routing robustness has been measured (ADR-019): the four templates match no
+route shape on **35 of 49** realistic questions — on 21 *novel* ones they match
+**one**. Our 7/7 measures fit, not routing capability. Do not quote 7/7 without
+the 35/49 beside it.
+
+Three tiers now exist (templates → cue fallback → LLM plan), each declining
+rather than guessing. **The LLM tiers are off by default** — deterministic-first
+is a default, not a comment, so no test or eval sweep can spend quota or depend
+on a model being reachable (F-025). The planner is deliberately *unmeasured* on
+the frozen set: running it there would spend daily quota and produce a number
+that moves with the provider's free lineup.
 
 | Component | State |
 |---|---|
@@ -73,7 +80,10 @@ tier closes part of that gap; do not quote 7/7 without the 35/49 beside it.
 | `eval/answer_key.json` | Drafted, **not two-person verified** — measured `verification.status`: `single_review` ×6, `draft` ×2, `unresolved` ×1, and all seven reviewed entries name the same single reviewer, which is F-015 exactly. (There is no `verified_by` field; this row named one until 30 Aug.) Precision/semantic review is what is outstanding; recall is independently corroborated, `eval/completeness.py` |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016) |
-| `src/query/` | Two routing tiers. Templates: **7/7 dev 1B** (ADR-017). Cue-based fallback on a template miss: **17 correct / 26 complete evidence** vs templates-alone 10 / 11, on 49 independently authored questions (ADR-019). Fallback answers carry their own `EvidenceStatus`, measured at 40% precision against templates' 91% |
+| `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **17 correct / 26 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default** |
+| `src/clients/openrouter.py` | Done — rotation, cache, structured output, timeout, retry classification. Model list verified live 2026-09-01, re-checkable with `--verify` |
+| `src/query/synthesis.py` | Done — prose from a verified chain, `phrasing: model \| template \| none`. Template path needs no key |
+| `src/ui/graphview.py` | Done — all 117 entities as one static SVG, no CDN, no JS, deterministic (ADR-020) |
 | `src/ui/` | Done (first version) — stdlib `http.server`, no new dependency; renders all nine demo surfaces; thinness enforced by three architectural tests (ADR-018) |
 
 ### Checkpoint 1 results (reproducible, not just measured)
@@ -185,8 +195,11 @@ python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_
 python -m src.graph.build          # build the graph, print coverage
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 216 tests
+python -m pytest                   # 277 tests
 python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
+                                   #   /graph shows the whole graph as one SVG
+python -m src.ui.server --with-model   # enable the LLM planner + phrasing
+python -m src.clients.openrouter --verify  # are the model rotations still live?
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.completeness        # independent answer-key completeness check

@@ -210,3 +210,43 @@ deterministic layer needs broader *reach* than four templates and stricter
 
 Phase 2 (individual guard porting with regression tests) and the ADR recording this
 decision are the next steps. No code has moved into `src/`.
+
+---
+
+## Addendum, 2026-09-01 — three arms, and what shipped
+
+The harness now runs **three** arms, because the cue tier was adopted and ships
+inside `answer_question`. Reproducing arm A's templates-only column therefore
+requires switching the fallback off explicitly (`use_fallback=False`), which the
+harness does. An ADR that tells a reader to run a command has to keep producing
+the number it quotes.
+
+```
+metric                        A templates   B cues   C shipped
+route_success                          11       30          30
+entity_resolution_success              13       46          32
+answer_correct                         10       12          17
+complete_evidence                      11       20          26
+no_route_shape                         35        4          16
+unnecessary_depth                       0        8           3
+honest refusal (of 6)                   6        5           5
+```
+
+**Arm C is the shipped system** — templates first, cue fallback on a miss. It
+beats both single-tier arms on the two numbers that matter (17 correct, 26
+complete evidence) while inheriting arm B's cost: one honest refusal traded
+away, and 16 questions still matching no route shape at all.
+
+A third tier (an LLM planner, ADR-020) exists but is **off by default and not
+measured here**. Running it against this set would spend daily quota and produce
+a number that moves with OpenRouter's free-model lineup, so every figure in this
+report remains deterministic and reproducible offline. What the planner is *for*
+is the 19 answerable questions arm C still cannot route; how well it does that
+is unmeasured, and is stated as unmeasured rather than estimated.
+
+Reproduce all three:
+
+```bash
+python -m comparison.harness
+python -m comparison.ablations
+```

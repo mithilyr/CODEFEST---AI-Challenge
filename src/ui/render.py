@@ -454,6 +454,26 @@ def page_index() -> str:
     )
 
 
+def page_graph(svg: str, legend: str, node_count: int, edge_count: int) -> str:
+    """The whole graph, drawn. Surface 10.
+
+    A static SVG built by `src/ui/graphview.py` - no CDN, no JavaScript, works
+    offline and with scripting disabled. See that module for why this is not
+    vis-network.
+    """
+    body = (
+        f"<h2>The knowledge graph</h2>"
+        f"<p class='muted'>{node_count} entities, {edge_count} edges, built from "
+        f"infobox rows. Every line carries the document that asserted it - "
+        f"hover to read it.</p>"
+        f"{legend}"
+        f"<div style='border:1px solid #ddd6c8;border-radius:6px;overflow:hidden;"
+        f"background:#faf8f4'>{svg}</div>"
+        f"<p class='muted'><a href='/'>Ask a question</a></p>"
+    )
+    return _shell("The knowledge graph - Ashen Era", body)
+
+
 def page_answer(view: dict) -> str:
     """The full result page: all nine demo surfaces, in reading order."""
     body = (
