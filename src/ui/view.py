@@ -72,6 +72,16 @@ STATUS_GLOSS: dict[str, str] = {
     EvidenceStatus.CONFLICTING_EVIDENCE.value:
         "The evidence is complete but sources disagree, and the disagreement "
         "is not settled by authority tier. Both sides are shown below.",
+    EvidenceStatus.FALLBACK_SUFFICIENT.value:
+        "No template matched, so this was routed by matching the question's "
+        "words against relation vocabulary - a second, weaker tier. Measured "
+        "at 40% precision against template routing's 91% (ADR-019), and its "
+        "usual error is stopping one hop short and returning the waypoint. "
+        "Read the evidence trail before trusting this one.",
+    EvidenceStatus.FALLBACK_AMBIGUOUS.value:
+        "Fallback routing reached more than one endpoint and could not "
+        "separate them from the question's wording. Every candidate is shown "
+        "rather than one being picked.",
 }
 
 #: Shown beside a hop so a reader knows what the number means without

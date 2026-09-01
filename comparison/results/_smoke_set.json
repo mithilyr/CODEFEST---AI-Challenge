@@ -1,0 +1,136 @@
+{
+ "_about": "harness self-test: verbatim dev questions",
+ "questions": [
+  {
+   "rid": "smoke_001",
+   "group": "A_paraphrase",
+   "source": "1b_003",
+   "paraphrase_kind": null,
+   "question": "To which shadowed redoubt must one journey to examine the relic long borne by Cerys Sablewood the Ashen since 356 AS?",
+   "gold_answers": [
+    "Gloamreach"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/cerys_sablewood_the_ashen.md",
+    "wiki/the_cinder_wrought_aegis.md"
+   ],
+   "expected_answerable": true,
+   "notes": "verbatim dev question, harness self-test only"
+  },
+  {
+   "rid": "smoke_002",
+   "group": "A_paraphrase",
+   "source": "1b_005",
+   "paraphrase_kind": null,
+   "question": "Which war was won by the organization that included Isolde Mournvale as one of its members?",
+   "gold_answers": [
+    "The War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/isolde_mournvale.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "verbatim dev question, harness self-test only"
+  },
+  {
+   "rid": "smoke_003",
+   "group": "A_paraphrase",
+   "source": "1b_006",
+   "paraphrase_kind": null,
+   "question": "Which individual was a member of the faction that ultimately won the War of Drowned Light?",
+   "gold_answers": [
+    "Ignatz Fellgard",
+    "Brannoc Palefroth",
+    "Thessaly Coldwater",
+    "Lucan Hollowmere",
+    "Tamsin Greyfen",
+    "Ossric Ashgrove",
+    "Corvus Hollowmere the Pale",
+    "Isolde Mournvale",
+    "Maelis Harrowick the Pale",
+    "Morwenna Morvain",
+    "Morwenna Vosgard",
+    "Ossric Ravensmoor",
+    "Ossric Wrenfield",
+    "Ravena Stormwell"
+   ],
+   "answer_cardinality": "any_of",
+   "required_evidence": [
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "verbatim dev question, harness self-test only"
+  },
+  {
+   "rid": "smoke_004",
+   "group": "A_paraphrase",
+   "source": "1b_007",
+   "paraphrase_kind": null,
+   "question": "Which accord was ultimately won by the faction of which Ederon Fellgard is a member?",
+   "gold_answers": [
+    "The Leaden Accord"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ederon_fellgard.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "verbatim dev question, harness self-test only"
+  },
+  {
+   "rid": "smoke_005",
+   "group": "A_paraphrase",
+   "source": "1b_009",
+   "paraphrase_kind": null,
+   "question": "In what way is Halvard Crowhurst connected to the victors of the Purge of Blackport?",
+   "gold_answers": [
+    "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won."
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_purge_of_blackport.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "verbatim dev question, harness self-test only"
+  },
+  {
+   "rid": "smoke_006",
+   "group": "A_paraphrase",
+   "source": "1b_013",
+   "paraphrase_kind": null,
+   "question": "Whose dominion encompasses the lair of the Gravemaw Wyrm?",
+   "gold_answers": [
+    "The Bleeding Crown"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/gravemaw_wyrm.md",
+    "wiki/marrowwell_abbey.md"
+   ],
+   "expected_answerable": true,
+   "notes": "verbatim dev question, harness self-test only"
+  },
+  {
+   "rid": "smoke_007",
+   "group": "A_paraphrase",
+   "source": "1b_022",
+   "paraphrase_kind": null,
+   "question": "Which war did Ravena Stormwell's own faction ultimately win?",
+   "gold_answers": [
+    "The War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ravena_stormwell.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "verbatim dev question, harness self-test only"
+  }
+ ]
+}

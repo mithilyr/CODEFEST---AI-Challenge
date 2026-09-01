@@ -857,3 +857,51 @@ src.query.evidence}` - and that only `EvidenceStatus` comes from the last.
 That states the real constraint: the view cannot import the modules that
 decide things. It is both stricter and quieter than the substring test.
 
+
+---
+
+## F-024 — A comparison harness that could not reproduce the result we already had
+
+**What we tried.** Measuring our four-template router against a sister repo's
+cue-based router (ADR-019) on an independently authored question set, scoring
+route success, answer correctness, complete evidence and traversal depth for
+both arms.
+
+**What killed it, four times.** The first run reported our own engine at 6/7 on
+the dev questions, where ADR-017 records 7/7. That gap was the tell: the
+harness was wrong, not the engine. Four separate causes, all ours:
+
+1. **Per-edge conflict filtering.** We applied `src/query/conflict.py`'s
+   `check_conflict` to every edge of every candidate path. It is
+   paragraph-scoped — right for the one question our engine asks it, far too
+   broad as a general filter. `wiki/the_iron_ring_cartel.md` carries its victor
+   list close enough to its Purge-of-Blackport denial that the paragraph naming
+   The Leaden Accord also matched the denial pattern, so the Cartel's
+   *uncontested* `victor_of -> The Leaden Accord` edge was excluded. That
+   emptied the candidate set and reported `1b_007` and `1b_022` as `not_found`
+   **for the sister arm**. Published, it would have understated a teammate's
+   work by two questions on a defect of our own making.
+2. **Bespoke answer matching.** We wrote a fresh string comparison instead of
+   using `eval/scoring.py`, so it lacked the negation guard ADR-014 exists for
+   and could not score `1b_009`, whose gold answer is a prose sentence.
+3. **Direction-sensitive route comparison.** `walk_relations` deliberately does
+   not fix direction, but the scorer compared relation tuples in order, so a
+   correct answer reached from the other end counted as a wrong route.
+4. **Unnormalised relation vocabulary.** The answer key writes `victor` and
+   `has_member` where `config/relations.yaml` writes `victor_of` and
+   `member_of` — the gap the README already reports. Unnormalised, every
+   correct `victor_of` route looked like a wrong one.
+
+**The number that killed it.** Arm A at 6/7 instead of 7/7, and arm B at 2/7
+before any fix. After all four: arm A reproduces 7/7 exactly, and arm B rises
+to 3/7 on the dev questions — the remaining losses being genuine.
+
+**What we do instead.** The harness is calibrated against a result we already
+know before any new number from it is trusted, and it reuses `eval/scoring.py`
+rather than reimplementing scoring. Each fix is documented at its site in
+`comparison/harness.py` and `comparison/sister_conflicts.py`.
+
+**The lesson worth keeping.** Three of these four bugs flattered our own arm and
+penalised the other. None was deliberate, and that is the point: when you build
+the instrument that measures your work against someone else's, the errors do not
+distribute randomly. The calibration step is not a formality.

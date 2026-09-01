@@ -27,11 +27,21 @@ are done: `origin` is configured
 - [x] Build `src/ui/` — stdlib `http.server`, no new dependency, all nine
       demo surfaces rendered, thinness pinned by three architectural tests
       (ADR-018). 19 new tests, 203 total.
-- [ ] **Next: measure the query layer's weaknesses, not polish the UI.**
-      Routing robustness on re-worded questions is the first measurement —
-      template hit rate, entity resolution, evidence completeness, answer
-      correctness, `NO_TEMPLATE_MATCH` and ambiguous-resolution frequency.
-      Do not add an LLM planner before that number exists (ADR-017's gate).
+- [x] **Measure the query layer's weaknesses.** Done 2026-09-01 (ADR-019).
+      55 independently authored questions, frozen before either router ran.
+      Templates match no route shape on 35/49; on novel questions, 1/21.
+      A cue-based fallback tier now runs on a template miss: 17 correct /
+      26 complete evidence vs 10 / 11 for templates alone. Reproduce with
+      `python -m comparison.harness` and `python -m comparison.ablations`.
+- [ ] **Next: decide whether an LLM planner is warranted.** ADR-017's gate is
+      cleared, but the deterministic failure rate is now known and is the
+      input to that decision: 19/49 answerable questions still reach no route
+      at all, and the fallback tier answers at 40% precision. A planner, if
+      added, emits a constrained plan that deterministic traversal validates
+      and walks — it never answers directly.
+- [ ] Compare the sister repo's conflict detector against `src/query/conflict.py`
+      (Phase 2 of the comparison; not yet measured — F-024 showed ours
+      over-fires when used as a general per-edge filter).
 - [ ] Rotate all API keys before 8 Sep (chat-log export day) — logs are a
       mandatory deliverable judges read.
 - [ ] Export AI chat logs to `ai_usage/` as work happens, not at the end.

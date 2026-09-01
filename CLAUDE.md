@@ -58,9 +58,11 @@ entity resolution, routing, bounded traversal, type filtering and same-tier
 conflict detection, none of the seven hard-coded (ADR-017). `src/ui/` renders
 that result and adds no reasoning of its own (ADR-018).
 
-**The query engine is Checkpoint 2, not a finished reasoning system.** The next
-piece of work is measuring where it is weak — routing robustness on
-differently-worded questions first — not visual polish and not an LLM.
+**The query engine is Checkpoint 2, not a finished reasoning system.**
+Routing robustness has now been measured (ADR-019) and the four templates match
+no route shape on **35 of 49** realistic questions — on 21 *novel* ones they
+match **one**. Our 7/7 measures fit, not routing capability. A cue-based second
+tier closes part of that gap; do not quote 7/7 without the 35/49 beside it.
 
 | Component | State |
 |---|---|
@@ -71,7 +73,7 @@ differently-worded questions first — not visual polish and not an LLM.
 | `eval/answer_key.json` | Drafted, **not two-person verified** — measured `verification.status`: `single_review` ×6, `draft` ×2, `unresolved` ×1, and all seven reviewed entries name the same single reviewer, which is F-015 exactly. (There is no `verified_by` field; this row named one until 30 Aug.) Precision/semantic review is what is outstanding; recall is independently corroborated, `eval/completeness.py` |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016) |
-| `src/query/` | Done — resolution, routing, traversal, evidence sufficiency, conflict detection — **7/7 dev 1B answered correctly** (ADR-017) |
+| `src/query/` | Two routing tiers. Templates: **7/7 dev 1B** (ADR-017). Cue-based fallback on a template miss: **17 correct / 26 complete evidence** vs templates-alone 10 / 11, on 49 independently authored questions (ADR-019). Fallback answers carry their own `EvidenceStatus`, measured at 40% precision against templates' 91% |
 | `src/ui/` | Done (first version) — stdlib `http.server`, no new dependency; renders all nine demo surfaces; thinness enforced by three architectural tests (ADR-018) |
 
 ### Checkpoint 1 results (reproducible, not just measured)
@@ -183,12 +185,14 @@ python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_
 python -m src.graph.build          # build the graph, print coverage
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 203 tests
+python -m pytest                   # 216 tests
 python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.completeness        # independent answer-key completeness check
 python -m eval.verify_key          # regenerate the answer-key review pack
+python -m comparison.harness       # reproduce ADR-019's router comparison
+python -m comparison.ablations     # reproduce ADR-019's guard ablations
 ```
 
 Use the project venv: `.venv/Scripts/python.exe` on Windows.
