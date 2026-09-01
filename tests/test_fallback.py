@@ -251,3 +251,102 @@ def test_exact_match_only_no_fuzzy_resolution_in_the_fallback(graph):
     `ederon_fellgard` are 0.839 similar."""
     assert find_mentions(graph, "Who is Ederon Fellgar?") == []
     assert find_mentions(graph, "Who is Ederon Fellgard?")[0].key == "ederon_fellgard"
+
+
+# --------------------------------------------------------------------------
+# Profile: "Who is X?" - an entity with no relation named.
+# --------------------------------------------------------------------------
+
+
+def test_who_is_x_returns_the_entitys_record(graph):
+    """The gap this closes. "Who is Ravena Stormwell?" names an entity the
+    graph knows and no relation at all, so both tiers correctly declined and
+    the honest result was NO_TEMPLATE_MATCH - on a question whose answer was
+    sitting in the graph the whole time (asking "which faction is she a member
+    of" answers The Silent Choir immediately). The failure was question
+    *shape*, not coverage."""
+    answer = answer_question("Who is Ravena Stormwell?", graph)
+
+    assert answer.status == EvidenceStatus.PROFILE
+    assert "The Silent Choir" in answer.values
+    assert answer.paths
+    assert answer.documents, "a profile is still evidence and still cites it"
+
+
+def test_a_profile_is_not_presented_as_a_resolved_answer(graph):
+    """It answers a broader question than the one asked, and the reader is
+    entitled to know that."""
+    answer = answer_question("Who is Ravena Stormwell?", graph)
+    assert answer.status is not EvidenceStatus.SUFFICIENT
+    assert answer.status.is_fallback
+    assert "not an answer to a narrower question" in (answer.note or "")
+
+
+def test_a_named_relation_the_corpus_lacks_still_declines(graph):
+    """The narrow rule. A profile fires only when NO relation is cued. Asking
+    for a mentor cues `mentor_of`, finds no path, and must still decline -
+    silence about a relation someone asked for is not an invitation to answer
+    a different question (F-014's rule applied to question shape)."""
+    answer = answer_question("Who was Ederon Fellgard's mentor?", graph)
+    assert answer.status is not EvidenceStatus.PROFILE
+    assert answer.values == ()
+
+
+def test_an_unknown_entity_gets_no_profile(graph):
+    answer = answer_question("Who is Tobias Ravenscar?", graph)
+    assert answer.status is not EvidenceStatus.PROFILE
+
+
+# --------------------------------------------------------------------------
+# Near-miss spellings are reported, never resolved.
+# --------------------------------------------------------------------------
+
+
+def test_a_near_miss_name_suggests_without_picking(graph):
+    """ADR-011 forbids picking a winner: `caedmon_fellgard` and
+    `ederon_fellgard` are 0.839 similar, so a threshold loose enough to accept
+    "Raven Stormwell" -> "Ravena Stormwell" (0.968) eventually merges two real
+    people. But refusing to guess is not a reason to withhold what was found -
+    the old behaviour returned a bare NO_TEMPLATE_MATCH and left a user with a
+    typo no way to discover it."""
+    answer = answer_question("Who is Raven Stormwell?", graph)
+
+    assert answer.status == EvidenceStatus.AMBIGUOUS_ENTITY
+    assert "Ravena Stormwell" in (answer.note or "")
+    assert answer.values == (), "suggesting is not answering"
+    assert answer.resolutions and answer.resolutions[0].candidates
+
+
+def test_a_correctly_spelled_possessive_is_not_reported_as_a_typo(graph):
+    """MEASURED REGRESSION. `_CAPITALISED_SPAN_RE` captures "Ederon Fellgard's"
+    whole, which resolves ambiguous at 0.938 against the real name - so the
+    near-miss reporter announced a typo for a question that spelled the name
+    perfectly."""
+    answer = answer_question("Who was Ederon Fellgard's mentor?", graph)
+    assert answer.status != EvidenceStatus.AMBIGUOUS_ENTITY
+    assert "is not a name in the corpus" not in (answer.note or "")
+
+
+def test_a_name_with_no_near_match_stays_an_ordinary_miss(graph):
+    """"Ashen Era" resolves to nothing at all - no candidates - so it must not
+    be dressed up as a spelling suggestion."""
+    answer = answer_question("What color is the sky in the Ashen Era?", graph)
+    assert answer.status == EvidenceStatus.NO_TEMPLATE_MATCH
+
+
+def test_only_identity_questions_earn_a_profile(graph):
+    """MEASURED CORRECTION. The first version profiled any question that cued
+    no relation, so "What did the Gravemaw Wyrm eat for breakfast?" was
+    answered with the wyrm's lair. Labelled or not, that answers a question
+    nobody asked. "Who is X?" asks for the record; "what did X eat?" asks for
+    an attribute the corpus does not hold, and must still decline."""
+    profiled = answer_question("Who is Ravena Stormwell?", graph)
+    described = answer_question("Tell me about the Iron-Ring Cartel", graph)
+    diet = answer_question("What did the Gravemaw Wyrm eat for breakfast?", graph)
+    colour = answer_question("What color is the Gravemaw Wyrm?", graph)
+
+    assert profiled.status == EvidenceStatus.PROFILE
+    assert described.status == EvidenceStatus.PROFILE
+    assert diet.status is not EvidenceStatus.PROFILE
+    assert colour.status is not EvidenceStatus.PROFILE
+    assert diet.values == () and colour.values == ()

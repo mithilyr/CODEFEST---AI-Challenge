@@ -29,7 +29,7 @@ from src.query.evidence import (
 )
 from src.query.fallback import route_by_cues
 from src.query.planner import plan_and_walk
-from src.query.resolve import EntityResolver, Resolution
+from src.query.resolve import EntityResolver, Resolution, ResolutionStatus
 from src.query.route import RouteMiss, build_gazetteer, route
 from src.settings import get_settings
 
@@ -207,11 +207,12 @@ def _fallback_answer(question: str, graph: Graph, relation_map: RelationMap) -> 
     if not route_result.answered:
         return None
 
-    status = (
-        EvidenceStatus.FALLBACK_AMBIGUOUS
-        if route_result.ambiguous
-        else EvidenceStatus.FALLBACK_SUFFICIENT
-    )
+    if route_result.profile:
+        status = EvidenceStatus.PROFILE
+    elif route_result.ambiguous:
+        status = EvidenceStatus.FALLBACK_AMBIGUOUS
+    else:
+        status = EvidenceStatus.FALLBACK_SUFFICIENT
     values = tuple(
         dict.fromkeys(
             graph.nodes[p.end].name if p.end in graph.nodes else p.end
@@ -232,10 +233,20 @@ def _fallback_answer(question: str, graph: Graph, relation_map: RelationMap) -> 
         paths=route_result.paths,
         documents=documents,
         note=(
-            "No template matched. Answered by cue-based fallback routing on "
-            f"relation(s) {', '.join(route_result.cued) or 'n/a'}. This tier is "
-            "measured at lower precision than template routing (ADR-019) - "
-            "check the evidence trail."
+            (
+                "This question names no relation, so there is no single chain "
+                "to walk. Below is everything the graph records about "
+                f"{graph.nodes[route_result.start.key].name}, each fact with "
+                "the document it came from - the entity's record, not an "
+                "answer to a narrower question."
+            )
+            if route_result.profile
+            else (
+                "No template matched. Answered by cue-based fallback routing on "
+                f"relation(s) {', '.join(route_result.cued) or 'n/a'}. This tier is "
+                "measured at lower precision than template routing (ADR-019) - "
+                "check the evidence trail."
+            )
         ),
     )
 
@@ -289,6 +300,22 @@ def _planned_answer(
     )
 
 
+def _strip_possessive(span: str) -> str:
+    """Drop a trailing possessive so a correct name is not reported as a typo.
+
+    `_CAPITALISED_SPAN_RE` captures "Ederon Fellgard's" whole. Resolved as-is
+    that span is ambiguous at 0.938 against the real `Ederon Fellgard`, so the
+    near-miss reporter below announced "'Ederon Fellgard's' is not a name in
+    the corpus" for a question that spelled the name perfectly - suggesting a
+    typo where there was none. The corpus uses U+2019 apostrophes as well as
+    ASCII ones (CLAUDE.md corpus fact 6), so both are stripped.
+    """
+    for suffix in ("'s", "’s", "'", "’"):
+        if span.endswith(suffix):
+            return span[: -len(suffix)]
+    return span
+
+
 def _unrouted(
     question: str, miss: RouteMiss, resolver: EntityResolver, evidence_units: list | None
 ) -> Answer:
@@ -302,6 +329,38 @@ def _unrouted(
     failed, so "a name this system has never heard of" and "a real corpus
     entity the graph doesn't cover" are not both reported as the same thing.
     """
+    # A near-miss spelling must be *reported*, not swallowed. Asked
+    # "Who is Raven Stormwell?" the resolver finds `Ravena Stormwell` at 0.968
+    # and correctly refuses to pick it (ADR-011: `caedmon_fellgard` and
+    # `ederon_fellgard` sit at 0.839, so any threshold loose enough to accept
+    # 0.968 eventually merges two real people). But refusing to guess is not a
+    # reason to withhold what we found - the old behaviour returned a bare
+    # NO_TEMPLATE_MATCH and never mentioned the candidate, leaving a user with
+    # a typo no way to discover it.
+    #
+    # Reporting is safe where guessing is not: `AMBIGUOUS_ENTITY` carries the
+    # candidates and their similarities for the caller to show, and the system
+    # still resolves nothing on its own. Only a span the resolver itself
+    # classified AMBIGUOUS qualifies - one it found nothing for at all (e.g.
+    # "Ashen Era") stays an ordinary template miss.
+    for candidate in _CAPITALISED_SPAN_RE.findall(question):
+        candidate = _strip_possessive(candidate)
+        resolution = resolver.resolve(candidate)
+        if resolution.status == ResolutionStatus.AMBIGUOUS and resolution.candidates:
+            suggestions = ", ".join(
+                f"{c.name} ({c.similarity:.3f})" for c in resolution.candidates[:3]
+            )
+            return Answer(
+                question=question,
+                status=EvidenceStatus.AMBIGUOUS_ENTITY,
+                resolutions=(resolution,),
+                note=(
+                    f"{candidate!r} is not a name in the corpus. Closest: "
+                    f"{suggestions}. Resolution is exact-match only and never "
+                    f"picks a winner (ADR-011) - retry with the exact name."
+                ),
+            )
+
     if "no resolved entity" not in miss.reason and "did not find exactly one" not in miss.reason:
         return Answer(question=question, status=EvidenceStatus.NO_TEMPLATE_MATCH, note=miss.reason)
 
