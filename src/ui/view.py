@@ -50,8 +50,11 @@ STATUS_GLOSS: dict[str, str] = {
         "A name in the question does not appear anywhere in the corpus - "
         "most likely a typo or an invented name.",
     EvidenceStatus.AMBIGUOUS_ENTITY.value:
-        "A name in the question matched more than one entity. Resolution is "
-        "exact-match only and never picks a winner (ADR-011).",
+        "A name in the question did not match one entity exactly - either it "
+        "resembles several, or it is a near-miss for one (a typo). The "
+        "candidates and their similarities are listed below; resolution is "
+        "exact-match only and never picks a winner (ADR-011), so retry with "
+        "the exact name.",
     EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE.value:
         "The entity is real and named in the corpus text, but has no wiki "
         "infobox, so the graph - built only from structured cells - has no "
