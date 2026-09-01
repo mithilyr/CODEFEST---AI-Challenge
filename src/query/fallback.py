@@ -254,10 +254,70 @@ class FallbackRoute:
     cued: tuple[str, ...]
     start: Mention | None
     ambiguous: bool = False
+    #: True when this is a profile rather than a chain - see `profile_of`.
+    profile: bool = False
 
     @property
     def answered(self) -> bool:
         return bool(self.paths)
+
+
+#: Question shapes that ask for an entity's record rather than for one fact.
+#:
+#: MEASURED CORRECTION. The first version of the profile rule fired whenever an
+#: entity resolved and no relation was cued. That is too broad, and two
+#: existing tests caught it: "What did the Gravemaw Wyrm eat for breakfast?"
+#: cues no relation either, and it was answered with a profile - returning the
+#: wyrm's lair to a question about its diet. Labelled or not, that is answering
+#: a question nobody asked, which is the failure F-025 is about.
+#:
+#: The line that holds: "Who is X?" *asks for the record*, so giving the record
+#: is answering it. "What did X eat?" asks for a specific attribute the corpus
+#: does not record, and the honest response is still to decline. This is a
+#: closed list of question shapes, not a semantic model - the same kind of
+#: deterministic rule as `route.py`'s templates, and extended only alongside a
+#: question that shows it is needed.
+IDENTITY_QUESTION_RE = re.compile(
+    r"^\s*(?:who|what)\s+(?:is|was|are|were)\b"
+    r"|^\s*tell me about\b"
+    r"|^\s*describe\b"
+    r"|\bwho\s+(?:is|was)\s+\w",
+    re.IGNORECASE,
+)
+
+
+def profile_of(graph: Graph, start: Mention) -> FallbackRoute:
+    """Everything the graph records about one entity, both directions.
+
+    WHY THIS EXISTS. "Who is Ravena Stormwell?" names an entity the graph knows
+    and a relation it does not - because it names no relation at all. Both
+    deterministic tiers correctly declined, and the honest result was
+    `no_template_match` on a question whose answer is sitting in the graph:
+    ask "which faction is Ravena Stormwell a member of" and it answers The
+    Silent Choir immediately. The failure was the question's *shape*, not our
+    coverage.
+
+    So when an entity resolves and nothing cues a relation, return every edge
+    touching that entity as its own one-hop path. This is not a guess: each
+    edge is a fact the graph already built from an infobox row, with its
+    document attached. What it is *not* is an answer to a specific question -
+    it is the entity's record - which is why it gets its own
+    `EvidenceStatus.PROFILE` and is labelled as a profile in the UI rather
+    than presented as a resolved answer.
+
+    Deliberately narrow. It fires only when NO relation is cued. A question
+    that names a relation the corpus does not record for this entity -
+    "Who was Ederon Fellgard's mentor?" - still cues `mentor_of`, still finds
+    no path, and still declines. Silence about a relation someone asked for is
+    not an invitation to answer a different question (F-014's rule, applied to
+    question shape).
+    """
+    edges = graph.neighbours(start.key)
+    if not edges:
+        return FallbackRoute((), (), start)
+    return FallbackRoute(
+        tuple(Path(start.key, (edge,)) for edge in edges), (), start, profile=True
+    )
 
 
 def route_by_cues(
@@ -291,6 +351,10 @@ def route_by_cues(
 
     cued = cued_relations(cues, question)
     if not cued:
+        # No relation named at all. Only an *identity* question earns a
+        # profile - see `IDENTITY_QUESTION_RE`.
+        if IDENTITY_QUESTION_RE.search(question):
+            return profile_of(graph, start)
         return FallbackRoute((), (), start)
 
     candidates = select_candidates(

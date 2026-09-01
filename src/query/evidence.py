@@ -72,6 +72,13 @@ class EvidenceStatus(str, Enum):
     PLANNED_SUFFICIENT = "planned_sufficient"
     PLANNED_AMBIGUOUS = "planned_ambiguous"
 
+    #: An entity resolved but the question named no relation ("Who is X?").
+    #: Not an answer to a specific question - the entity's whole record, every
+    #: fact of it real and sourced. Distinct from SUFFICIENT because the system
+    #: is answering a broader question than the one asked, and a reader is
+    #: entitled to know that. See `src/query/fallback.profile_of`.
+    PROFILE = "profile"
+
     @property
     def is_answerable(self) -> bool:
         return self in {
@@ -81,6 +88,7 @@ class EvidenceStatus(str, Enum):
             EvidenceStatus.FALLBACK_AMBIGUOUS,
             EvidenceStatus.PLANNED_SUFFICIENT,
             EvidenceStatus.PLANNED_AMBIGUOUS,
+            EvidenceStatus.PROFILE,
         }
 
     @property
@@ -114,6 +122,8 @@ class EvidenceStatus(str, Enum):
             EvidenceStatus.PLANNED_AMBIGUOUS,
         ):
             return "llm_plan"
+        if self is EvidenceStatus.PROFILE:
+            return "cue_fallback"
         return None
 
 

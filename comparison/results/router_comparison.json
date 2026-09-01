@@ -185,13 +185,13 @@
       {
         "rid": "rb_009",
         "group": "A_paraphrase",
-        "status": "no_template_match",
+        "status": "ambiguous_entity",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -200,7 +200,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "note": "'Drowned Light' is not a name in the corpus. Closest: The War of Drowned Light (0.788). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_010",
@@ -256,13 +256,13 @@
       {
         "rid": "rb_011",
         "group": "A_paraphrase",
-        "status": "no_template_match",
+        "status": "ambiguous_entity",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -271,7 +271,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "note": "'Drowned Light' is not a name in the corpus. Closest: The War of Drowned Light (0.788). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_012",
@@ -1143,13 +1143,13 @@
       {
         "rid": "rb_050",
         "group": "C_unanswerable",
-        "status": "no_template_match",
+        "status": "ambiguous_entity",
         "route_success": true,
         "entity_resolution_success": true,
         "answer_correct": true,
         "complete_evidence": true,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -1158,7 +1158,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "note": "'Cerys Sablewode' is not a name in the corpus. Closest: Cerys Sablewood the Ashen (0.750). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_051",
@@ -1267,8 +1267,8 @@
       "entity_resolution_success": 19,
       "answer_correct": 16,
       "complete_evidence": 17,
-      "ambiguous": 1,
-      "no_route_shape": 40,
+      "ambiguous": 4,
+      "no_route_shape": 37,
       "wrong_route": 0,
       "unnecessary_depth": 0,
       "would_escalate": 0
@@ -3031,13 +3031,13 @@
       {
         "rid": "rb_009",
         "group": "A_paraphrase",
-        "status": "no_template_match",
+        "status": "ambiguous_entity",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -3046,7 +3046,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "note": "'Drowned Light' is not a name in the corpus. Closest: The War of Drowned Light (0.788). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_010",
@@ -4034,22 +4034,46 @@
       {
         "rid": "rb_038",
         "group": "B_novel",
-        "status": "no_template_match",
+        "status": "profile",
         "route_success": false,
-        "entity_resolution_success": false,
+        "entity_resolution_success": true,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
+        "ambiguous": true,
         "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": true,
-        "values": [],
-        "documents": [],
-        "relation_routes": [],
-        "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "values": [
+          "The Bleeding Crown",
+          "The Thrice-Bound Edge",
+          "Edge of Gloamreach",
+          "The Accord of Mournthrone",
+          "Korvath Nightbrook"
+        ],
+        "documents": [
+          "wiki/brannoc_ironmere_the_red_handed.md"
+        ],
+        "relation_routes": [
+          [
+            "concealed_tie_to"
+          ],
+          [
+            "member_of"
+          ],
+          [
+            "wields"
+          ],
+          [
+            "belligerent_in"
+          ],
+          [
+            "mentor_of"
+          ]
+        ],
+        "hops": 1,
+        "note": "This question names no relation, so there is no single chain to walk. Below is everything the graph records about Brannoc Ironmere the Red-Handed, each fact with the document it came from - the entity's record, not an answer to a narrower question."
       },
       {
         "rid": "rb_039",
@@ -4404,13 +4428,13 @@
       {
         "rid": "rb_050",
         "group": "C_unanswerable",
-        "status": "no_template_match",
+        "status": "ambiguous_entity",
         "route_success": true,
         "entity_resolution_success": true,
         "answer_correct": true,
         "complete_evidence": true,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -4419,7 +4443,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "note": "'Cerys Sablewode' is not a name in the corpus. Closest: Cerys Sablewood the Ashen (0.750). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_051",
@@ -4547,11 +4571,11 @@
     "summary": {
       "n": 55,
       "route_success": 35,
-      "entity_resolution_success": 37,
+      "entity_resolution_success": 38,
       "answer_correct": 22,
       "complete_evidence": 32,
-      "ambiguous": 6,
-      "no_route_shape": 20,
+      "ambiguous": 9,
+      "no_route_shape": 18,
       "wrong_route": 0,
       "unnecessary_depth": 3,
       "would_escalate": 0
@@ -4565,8 +4589,8 @@
         "entity_resolution_success": 10,
         "answer_correct": 9,
         "complete_evidence": 10,
-        "ambiguous": 1,
-        "no_route_shape": 17,
+        "ambiguous": 3,
+        "no_route_shape": 15,
         "wrong_route": 0,
         "unnecessary_depth": 0,
         "would_escalate": 0
@@ -4617,8 +4641,8 @@
         "entity_resolution_success": 6,
         "answer_correct": 6,
         "complete_evidence": 6,
-        "ambiguous": 0,
-        "no_route_shape": 5,
+        "ambiguous": 1,
+        "no_route_shape": 4,
         "wrong_route": 0,
         "unnecessary_depth": 0,
         "would_escalate": 0

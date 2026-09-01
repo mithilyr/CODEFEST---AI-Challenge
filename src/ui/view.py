@@ -90,6 +90,11 @@ STATUS_GLOSS: dict[str, str] = {
     EvidenceStatus.PLANNED_AMBIGUOUS.value:
         "A model-proposed route reached more than one endpoint. All are shown; "
         "none was picked.",
+    EvidenceStatus.PROFILE.value:
+        "This question names an entity but no relation, so there is no single "
+        "chain to walk. What follows is everything the graph records about "
+        "that entity - each fact sourced - rather than an answer to a "
+        "narrower question.",
 }
 
 #: Shown beside a hop so a reader knows what the number means without
