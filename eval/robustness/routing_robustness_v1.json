@@ -1,0 +1,1007 @@
+{
+ "_about": "Routing robustness set v1. Independently authored: the author had no access to src/query/route.py, engine.py, resolve.py, config/relations.yaml, or either router implementation. Frozen BEFORE either router was run against it.",
+ "_authored": "2026-08-31",
+ "_frozen": "2026-08-31",
+ "_frozen_sha256": "f3ad401148d03d32671ba1374bc5a74721396fc0e2777940858fee7be9e1b7d8",
+ "_independence": "Author read only the corpus, eval/answer_key.json and docs/limitations.md. config/relations.yaml was withheld specifically because it is the cue-based router vocabulary source; an author who read it would have biased the comparison toward that router.",
+ "_groups": {
+  "A_paraphrase": "4 re-wordings of each of the 7 dev 1B questions, one per axis (synonym, reordering, indirect, colloquial). Gold answer held identical to the source question.",
+  "B_novel": "New multi-hop questions traced by hand against the wiki.",
+  "C_unanswerable": "Questions the system should refuse: misspelling, absent entity, or a relation the pages never record."
+ },
+ "questions": [
+  {
+   "rid": "rb_001",
+   "group": "A_paraphrase",
+   "source": "1b_003",
+   "paraphrase_kind": "synonym",
+   "question": "In which gloom-shrouded stronghold is the artifact that Cerys Sablewood the Ashen has carried since 356 AS kept?",
+   "gold_answers": [
+    "Gloamreach"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/cerys_sablewood_the_ashen.md",
+    "wiki/the_cinder_wrought_aegis.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_003; 'shadowed redoubt'->'gloom-shrouded stronghold', 'relic borne'->'artifact carried'."
+  },
+  {
+   "rid": "rb_002",
+   "group": "A_paraphrase",
+   "source": "1b_003",
+   "paraphrase_kind": "reordering",
+   "question": "Cerys Sablewood the Ashen has borne a relic since 356 AS. Where is that relic housed today?",
+   "gold_answers": [
+    "Gloamreach"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/cerys_sablewood_the_ashen.md",
+    "wiki/the_cinder_wrought_aegis.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_003; the person and the date are stated first as a premise, and the question proper asks only for the housing site."
+  },
+  {
+   "rid": "rb_003",
+   "group": "A_paraphrase",
+   "source": "1b_003",
+   "paraphrase_kind": "indirect",
+   "question": "The Cinder-Wrought Aegis has been in Cerys Sablewood the Ashen's hands since 356 AS. What place holds it?",
+   "gold_answers": [
+    "Gloamreach"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/cerys_sablewood_the_ashen.md",
+    "wiki/the_cinder_wrought_aegis.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_003, entered from the relic rather than the wielder; the wielder link is still what identifies the correct relic."
+  },
+  {
+   "rid": "rb_004",
+   "group": "A_paraphrase",
+   "source": "1b_003",
+   "paraphrase_kind": "colloquial",
+   "question": "where do u go to see the relic cerys sablewood the ashen has been carrying since 356",
+   "gold_answers": [
+    "Gloamreach"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/cerys_sablewood_the_ashen.md",
+    "wiki/the_cinder_wrought_aegis.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_003; hurried lowercase phrasing, no question mark, 'AS' dropped after the year."
+  },
+  {
+   "rid": "rb_005",
+   "group": "A_paraphrase",
+   "source": "1b_005",
+   "paraphrase_kind": "synonym",
+   "question": "Which conflict did the order Isolde Mournvale belonged to emerge victorious from?",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/isolde_mournvale.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_005; 'war'->'conflict', 'organization'->'order', 'won'->'emerged victorious from'."
+  },
+  {
+   "rid": "rb_006",
+   "group": "A_paraphrase",
+   "source": "1b_005",
+   "paraphrase_kind": "reordering",
+   "question": "Isolde Mournvale was counted among the members of a certain group. Which war did that group win?",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/isolde_mournvale.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_005; membership stated as a premise sentence, the victory asked as a separate question."
+  },
+  {
+   "rid": "rb_007",
+   "group": "A_paraphrase",
+   "source": "1b_005",
+   "paraphrase_kind": "indirect",
+   "question": "Which war ended in victory for the side Isolde Mournvale had joined?",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/isolde_mournvale.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_005, approached from the outcome of the war rather than from the faction."
+  },
+  {
+   "rid": "rb_008",
+   "group": "A_paraphrase",
+   "source": "1b_005",
+   "paraphrase_kind": "colloquial",
+   "question": "isolde mournvales group won what war",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/isolde_mournvale.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_005; missing apostrophe, inverted word order, no punctuation."
+  },
+  {
+   "rid": "rb_009",
+   "group": "A_paraphrase",
+   "source": "1b_006",
+   "paraphrase_kind": "synonym",
+   "question": "Name a person who belonged to the group that came out on top in the War of Drowned Light.",
+   "gold_answers": [
+    "Ignatz Fellgard",
+    "Brannoc Palefroth",
+    "Thessaly Coldwater",
+    "Lucan Hollowmere",
+    "Tamsin Greyfen",
+    "Ossric Ashgrove",
+    "Corvus Hollowmere the Pale",
+    "Isolde Mournvale",
+    "Maelis Harrowick the Pale",
+    "Morwenna Morvain",
+    "Morwenna Vosgard",
+    "Ossric Ravensmoor",
+    "Ossric Wrenfield",
+    "Ravena Stormwell"
+   ],
+   "answer_cardinality": "any_of",
+   "required_evidence": [
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_006; 'individual'->'person', 'faction'->'group', 'ultimately won'->'came out on top'."
+  },
+  {
+   "rid": "rb_010",
+   "group": "A_paraphrase",
+   "source": "1b_006",
+   "paraphrase_kind": "reordering",
+   "question": "The War of Drowned Light was won by a single faction. Who was in it?",
+   "gold_answers": [
+    "Ignatz Fellgard",
+    "Brannoc Palefroth",
+    "Thessaly Coldwater",
+    "Lucan Hollowmere",
+    "Tamsin Greyfen",
+    "Ossric Ashgrove",
+    "Corvus Hollowmere the Pale",
+    "Isolde Mournvale",
+    "Maelis Harrowick the Pale",
+    "Morwenna Morvain",
+    "Morwenna Vosgard",
+    "Ossric Ravensmoor",
+    "Ossric Wrenfield",
+    "Ravena Stormwell"
+   ],
+   "answer_cardinality": "any_of",
+   "required_evidence": [
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_006; the victory is stated first and membership is the question."
+  },
+  {
+   "rid": "rb_011",
+   "group": "A_paraphrase",
+   "source": "1b_006",
+   "paraphrase_kind": "indirect",
+   "question": "Which figures counted themselves among the victors of the War of Drowned Light?",
+   "gold_answers": [
+    "Ignatz Fellgard",
+    "Brannoc Palefroth",
+    "Thessaly Coldwater",
+    "Lucan Hollowmere",
+    "Tamsin Greyfen",
+    "Ossric Ashgrove",
+    "Corvus Hollowmere the Pale",
+    "Isolde Mournvale",
+    "Maelis Harrowick the Pale",
+    "Morwenna Morvain",
+    "Morwenna Vosgard",
+    "Ossric Ravensmoor",
+    "Ossric Wrenfield",
+    "Ravena Stormwell"
+   ],
+   "answer_cardinality": "any_of",
+   "required_evidence": [
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_006, entered from the victors rather than from an unnamed individual."
+  },
+  {
+   "rid": "rb_012",
+   "group": "A_paraphrase",
+   "source": "1b_006",
+   "paraphrase_kind": "colloquial",
+   "question": "who was in the faction that won war of drowned light",
+   "gold_answers": [
+    "Ignatz Fellgard",
+    "Brannoc Palefroth",
+    "Thessaly Coldwater",
+    "Lucan Hollowmere",
+    "Tamsin Greyfen",
+    "Ossric Ashgrove",
+    "Corvus Hollowmere the Pale",
+    "Isolde Mournvale",
+    "Maelis Harrowick the Pale",
+    "Morwenna Morvain",
+    "Morwenna Vosgard",
+    "Ossric Ravensmoor",
+    "Ossric Wrenfield",
+    "Ravena Stormwell"
+   ],
+   "answer_cardinality": "any_of",
+   "required_evidence": [
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_006; article dropped before the war title, no punctuation."
+  },
+  {
+   "rid": "rb_013",
+   "group": "A_paraphrase",
+   "source": "1b_007",
+   "paraphrase_kind": "synonym",
+   "question": "Which treaty did the group Ederon Fellgard belonged to end up winning?",
+   "gold_answers": [
+    "The Leaden Accord",
+    "Leaden Accord"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ederon_fellgard.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_007; 'accord'->'treaty', 'faction'->'group', 'is a member of'->'belonged to'. Ederon Fellgard, not Caedmon Fellgard."
+  },
+  {
+   "rid": "rb_014",
+   "group": "A_paraphrase",
+   "source": "1b_007",
+   "paraphrase_kind": "reordering",
+   "question": "Ederon Fellgard is a member of a faction. Which accord did that faction ultimately win?",
+   "gold_answers": [
+    "The Leaden Accord",
+    "Leaden Accord"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ederon_fellgard.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_007; membership stated as a premise, the accord asked separately. The word 'accord' is retained because it carries the type filter."
+  },
+  {
+   "rid": "rb_015",
+   "group": "A_paraphrase",
+   "source": "1b_007",
+   "paraphrase_kind": "indirect",
+   "question": "Of the accords fought over in the Ashen Era, which one was won by Ederon Fellgard's faction?",
+   "gold_answers": [
+    "The Leaden Accord",
+    "Leaden Accord"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ederon_fellgard.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_007, approached from the set of accords inward rather than from the person outward."
+  },
+  {
+   "rid": "rb_016",
+   "group": "A_paraphrase",
+   "source": "1b_007",
+   "paraphrase_kind": "colloquial",
+   "question": "ederon fellgards faction won which accord",
+   "gold_answers": [
+    "The Leaden Accord",
+    "Leaden Accord"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ederon_fellgard.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_007; missing apostrophe, inverted order, no punctuation."
+  },
+  {
+   "rid": "rb_017",
+   "group": "A_paraphrase",
+   "source": "1b_009",
+   "paraphrase_kind": "synonym",
+   "question": "What is the link between Halvard Crowhurst and the side said to have won the Purge of Blackport?",
+   "gold_answers": [
+    "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.",
+    "member of The Iron-Ring Cartel",
+    "member of the Iron-Ring Cartel",
+    "Iron-Ring Cartel member"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_purge_of_blackport.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_009; 'in what way ... connected'->'what is the link', 'victors'->'the side said to have won'. The hedged framing is preserved so the question still asks for the relation, not for the identity of the victor."
+  },
+  {
+   "rid": "rb_018",
+   "group": "A_paraphrase",
+   "source": "1b_009",
+   "paraphrase_kind": "reordering",
+   "question": "The Purge of Blackport had victors on record. How does Halvard Crowhurst stand in relation to them?",
+   "gold_answers": [
+    "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.",
+    "member of The Iron-Ring Cartel",
+    "member of the Iron-Ring Cartel",
+    "Iron-Ring Cartel member"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_purge_of_blackport.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_009; the conflict is stated first and the relation asked second."
+  },
+  {
+   "rid": "rb_019",
+   "group": "A_paraphrase",
+   "source": "1b_009",
+   "paraphrase_kind": "indirect",
+   "question": "What relationship do the recorded victors of the Purge of Blackport have with Halvard Crowhurst?",
+   "gold_answers": [
+    "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.",
+    "member of The Iron-Ring Cartel",
+    "member of the Iron-Ring Cartel",
+    "Iron-Ring Cartel member"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_purge_of_blackport.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_009, entered from the victors' side rather than from Halvard Crowhurst."
+  },
+  {
+   "rid": "rb_020",
+   "group": "A_paraphrase",
+   "source": "1b_009",
+   "paraphrase_kind": "colloquial",
+   "question": "how is halvard crowhurst tied to whoever won the purge of blackport",
+   "gold_answers": [
+    "He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.",
+    "member of The Iron-Ring Cartel",
+    "member of the Iron-Ring Cartel",
+    "Iron-Ring Cartel member"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_purge_of_blackport.md",
+    "wiki/the_iron_ring_cartel.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_009; casual 'tied to whoever won' phrasing, no punctuation."
+  },
+  {
+   "rid": "rb_021",
+   "group": "A_paraphrase",
+   "source": "1b_013",
+   "paraphrase_kind": "synonym",
+   "question": "Which power holds sway over the place where the Gravemaw Wyrm makes its lair?",
+   "gold_answers": [
+    "The Bleeding Crown",
+    "Bleeding Crown"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/gravemaw_wyrm.md",
+    "wiki/marrowwell_abbey.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_013; 'whose dominion encompasses'->'which power holds sway over'."
+  },
+  {
+   "rid": "rb_022",
+   "group": "A_paraphrase",
+   "source": "1b_013",
+   "paraphrase_kind": "reordering",
+   "question": "The Gravemaw Wyrm dens in one particular site. Who rules that site?",
+   "gold_answers": [
+    "The Bleeding Crown",
+    "Bleeding Crown"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/gravemaw_wyrm.md",
+    "wiki/marrowwell_abbey.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_013; the lair is stated as a premise and the ruler asked separately."
+  },
+  {
+   "rid": "rb_023",
+   "group": "A_paraphrase",
+   "source": "1b_013",
+   "paraphrase_kind": "indirect",
+   "question": "The stronghold recorded as the Gravemaw Wyrm's lair falls under whose rule?",
+   "gold_answers": [
+    "The Bleeding Crown",
+    "Bleeding Crown"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/gravemaw_wyrm.md",
+    "wiki/marrowwell_abbey.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_013, entered from the location rather than from the creature."
+  },
+  {
+   "rid": "rb_024",
+   "group": "A_paraphrase",
+   "source": "1b_013",
+   "paraphrase_kind": "colloquial",
+   "question": "gravemaw wyrm lair, who rules there",
+   "gold_answers": [
+    "The Bleeding Crown",
+    "Bleeding Crown"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/gravemaw_wyrm.md",
+    "wiki/marrowwell_abbey.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_013; telegraphic phrasing, no verb in the first clause."
+  },
+  {
+   "rid": "rb_025",
+   "group": "A_paraphrase",
+   "source": "1b_022",
+   "paraphrase_kind": "synonym",
+   "question": "Which conflict was ultimately won by the organization Ravena Stormwell belongs to?",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ravena_stormwell.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_022; 'war'->'conflict', 'her own faction'->'the organization she belongs to'."
+  },
+  {
+   "rid": "rb_026",
+   "group": "A_paraphrase",
+   "source": "1b_022",
+   "paraphrase_kind": "reordering",
+   "question": "Ravena Stormwell is a member of a faction. What war did that faction win?",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ravena_stormwell.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_022; membership stated first, victory asked second."
+  },
+  {
+   "rid": "rb_027",
+   "group": "A_paraphrase",
+   "source": "1b_022",
+   "paraphrase_kind": "indirect",
+   "question": "Ravena Stormwell's side prevailed in which war?",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ravena_stormwell.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_022, approached from the victory back to the war rather than from the faction forward."
+  },
+  {
+   "rid": "rb_028",
+   "group": "A_paraphrase",
+   "source": "1b_022",
+   "paraphrase_kind": "colloquial",
+   "question": "what war did ravena stormwells lot end up winning",
+   "gold_answers": [
+    "The War of Drowned Light",
+    "War of Drowned Light"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ravena_stormwell.md",
+    "wiki/the_war_of_drowned_light.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Same join as 1b_022; missing apostrophe, colloquial 'lot' for faction."
+  },
+  {
+   "rid": "rb_029",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which creature makes its lair in the abbey that Gareth Ironmere has commanded since 322 AS?",
+   "gold_answers": [
+    "Gravemaw Wyrm"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/gareth_ironmere.md",
+    "wiki/gravemaw_wyrm.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: Gareth Ironmere's infobox gives 'Commands Marrowwell Abbey since 322 AS'; the Gravemaw Wyrm's infobox gives 'Lair: Marrowwell Abbey'. Marrowwell Abbey is the shared node."
+  },
+  {
+   "rid": "rb_030",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which power rules the settlement where The Cinder-Wrought Aegis is housed?",
+   "gold_answers": [
+    "House Morvain"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_cinder_wrought_aegis.md",
+    "wiki/gloamreach.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: the Aegis page gives 'Place of housing: Gloamreach'; the Gloamreach page gives 'Ruled by: House Morvain'. Deliberately asks for the ruler, not the location, so it is not the dev question restated."
+  },
+  {
+   "rid": "rb_031",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "In which region does the stronghold commanded by Isolde Fellgard the Unforgiven lie?",
+   "gold_answers": [
+    "The Ash Wastes",
+    "Ash Wastes"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/isolde_fellgard_the_unforgiven.md",
+    "wiki/gloammarch.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: her infobox gives 'Commands Gloammarch since 310 AS'; the Gloammarch page gives 'Region: The Ash Wastes'. Isolde Fellgard the Unforgiven, not Ederon or Caedmon Fellgard."
+  },
+  {
+   "rid": "rb_032",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "In which stronghold is the gauntlet that Maelis Harrowick the Pale has wielded since 399 AS kept?",
+   "gold_answers": [
+    "Greyfell Citadel"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/maelis_harrowick_the_pale.md",
+    "wiki/gauntlet_of_sorrowfell.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: her infobox gives 'Wields the Gauntlet of Sorrowfell since 399 AS'; the Gauntlet page gives 'Housed in: Greyfell Citadel'. She also wields The Psalter of Seven Sorrows, so the word 'gauntlet' and the year 399 AS both disambiguate. The Gauntlet's forging year is contested but its housing is not."
+  },
+  {
+   "rid": "rb_033",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction rules the keep that houses the ward Ignatz Ashgrove the Oathless has wielded since 281 AS?",
+   "gold_answers": [
+    "The Bleeding Crown",
+    "Bleeding Crown"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ignatz_ashgrove_the_oathless.md",
+    "wiki/the_hollow_edge.md",
+    "wiki/crookgate_keep.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand across three pages: 'Wields The Hollow Edge since 281 AS' -> 'The Hollow Edge ... Housed in: Crookgate Keep' -> 'Crookgate Keep ... Ruled by: The Bleeding Crown'. The date and the class word 'ward' separate The Hollow Edge from the Chalice of Ashdeep, which he also wields."
+  },
+  {
+   "rid": "rb_034",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which artifact is housed in the settlement that Sabelle Mournvale the Twice-Crowned commands?",
+   "gold_answers": [
+    "The Silent Psalter",
+    "Silent Psalter"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/sabelle_mournvale_the_twice_crowned.md",
+    "wiki/the_silent_psalter.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: her infobox gives 'Commands Marrowwatch since 293 AS'; The Silent Psalter's infobox gives 'Housed in: Marrowwatch'. Reverse direction: the artifact is found from the location, not from a wielder."
+  },
+  {
+   "rid": "rb_035",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Where was the relic that Aldous Wrenfield the Last Warden wields originally forged?",
+   "gold_answers": [
+    "Fenspire"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/aldous_wrenfield_the_last_warden.md",
+    "wiki/the_silent_psalter.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: his infobox gives 'Wields The Silent Psalter since 341 AS'; The Silent Psalter's infobox gives 'Forged at: Fenspire'. He also commands Fenspire, which makes this a good check that the answer is reached through the relic rather than copied from his command row."
+  },
+  {
+   "rid": "rb_036",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction rules the abbey that houses the sceptre Corvus Hollowmere the Pale has borne since 379 AS?",
+   "gold_answers": [
+    "The Silent Choir",
+    "Silent Choir"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/corvus_hollowmere_the_pale.md",
+    "wiki/the_sceptre_of_final_winter.md",
+    "wiki/palewell_abbey.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand across three pages: 'Wields The Sceptre of Final Winter since 379 AS' -> 'Housed in: Palewell Abbey' -> 'Ruling power: The Silent Choir'. The abbey page labels the ruler row 'Ruling power', not 'Ruled by'."
+  },
+  {
+   "rid": "rb_037",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "In which settlement was the lantern wielded by Halvard Vane the Grave-Sworn forged?",
+   "gold_answers": [
+    "Stormmarch"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/halvard_vane_the_grave_sworn.md",
+    "wiki/the_thrice_bound_lantern.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: his infobox gives 'Wields The Thrice-Bound Lantern since 364 AS'; the Lantern's infobox gives 'Forged at: Stormmarch'. The Lantern is housed in Hollowvale, which is the obvious wrong answer if forging and housing are conflated."
+  },
+  {
+   "rid": "rb_038",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "What is the garrison strength of the stronghold Brannoc Ironmere the Red-Handed commands?",
+   "gold_answers": [
+    "3065"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/brannoc_ironmere_the_red_handed.md",
+    "wiki/blackford.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: his infobox gives 'Commands Blackford since 285 AS'; the Blackford page gives 'Garrison strength: 3065'."
+  },
+  {
+   "rid": "rb_039",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction won the war in which the Vault Chitin was unleashed?",
+   "gold_answers": [
+    "The Bleeding Crown",
+    "Bleeding Crown"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/vault_chitin.md",
+    "wiki/the_war_of_endless_vigil.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: the Vault Chitin's infobox gives 'Unleashed in: The War of Endless Vigil'; that war's page gives 'Victor: The Bleeding Crown'."
+  },
+  {
+   "rid": "rb_040",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Who prevailed in the conflict where the Lantern Moth Swarm was let loose?",
+   "gold_answers": [
+    "The Iron-Ring Cartel",
+    "Iron-Ring Cartel"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/lantern_moth_swarm.md",
+    "wiki/the_leaden_accord.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: the swarm's infobox gives 'Unleashed in: The Leaden Accord'; the Leaden Accord's page gives 'Victor: The Iron-Ring Cartel'."
+  },
+  {
+   "rid": "rb_041",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction rules the place where the Pale Stag of Omens makes its lair?",
+   "gold_answers": [
+    "The Iron-Ring Cartel",
+    "Iron-Ring Cartel"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/pale_stag_of_omens.md",
+    "wiki/hollowreach.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: the Pale Stag's infobox gives 'Lair: Hollowreach'; the Hollowreach page gives 'Ruler: The Iron-Ring Cartel'. Hollowreach labels the row 'Ruler', not 'Ruled by'."
+  },
+  {
+   "rid": "rb_042",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "In which region does the Ashfall Colossus have its lair?",
+   "gold_answers": [
+    "The Gloaming Reach",
+    "Gloaming Reach"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ashfall_colossus.md",
+    "wiki/embermarch.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: the Colossus's infobox gives 'Lair: Embermarch'; the Embermarch page gives 'Region: The Gloaming Reach'."
+  },
+  {
+   "rid": "rb_043",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction is recorded as the victor of the conflict Morwenna Ashgrove fought in?",
+   "gold_answers": [
+    "The Iron-Ring Cartel",
+    "Iron-Ring Cartel"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/morwenna_ashgrove.md",
+    "wiki/the_leaden_accord.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: her infobox gives 'Fought in The Leaden Accord, fighting for The Ashen Vanguard'; the Leaden Accord's page gives 'Victor: The Iron-Ring Cartel'. The side she fought FOR is not the victor, so answering 'The Ashen Vanguard' is the trap."
+  },
+  {
+   "rid": "rb_044",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction rules the hold where the apprentice of Ignatz Ashgrove the Oathless serves?",
+   "gold_answers": [
+    "The Ashen Vanguard",
+    "Ashen Vanguard"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ignatz_ashgrove_the_oathless.md",
+    "wiki/ignatz_marrowgate.md",
+    "wiki/cindermere_hold.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand across three pages: 'Mentor of Ignatz Marrowgate' -> 'Ignatz Marrowgate ... Place of service: Cindermere Hold' -> 'Cindermere Hold ... Ruled by: The Ashen Vanguard'. Ignatz Marrowgate himself belongs to The Bleeding Crown, which is the obvious wrong answer if the question is misread as asking his own allegiance."
+  },
+  {
+   "rid": "rb_045",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which power rules the settlement where Caedmon Fellgard serves?",
+   "gold_answers": [
+    "The Ashen Vanguard",
+    "Ashen Vanguard"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/caedmon_fellgard.md",
+    "wiki/thorncairn.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: Caedmon Fellgard's infobox gives 'Place of service: Thorncairn'; the Thorncairn page gives 'Ruler: The Ashen Vanguard'. Caedmon Fellgard, NOT Ederon Fellgard - Caedmon serves at Thorncairn, Ederon at Greyfell Citadel, so the two names resolve to different answers."
+  },
+  {
+   "rid": "rb_046",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which stronghold is the seat of the faction Ederon Coldwater belongs to?",
+   "gold_answers": [
+    "Ironfell Citadel"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/ederon_coldwater.md",
+    "wiki/house_morvain.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand: Ederon Coldwater's infobox gives 'Member of: House Morvain'; the House Morvain page gives 'Seat: Ironfell Citadel'. Deliberate name trap with Ederon Fellgard, who belongs to The Iron-Ring Cartel and would yield Hollowreach instead."
+  },
+  {
+   "rid": "rb_047",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which conflict does The Bleeding Crown's own article record it as having won?",
+   "gold_answers": [
+    "The War of Endless Vigil",
+    "War of Endless Vigil"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_bleeding_crown.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand, single page: The Bleeding Crown's infobox gives 'Victor of: The War of Endless Vigil'. Included as a one-page control so the set is not all joins."
+  },
+  {
+   "rid": "rb_048",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Where does The Silent Choir have its seat?",
+   "gold_answers": [
+    "Vharencrag Fortress"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/the_silent_choir.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand, single page: The Silent Choir's infobox gives 'Seat: Vharencrag Fortress'. One-page control."
+  },
+  {
+   "rid": "rb_049",
+   "group": "B_novel",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Who rules Gloamreach?",
+   "gold_answers": [
+    "House Morvain"
+   ],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [
+    "wiki/gloamreach.md"
+   ],
+   "expected_answerable": true,
+   "notes": "Traced by hand, single page: the Gloamreach infobox gives 'Ruled by: House Morvain'. One-page control. The same page's 'Founded' row is contested, so this also checks that a contested neighbouring field does not contaminate an uncontested one."
+  },
+  {
+   "rid": "rb_050",
+   "group": "C_unanswerable",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which relic has Cerys Sablewode the Ashen wielded since 356 AS?",
+   "gold_answers": [],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [],
+   "expected_answerable": false,
+   "notes": "REFUSE - misspelled entity. The corpus contains 'Cerys Sablewood the Ashen'; the string 'Sablewode' appears nowhere in the archive (checked across wiki, codex, chronicles and ephemera). An honest system should say it cannot find that name, or ask whether Cerys Sablewood the Ashen was meant, rather than silently answering as if the name matched."
+  },
+  {
+   "rid": "rb_051",
+   "group": "C_unanswerable",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction won the Siege of Emberfall Bridge?",
+   "gold_answers": [],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [],
+   "expected_answerable": false,
+   "notes": "REFUSE - the conflict does not exist. The corpus records six conflicts (The Accord of Mournthrone, The Leaden Accord, The Purge of Blackport, The War of Drowned Light, The War of Endless Vigil, The Winter Reckoning). The string 'Emberfall' does not occur anywhere in the archive. Answering with any faction is a fabrication."
+  },
+  {
+   "rid": "rb_052",
+   "group": "C_unanswerable",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which stronghold does Tobias Ravenscar command?",
+   "gold_answers": [],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [],
+   "expected_answerable": false,
+   "notes": "REFUSE - the person does not exist. The string 'Ravenscar' does not occur anywhere in the archive. The surname is close in shape to real corpus names such as Ossric Ravensmoor, so this specifically tests whether a near-miss on a name gets silently snapped onto a real entity."
+  },
+  {
+   "rid": "rb_053",
+   "group": "C_unanswerable",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Who was Ederon Fellgard's mentor?",
+   "gold_answers": [],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [],
+   "expected_answerable": false,
+   "notes": "REFUSE - real entity, relation never recorded. Ederon Fellgard's page has no mentor row, and its prose states outright that the record does not identify family members, friends, enemies, mentors, apprentices, colleagues or political connections. Mentorship edges are dense elsewhere in the corpus, so the temptation to borrow one from a similarly-named Fellgard is the exact failure this catches."
+  },
+  {
+   "rid": "rb_054",
+   "group": "C_unanswerable",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which conflict did House Morvain win?",
+   "gold_answers": [],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [],
+   "expected_answerable": false,
+   "notes": "REFUSE - real entity, relation never recorded. House Morvain's page records it only as a belligerent in The War of Endless Vigil and The Purge of Blackport and carries no victory row of any kind; the recorded victors of those two are The Bleeding Crown and the Iron-Ring Cartel respectively. Being present at a conflict is not winning it, and naming either conflict here would be a guess."
+  },
+  {
+   "rid": "rb_055",
+   "group": "C_unanswerable",
+   "source": null,
+   "paraphrase_kind": null,
+   "question": "Which faction does the Marsh Revenant serve?",
+   "gold_answers": [],
+   "answer_cardinality": "exactly_one",
+   "required_evidence": [],
+   "expected_answerable": false,
+   "notes": "REFUSE - real entity, relation never recorded. Both the Marsh Revenant's wiki page and its codex bestiary entry state explicitly that no affiliation is recorded for it and that it needs no declared master. Other creatures in the corpus do carry a link from creature to conflict, so a router may be tempted to infer an allegiance from one; there is none to infer here."
+  }
+ ]
+}
