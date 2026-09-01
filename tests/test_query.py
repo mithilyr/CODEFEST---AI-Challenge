@@ -31,19 +31,6 @@ from src.settings import get_settings
 
 
 @pytest.fixture(scope="module")
-def corpus_root():
-    settings = get_settings()
-    if not settings.corpus_path.is_dir():
-        pytest.skip(f"Corpus not present at {settings.corpus_path}; see README.md")
-    return settings.corpus_path
-
-
-@pytest.fixture(scope="module")
-def graph(corpus_root):
-    return build_graph()
-
-
-@pytest.fixture(scope="module")
 def evidence_units(corpus_root):
     return ingest().evidence
 

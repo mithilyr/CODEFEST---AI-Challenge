@@ -165,6 +165,26 @@
       {
         "rid": "rb_008",
         "group": "A_paraphrase",
+        "status": "ambiguous_entity",
+        "route_success": false,
+        "entity_resolution_success": false,
+        "answer_correct": false,
+        "complete_evidence": false,
+        "ambiguous": true,
+        "no_route_shape": false,
+        "wrong_route": false,
+        "unnecessary_depth": false,
+        "would_escalate": null,
+        "gold_route_underivable": false,
+        "values": [],
+        "documents": [],
+        "relation_routes": [],
+        "hops": null,
+        "note": "'isolde mournvales' is not a name in the corpus. Closest: Isolde Mournvale (0.970), Isolde Thornwald (0.727). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+      },
+      {
+        "rid": "rb_009",
+        "group": "A_paraphrase",
         "status": "no_template_match",
         "route_success": false,
         "entity_resolution_success": false,
@@ -181,26 +201,6 @@
         "relation_routes": [],
         "hops": null,
         "note": "no deterministic template's trigger phrase matched"
-      },
-      {
-        "rid": "rb_009",
-        "group": "A_paraphrase",
-        "status": "ambiguous_entity",
-        "route_success": false,
-        "entity_resolution_success": false,
-        "answer_correct": false,
-        "complete_evidence": false,
-        "ambiguous": true,
-        "no_route_shape": false,
-        "wrong_route": false,
-        "unnecessary_depth": false,
-        "would_escalate": null,
-        "gold_route_underivable": false,
-        "values": [],
-        "documents": [],
-        "relation_routes": [],
-        "hops": null,
-        "note": "'Drowned Light' is not a name in the corpus. Closest: The War of Drowned Light (0.788). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_010",
@@ -256,13 +256,13 @@
       {
         "rid": "rb_011",
         "group": "A_paraphrase",
-        "status": "ambiguous_entity",
+        "status": "no_template_match",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": true,
-        "no_route_shape": false,
+        "ambiguous": false,
+        "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -271,7 +271,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'Drowned Light' is not a name in the corpus. Closest: The War of Drowned Light (0.788). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "no deterministic template's trigger phrase matched"
       },
       {
         "rid": "rb_012",
@@ -413,12 +413,12 @@
       {
         "rid": "rb_016",
         "group": "A_paraphrase",
-        "status": "relation_unavailable",
+        "status": "ambiguous_entity",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
+        "ambiguous": true,
         "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
@@ -428,7 +428,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "victory_membership trigger fired with no resolved entity"
+        "note": "'ederon fellgards' is not a name in the corpus. Closest: Ederon Fellgard (0.968), Caedmon Fellgard (0.812). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_017",
@@ -693,13 +693,13 @@
       {
         "rid": "rb_028",
         "group": "A_paraphrase",
-        "status": "no_template_match",
+        "status": "ambiguous_entity",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -708,7 +708,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "note": "'ravena stormwells' is not a name in the corpus. Closest: Ravena Stormwell (0.970). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_029",
@@ -1158,7 +1158,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'Cerys Sablewode' is not a name in the corpus. Closest: Cerys Sablewood the Ashen (0.750). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "'Cerys Sablewode the Ashen' is not a name in the corpus. Closest: Cerys Sablewood the Ashen (0.960). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_051",
@@ -1267,7 +1267,7 @@
       "entity_resolution_success": 19,
       "answer_correct": 16,
       "complete_evidence": 17,
-      "ambiguous": 4,
+      "ambiguous": 5,
       "no_route_shape": 37,
       "wrong_route": 0,
       "unnecessary_depth": 0,
@@ -3011,6 +3011,26 @@
       {
         "rid": "rb_008",
         "group": "A_paraphrase",
+        "status": "ambiguous_entity",
+        "route_success": false,
+        "entity_resolution_success": false,
+        "answer_correct": false,
+        "complete_evidence": false,
+        "ambiguous": true,
+        "no_route_shape": false,
+        "wrong_route": false,
+        "unnecessary_depth": false,
+        "would_escalate": null,
+        "gold_route_underivable": false,
+        "values": [],
+        "documents": [],
+        "relation_routes": [],
+        "hops": null,
+        "note": "'isolde mournvales' is not a name in the corpus. Closest: Isolde Mournvale (0.970), Isolde Thornwald (0.727). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+      },
+      {
+        "rid": "rb_009",
+        "group": "A_paraphrase",
         "status": "no_template_match",
         "route_success": false,
         "entity_resolution_success": false,
@@ -3027,26 +3047,6 @@
         "relation_routes": [],
         "hops": null,
         "note": "no deterministic template's trigger phrase matched"
-      },
-      {
-        "rid": "rb_009",
-        "group": "A_paraphrase",
-        "status": "ambiguous_entity",
-        "route_success": false,
-        "entity_resolution_success": false,
-        "answer_correct": false,
-        "complete_evidence": false,
-        "ambiguous": true,
-        "no_route_shape": false,
-        "wrong_route": false,
-        "unnecessary_depth": false,
-        "would_escalate": null,
-        "gold_route_underivable": false,
-        "values": [],
-        "documents": [],
-        "relation_routes": [],
-        "hops": null,
-        "note": "'Drowned Light' is not a name in the corpus. Closest: The War of Drowned Light (0.788). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_010",
@@ -3290,12 +3290,12 @@
       {
         "rid": "rb_016",
         "group": "A_paraphrase",
-        "status": "relation_unavailable",
+        "status": "ambiguous_entity",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
+        "ambiguous": true,
         "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
@@ -3305,7 +3305,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "victory_membership trigger fired with no resolved entity"
+        "note": "'ederon fellgards' is not a name in the corpus. Closest: Ederon Fellgard (0.968), Caedmon Fellgard (0.812). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_017",
@@ -3793,13 +3793,13 @@
       {
         "rid": "rb_028",
         "group": "A_paraphrase",
-        "status": "no_template_match",
+        "status": "ambiguous_entity",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -3808,7 +3808,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "note": "'ravena stormwells' is not a name in the corpus. Closest: Ravena Stormwell (0.970). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_029",
@@ -4443,7 +4443,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'Cerys Sablewode' is not a name in the corpus. Closest: Cerys Sablewood the Ashen (0.750). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "'Cerys Sablewode the Ashen' is not a name in the corpus. Closest: Cerys Sablewood the Ashen (0.960). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
       },
       {
         "rid": "rb_051",
@@ -4574,8 +4574,8 @@
       "entity_resolution_success": 38,
       "answer_correct": 22,
       "complete_evidence": 32,
-      "ambiguous": 9,
-      "no_route_shape": 18,
+      "ambiguous": 11,
+      "no_route_shape": 17,
       "wrong_route": 0,
       "unnecessary_depth": 3,
       "would_escalate": 0
@@ -4589,7 +4589,7 @@
         "entity_resolution_success": 10,
         "answer_correct": 9,
         "complete_evidence": 10,
-        "ambiguous": 3,
+        "ambiguous": 4,
         "no_route_shape": 15,
         "wrong_route": 0,
         "unnecessary_depth": 0,

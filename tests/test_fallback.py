@@ -16,8 +16,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.graph.build import build_graph, load_relation_map
-from src.graph.schema import Edge, Graph, Node
+from src.graph.schema import Edge
 from src.graph.traverse import Path
 from src.query.engine import answer_question
 from src.query.evidence import EvidenceStatus
@@ -29,25 +28,6 @@ from src.query.fallback import (
     route_by_cues,
     select_candidates,
 )
-from src.settings import get_settings
-
-
-@pytest.fixture(scope="module")
-def corpus_root():
-    settings = get_settings()
-    if not settings.corpus_path.is_dir():
-        pytest.skip(f"Corpus not present at {settings.corpus_path}; see README.md")
-    return settings.corpus_path
-
-
-@pytest.fixture(scope="module")
-def graph(corpus_root):
-    return build_graph()
-
-
-@pytest.fixture(scope="module")
-def relations():
-    return load_relation_map()
 
 
 @pytest.fixture(scope="module")
@@ -350,3 +330,78 @@ def test_only_identity_questions_earn_a_profile(graph):
     assert diet.status is not EvidenceStatus.PROFILE
     assert colour.status is not EvidenceStatus.PROFILE
     assert diet.values == () and colour.values == ()
+
+
+# --------------------------------------------------------------------------
+# Near-miss scanning is case- and underscore-insensitive.
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Who is halward crowhurst?",      # lowercase, v/w typo - the reported bug
+        "Who is Halward Crowhurst?",      # capitalised, same typo
+        "who is halward_crowhurst?",      # underscore key form, same typo
+        "halward crowhurst",              # no question wrapper at all
+        "WHO IS HALWARD CROWHURST?",      # shouting
+    ],
+)
+def test_a_typo_is_suggested_whatever_its_shape(question, graph):
+    """REPORTED BUG. The first version scanned only `_CAPITALISED_SPAN_RE`, so
+    "Halward Crowhurst" got a suggestion and "halward crowhurst" got a bare
+    NO_TEMPLATE_MATCH. The resolver scores both at 0.941 against `Halvard
+    Crowhurst` - the lowercase spelling simply never reached it. People typing
+    into a search box do not capitalise, and they paste entity keys with
+    underscores."""
+    answer = answer_question(question, graph)
+
+    assert answer.status == EvidenceStatus.AMBIGUOUS_ENTITY
+    assert "Halvard Crowhurst" in (answer.note or "")
+    assert answer.values == (), "suggesting is still not answering"
+
+
+@pytest.mark.parametrize(
+    "question",
+    ["Who is halvard_crowhurst?", "Who is halvard crowhurst?", "Who is HALVARD CROWHURST?"],
+)
+def test_a_correct_name_in_any_shape_still_resolves(question, graph):
+    """The underscore/key form and lowercase must route normally, not be
+    treated as near-misses of themselves."""
+    answer = answer_question(question, graph)
+    assert answer.status == EvidenceStatus.PROFILE
+    assert answer.values
+
+
+def test_a_single_misspelt_word_is_suggested(graph):
+    """One-word entity names exist (`Gloamreach`), so single-token spans are
+    scanned - above a length floor, since short strings score noisily."""
+    answer = answer_question("who is gloamreac", graph)
+    assert answer.status == EvidenceStatus.AMBIGUOUS_ENTITY
+    assert "Gloamreach" in (answer.note or "")
+
+
+def test_a_question_naming_a_real_entity_is_never_called_a_typo(graph):
+    """MEASURED GUARD. The worst noise the scan produces is a window that
+    swallows a correctly spelled name plus a neighbouring word - "was Ederon
+    Fellgard" scores 0.882. Rather than rely on the floor alone, a span that
+    resolves for real aborts the scan outright: the question names the man
+    correctly and fails because the corpus records no mentor."""
+    answer = answer_question("Who was Ederon Fellgard's mentor?", graph)
+    assert answer.status != EvidenceStatus.AMBIGUOUS_ENTITY
+    assert "not a name in the corpus" not in (answer.note or "")
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What color is the sky in the Ashen Era?",
+        "Which stronghold does Tobias Ravenscar command?",
+        "Which faction won the Siege of Emberfall Bridge?",
+    ],
+)
+def test_a_name_with_no_real_near_match_produces_no_suggestion(question, graph):
+    """The reporting floor is 0.90, far above the resolver's own 0.72 - which
+    exists to admit candidates for a human, not to claim a typo."""
+    answer = answer_question(question, graph)
+    assert answer.status != EvidenceStatus.AMBIGUOUS_ENTITY

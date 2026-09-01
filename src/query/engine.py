@@ -300,6 +300,93 @@ def _planned_answer(
     )
 
 
+#: Word tokens for near-miss scanning. Underscores are turned into spaces
+#: before this runs, so `halvard_crowhurst` is scanned as two words - a user
+#: pasting an entity key should be treated like a user typing the name.
+_WORD_TOKEN_RE = re.compile(r"[A-Za-z][A-Za-z'\-]*")
+
+#: Longest entity name in the corpus is four words ("Cerys Sablewood the
+#: Ashen"), so scanning past four buys nothing and costs comparisons.
+_MAX_SPAN_WORDS = 4
+
+#: Reporting floor, deliberately far above the resolver's own FUZZY_FLOOR of
+#: 0.72. MEASURED: real typos score 0.941 ("halward crowhurst"), 0.947
+#: ("gloamreac"), 0.966 ("Ederon Fellgar") and 0.968 ("Raven Stormwell"),
+#: while the worst noise - a window that swallows a *correctly* spelled name
+#: plus a neighbouring word, "was Ederon Fellgard" - tops out at 0.882. 0.90
+#: sits in that gap. This floor governs only what we SHOW; nothing is ever
+#: resolved automatically at any similarity (ADR-011).
+_SUGGESTION_FLOOR = 0.90
+
+#: Single words shorter than this are skipped. Short strings score noisily
+#: against a 117-key pool and would suggest a name for words like "lair".
+_MIN_SINGLE_WORD = 5
+
+#: Ordinary English a corpus name is never made only of. A window composed
+#: entirely of these cannot be a misspelt entity, so it is skipped before the
+#: resolver runs - each skipped window saves 117 `difflib` comparisons, and a
+#: typical question generates far more function-word windows than name-shaped
+#: ones. MEASURED: 77ms -> 49ms per question on the miss path, with no change
+#: to any suggestion the scan makes.
+_NOT_A_NAME = frozenset(
+    {
+        "a", "about", "an", "and", "any", "are", "as", "at", "be", "been",
+        "by", "can", "color", "colour", "did", "do", "does", "for", "from",
+        "had", "has", "have", "how", "in", "is", "it", "its", "me", "must",
+        "of", "on", "one", "or", "own", "recorded", "so", "tell", "that",
+        "the", "their", "there", "they", "this", "to", "was", "were", "what",
+        "when", "where", "which", "who", "whom", "whose", "why", "with",
+        "ultimately", "also", "still", "some", "many", "much", "more", "most",
+    }
+)
+
+
+def _best_near_miss(question: str, resolver: EntityResolver):
+    """Find the likeliest misspelt entity in a question, or nothing.
+
+    WHY THIS SCANS RATHER THAN PATTERN-MATCHES. The first version used
+    `_CAPITALISED_SPAN_RE`, so it only ever saw capitalised phrases. Reported
+    by a user: "halward crowhurst" (lowercase, and a v/w typo) returned a bare
+    `no_template_match` with no suggestion, while "Halward Crowhurst" got the
+    suggestion. The resolver had no difficulty with either - it scores both at
+    0.941 against `Halvard Crowhurst` - but the lowercase spelling never
+    reached it, because the regex demanded capitals. People typing into a
+    search box do not capitalise, and they paste entity keys with underscores.
+
+    Returns (span, resolution) or (None, None).
+    """
+    text = question.replace("_", " ")
+    tokens = _WORD_TOKEN_RE.findall(text)
+    best: tuple[float, str, object] | None = None
+
+    for size in range(1, _MAX_SPAN_WORDS + 1):
+        for start in range(len(tokens) - size + 1):
+            window = tokens[start : start + size]
+            if all(w.lower() in _NOT_A_NAME for w in window):
+                continue
+            span = _strip_possessive(" ".join(window))
+            if size == 1 and len(span) < _MIN_SINGLE_WORD:
+                continue
+            resolution = resolver.resolve(span)
+
+            # A span that resolves for real means the question DOES name a
+            # known entity, so the miss is about routing or relations, not
+            # spelling. Suggesting a typo here would be wrong and confusing:
+            # "Who was Ederon Fellgard's mentor?" names the man correctly and
+            # fails because the corpus records no mentor.
+            if resolution.resolved:
+                return None, None
+
+            if resolution.status == ResolutionStatus.AMBIGUOUS and resolution.candidates:
+                score = resolution.candidates[0].similarity
+                if score >= _SUGGESTION_FLOOR and (best is None or score > best[0]):
+                    best = (score, span, resolution)
+
+    if best is None:
+        return None, None
+    return best[1], best[2]
+
+
 def _strip_possessive(span: str) -> str:
     """Drop a trailing possessive so a correct name is not reported as a typo.
 
@@ -343,23 +430,21 @@ def _unrouted(
     # still resolves nothing on its own. Only a span the resolver itself
     # classified AMBIGUOUS qualifies - one it found nothing for at all (e.g.
     # "Ashen Era") stays an ordinary template miss.
-    for candidate in _CAPITALISED_SPAN_RE.findall(question):
-        candidate = _strip_possessive(candidate)
-        resolution = resolver.resolve(candidate)
-        if resolution.status == ResolutionStatus.AMBIGUOUS and resolution.candidates:
-            suggestions = ", ".join(
-                f"{c.name} ({c.similarity:.3f})" for c in resolution.candidates[:3]
-            )
-            return Answer(
-                question=question,
-                status=EvidenceStatus.AMBIGUOUS_ENTITY,
-                resolutions=(resolution,),
-                note=(
-                    f"{candidate!r} is not a name in the corpus. Closest: "
-                    f"{suggestions}. Resolution is exact-match only and never "
-                    f"picks a winner (ADR-011) - retry with the exact name."
-                ),
-            )
+    span, resolution = _best_near_miss(question, resolver)
+    if resolution is not None:
+        suggestions = ", ".join(
+            f"{c.name} ({c.similarity:.3f})" for c in resolution.candidates[:3]
+        )
+        return Answer(
+            question=question,
+            status=EvidenceStatus.AMBIGUOUS_ENTITY,
+            resolutions=(resolution,),
+            note=(
+                f"{span!r} is not a name in the corpus. Closest: "
+                f"{suggestions}. Resolution is exact-match only and never "
+                f"picks a winner (ADR-011) - retry with the exact name."
+            ),
+        )
 
     if "no resolved entity" not in miss.reason and "did not find exactly one" not in miss.reason:
         return Answer(question=question, status=EvidenceStatus.NO_TEMPLATE_MATCH, note=miss.reason)

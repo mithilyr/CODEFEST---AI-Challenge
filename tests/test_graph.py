@@ -14,26 +14,11 @@ import collections
 import json
 from pathlib import Path
 
-import pytest
 
-from src.graph.build import build_graph, infobox_rows, load_relation_map
+from src.graph.build import infobox_rows, load_relation_map
 from src.graph.cells import parse_cell
 from src.graph.entities import canonical_key, display_name, slugify
 from src.graph.traverse import find_paths, walk_relations
-from src.settings import get_settings
-
-
-@pytest.fixture(scope="module")
-def corpus_root():
-    settings = get_settings()
-    if not settings.corpus_path.is_dir():
-        pytest.skip(f"Corpus not present at {settings.corpus_path}; see README.md")
-    return settings.corpus_path
-
-
-@pytest.fixture(scope="module")
-def graph(corpus_root):
-    return build_graph()
 
 
 # --------------------------------------------------------------------------

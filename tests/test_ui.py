@@ -27,31 +27,16 @@ from pathlib import Path
 
 import pytest
 
-from src.graph.build import build_graph
 from src.query.engine import Answer, answer_question
 from src.query.evidence import EvidenceStatus
 from src.ui import render, view
 from src.ui.render import page_answer, page_error, page_index
 from src.ui.view import build_view
-from src.settings import get_settings
 
 Q_013 = "Whose dominion encompasses the lair of the Gravemaw Wyrm?"
 Q_007 = "Which accord was ultimately won by the faction of which Ederon Fellgard is a member?"
 Q_006 = "Which individual was a member of the faction that ultimately won the War of Drowned Light?"
 Q_009 = "In what way is Halvard Crowhurst connected to the victors of the Purge of Blackport?"
-
-
-@pytest.fixture(scope="module")
-def corpus_root():
-    settings = get_settings()
-    if not settings.corpus_path.is_dir():
-        pytest.skip(f"Corpus not present at {settings.corpus_path}; see README.md")
-    return settings.corpus_path
-
-
-@pytest.fixture(scope="module")
-def graph(corpus_root):
-    return build_graph()
 
 
 @pytest.fixture(scope="module")

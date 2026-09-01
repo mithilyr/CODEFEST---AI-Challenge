@@ -9,29 +9,14 @@ from __future__ import annotations
 
 import pytest
 
-from src.graph.build import build_graph
 from src.query.engine import answer_question
 from src.query.evidence import EvidenceStatus
 from src.query.synthesis import synthesise, template_sentence
-from src.settings import get_settings
 
 DEV_QUESTION = (
     "Which accord was ultimately won by the faction of which "
     "Ederon Fellgard is a member?"
 )
-
-
-@pytest.fixture(scope="module")
-def corpus_root():
-    settings = get_settings()
-    if not settings.corpus_path.is_dir():
-        pytest.skip(f"Corpus not present at {settings.corpus_path}; see README.md")
-    return settings.corpus_path
-
-
-@pytest.fixture(scope="module")
-def graph(corpus_root):
-    return build_graph()
 
 
 @pytest.fixture(scope="module")

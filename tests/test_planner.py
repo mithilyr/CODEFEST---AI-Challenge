@@ -14,7 +14,6 @@ import json
 
 import pytest
 
-from src.graph.build import build_graph, load_relation_map
 from src.query.engine import answer_question
 from src.query.evidence import EvidenceStatus
 from src.query.planner import (
@@ -23,25 +22,6 @@ from src.query.planner import (
     plan_and_walk,
     validate_plan,
 )
-from src.settings import get_settings
-
-
-@pytest.fixture(scope="module")
-def corpus_root():
-    settings = get_settings()
-    if not settings.corpus_path.is_dir():
-        pytest.skip(f"Corpus not present at {settings.corpus_path}; see README.md")
-    return settings.corpus_path
-
-
-@pytest.fixture(scope="module")
-def graph(corpus_root):
-    return build_graph()
-
-
-@pytest.fixture(scope="module")
-def relations():
-    return load_relation_map()
 
 
 class FakePool:

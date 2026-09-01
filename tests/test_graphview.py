@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import pytest
 
-from src.graph.build import build_graph
-from src.graph.schema import Edge, Graph, Node
+from src.graph.schema import Graph, Node
 from src.ui.graphview import (
     HEIGHT,
     WIDTH,
@@ -13,15 +11,6 @@ from src.ui.graphview import (
     legend_html,
     render_svg,
 )
-from src.settings import get_settings
-
-
-@pytest.fixture(scope="module")
-def graph():
-    settings = get_settings()
-    if not settings.corpus_path.is_dir():
-        pytest.skip(f"Corpus not present at {settings.corpus_path}; see README.md")
-    return build_graph()
 
 
 def test_the_drawing_is_identical_on_every_run(graph):
