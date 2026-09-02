@@ -970,3 +970,63 @@ that is correct in isolation becomes wrong once it is wired to something real.
 Neither showed up in a unit test. Both showed up within minutes of running the
 thing against the actual world — which is the same lesson the sister team wrote
 down after Docker (ADR-022 in their repo), arrived at independently here.
+
+---
+
+## F-026 — A typo reporter that calls a correctly-spelled name a typo
+
+**What we tried.** The near-miss reporter of ADR-021: on a routing miss, scan
+word windows, and if the resolver classifies one as `AMBIGUOUS` at ≥0.90,
+report the candidates instead of returning a bare `no_template_match`. Guarded
+by `_strip_possessive`, which was written *specifically* because
+`Ederon Fellgard's` scored 0.938 against the real name and was announced as a
+typo on a question that spelled it perfectly.
+
+**What killed it.** Re-running `python -m comparison.harness` against the frozen
+55-question set — not a unit test — found the same bug in the form the guard
+does not cover. Three of 49 answerable questions:
+
+```
+rb_008  isolde mournvales group won what war
+rb_016  ederon fellgards faction won which accord
+rb_028  what war did ravena stormwells lot end up winning
+```
+
+All three names are spelled **correctly**. The user simply omitted the
+apostrophe. `_strip_possessive` strips `'s`, `’s`, `'` and `’` — not a bare
+trailing `s` — so the span reaches the resolver as `isolde mournvales`, scores
+0.970 against `Isolde Mournvale`, and the system announces *"'isolde
+mournvales' is not a name in the corpus."*
+
+MEASURED, by resolving both forms directly:
+
+```
+isolde mournvales   AMBIGUOUS      isolde mournvale   NORMALISED (resolved)
+ederon fellgards    AMBIGUOUS      ederon fellgard    NORMALISED (resolved)
+ravena stormwells   AMBIGUOUS      ravena stormwell   NORMALISED (resolved)
+```
+
+`rb_016` is the sharpest case: it previously returned `relation_unavailable`, a
+*more specific and more correct* diagnosis, and the new reporter replaced it
+with a spelling complaint. That is a regression in diagnosis quality, on a
+change whose entire purpose was to diagnose better.
+
+**The lesson.** *A guard written for one surface form of a problem does not
+cover the problem.* `_strip_possessive` was added after this exact failure with
+an apostrophe, and its docstring says so. Nobody asked which other spellings of
+"possessive" exist. The test suite could not catch it — all 298 pass — because
+the case only appears in questions written by someone other than the person who
+wrote the guard, which is what the frozen set is for.
+
+**Second lesson, about measurement hygiene.** `626631e`'s commit message
+records the frozen set as "unchanged where it matters: 17 correct, 26 complete
+evidence" — true, and it checked arm C. It did not check arm A, where the
+count moved 35 → 33 and these three questions changed status. A summary metric
+held steady while a per-question behaviour regressed underneath it. Diff the
+per-question records, not just the totals.
+
+**Status: open, deliberately.** The obvious fix — strip a bare trailing `s` —
+is not obviously safe against plurals and against names that legitimately end
+in `s`, and it would change routing outcomes on the frozen set, so it needs its
+own measurement rather than a same-day patch. Recorded in ADR-021 as a known
+limitation so the report does not claim the reporter is clean.

@@ -1733,3 +1733,123 @@ measurement of what the planner is *for*, not of how well it does it.
 
 *Status: accepted. 269 tests, 66 of them new. Model list re-verifiable with
 `python -m src.clients.openrouter --verify`.*
+
+---
+
+## ADR-021 — Question shape is a routing failure of its own, and a near-miss spelling is reported rather than resolved
+
+**Problem**
+
+Two commits (`626631e`, `885b5fd`) shipped on 1 Sep with no ADR. Both touch the
+boundary ADR-011 draws — *resolution is exact match, and fuzzy matching may
+never pick a winner* — and one of them adds a seventh answerable
+`EvidenceStatus`. A judge who reads ADR-011 and then finds `difflib`
+similarity scanning in `src/query/engine.py` has no document reconciling the
+two. This ADR is that document, written three days late.
+
+The triggering observation was that *"Who is Ravena Stormwell?"* returned
+nothing, and tracing it found **two independent causes**, not one.
+
+**What we measured**
+
+1. **Shape, not coverage.** *"Who is Ravena Stormwell?"* — spelled correctly —
+   also failed. It names an entity the graph knows and no relation at all, so
+   both deterministic tiers declined correctly. Yet
+   *"which faction is Ravena Stormwell a member of"* answers The Silent Choir
+   immediately from the same graph. The evidence was present; the question
+   shape had no route.
+2. **A near-miss was found and then discarded.** The resolver scores
+   `Ravena Stormwell` at **0.968** against the typo and correctly refuses to
+   pick it — ADR-011's reason holds: `caedmon_fellgard` and `ederon_fellgard`
+   sit at **0.839**, so any threshold loose enough to accept 0.968 eventually
+   merges two real people. But the engine then returned a bare
+   `no_template_match` and never mentioned the candidate, leaving a user with a
+   typo no route to the right spelling.
+
+**Decision**
+
+1. **`EvidenceStatus.PROFILE` and `fallback.profile_of`.** When an entity
+   resolves and *no* relation is cued, return every edge touching that entity
+   as a one-hop path. Each fact is one the graph already built from an infobox
+   row, with its document attached — so this is not a guess. It is also not an
+   answer to a narrow question, which is why it carries its own status and says
+   so, rather than borrowing `SUFFICIENT`'s credibility.
+2. **Only identity-shaped questions earn a profile.** `IDENTITY_QUESTION_RE` is
+   a closed list — `who/what is|was|are|were`, `tell me about`, `describe`.
+   The first version fired whenever no relation was cued, so *"What did the
+   Gravemaw Wyrm eat for breakfast?"* was answered with the wyrm's lair. Two
+   existing tests caught it. Labelled or not, that is F-025's failure exactly:
+   answering a question nobody asked. The line that holds is that *"Who is X?"*
+   asks for the record, so giving the record answers it.
+3. **Near misses are reported, never resolved.** `AMBIGUOUS_ENTITY` now carries
+   the candidates and their similarities, and the note names ADR-011 and tells
+   the user to retry with the exact name. **Nothing is resolved automatically
+   at any similarity.** Reporting is safe precisely where guessing is not.
+4. **The reporting floor is 0.90, and governs display only.** MEASURED: real
+   typos score 0.941 (`halward crowhurst`), 0.947 (`gloamreac`), 0.966
+   (`Ederon Fellgar`), 0.968 (`Raven Stormwell`); the worst noise — a window
+   swallowing a correctly-spelled name plus a neighbour, `was Ederon Fellgard`
+   — tops out at **0.882**. 0.90 sits in that gap. It is deliberately far above
+   the resolver's own `FUZZY_FLOOR` of 0.72, because that floor decides what we
+   *show* and never what we *pick*.
+5. **The scan is over word windows, not capitalised spans.** The first version
+   used `_CAPITALISED_SPAN_RE`, so `halward crowhurst` (lowercase, v/w typo)
+   got no suggestion while `Halward Crowhurst` did — though the resolver scores
+   both at 0.941. People typing into a search box do not capitalise, and they
+   paste entity keys with underscores. Windows are 1–4 tokens (the longest
+   corpus name, `Cerys Sablewood the Ashen`, is four); function-word-only
+   windows are skipped, which measured **77ms → 49ms** per question on the miss
+   path with no change to any suggestion produced.
+
+**Effect on the frozen set — and a correction to ADR-019**
+
+Re-running `python -m comparison.harness` today:
+
+```
+metric                  A templates   B cues   C shipped
+route_success                    11       30          30
+answer_correct                   10       12          17
+complete_evidence                11       20          26
+no_route_shape                   33        4          14
+```
+
+Arm C is unchanged (**17 correct / 26 complete evidence**) and arm B is
+byte-identical, so ADR-019's adoption argument stands untouched. **Arm A moved**:
+four questions were reclassified from `no_template_match` / `relation_unavailable`
+to `ambiguous_entity`, so the templates tier's `no_route_shape` count is now
+**33 of 49, not the 35 ADR-019 records**. No answer changed correctness. ADR-019's
+headline should be read as 33/49 from this commit forward; the 35 was correct when
+written and is retained here rather than edited out of that ADR.
+
+**Measured limitation — the suggestion misdiagnoses a correct spelling**
+
+Three of those four reclassified questions are **apostrophe-less possessives**:
+
+```
+rb_008  isolde mournvales group won what war
+rb_016  ederon fellgards faction won which accord
+rb_028  what war did ravena stormwells lot end up winning
+```
+
+Every one of those names is spelled correctly. The system reports *"'isolde
+mournvales' is not a name in the corpus"*, which is true of the span and
+misleading about the question. `_strip_possessive` handles `'s` and `’s` — this
+is the same bug in the form it does not handle. MEASURED: stripping a bare
+trailing `s` makes all three resolve exactly (`NORMALISED`), which would also
+let the cue tier route them. That fix is **not made here**, because stripping a
+bare `s` is not obviously safe against plurals and names ending in `s`, and it
+deserves its own measurement rather than being smuggled into a documentation
+commit. Logged as **F-026**. The fourth, `rb_050` (`Cerys Sablewode` →
+`Sablewood`, 0.960), is a genuine typo correctly reported.
+
+**Why not fuzzy resolution after all**
+
+Because ADR-011's number has not moved. 0.839 between two real people is still
+below 0.90, but the gap is 0.06 and it is the *only* thing separating a helpful
+suggestion from a silently merged identity. A suggestion a human accepts costs
+one keystroke; a merge nobody sees costs a wrong answer with real citations
+attached — the failure mode this project exists to prevent.
+
+*Status: accepted, retroactive. Pinned by the tests added in `626631e` and
+`885b5fd` (`tests/test_fallback.py`); 298 tests total. Reproduce the frozen-set
+numbers with `python -m comparison.harness`.*
