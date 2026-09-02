@@ -148,7 +148,7 @@ Source: `eval/results/baseline_latest.md` prints this banner itself: 2 draft,
 risks and 1 dispute needing a human (`1c_000`). Say this plainly — a team that
 labels its own numbers provisional reads as more credible, not less.
 
-**Failed approaches — pick four from `docs/failures.md` (F-001…F-026).** The
+**Failed approaches — pick four from `docs/failures.md` (F-001…F-027).** The
 four that carry the most signal:
 - **F-025** — an LLM plan that was well-formed, validated, and about nothing.
   Well-formedness is not relevance.
@@ -157,6 +157,17 @@ four that carry the most signal:
 - **F-026** — the typo reporter that calls a correctly-spelled name a typo,
   found by re-running the frozen set, *still open*. Including an open defect is
   a strength here; §5.3 asks for limitations, not a victory lap.
+
+  *A fifth candidate worth weighing against these four:* **F-027** — a graph
+  edge with every provenance field correct (real document, real field, real
+  row, real cell) and the arrow pointing backwards; 3 of 267 edges, 37% of
+  `mentor_of`. Nothing in the tests, the summary, or the score caught it — the
+  score was byte-identical before and after the fix. It is the sharpest
+  illustration in the repo of this section's own opening claim ("a confident,
+  well-formatted, wrong result"), and unlike F-026 it is *closed*, which cuts
+  the other way for a section that wants at least one open defect on display.
+  Not substituted in here — that trade is an editorial call for whoever
+  drafts this section, not one to make silently in the outline.
 
 **Two claims that are dead and must not be revived.** The 1C baseline does
 *not* answer 360 AS — measured, false. And the authority-tier layer is *not*

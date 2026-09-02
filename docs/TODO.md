@@ -29,10 +29,16 @@ are done: `origin` is configured
       (ADR-018). 19 new tests, 203 total.
 - [x] **Measure the query layer's weaknesses.** Done 2026-09-01 (ADR-019).
       55 independently authored questions, frozen before either router ran.
-      Templates match no route shape on 35/49; on novel questions, 1/21.
-      A cue-based fallback tier now runs on a template miss: 17 correct /
-      26 complete evidence vs 10 / 11 for templates alone. Reproduce with
-      `python -m comparison.harness` and `python -m comparison.ablations`.
+      Templates match no route shape on 35/49 as first measured; on novel
+      questions, 1/21. A cue-based fallback tier now runs on a template miss:
+      17 correct / 26 complete evidence vs 10 / 11 for templates alone.
+      **Both headline numbers have since moved on reruns, not on this task
+      changing**: no-route-shape is 33/49 as of ADR-021 (four questions
+      reclassified to `ambiguous_entity`, no answer changed), and the shipped
+      tier's complete evidence is 27/49 as of ADR-024 (one question,
+      `rb_044`). Re-verified 2026-09-02, both this session. Reproduce with
+      `python -m comparison.harness` and `python -m comparison.ablations`;
+      never quote 35 or 26 without checking they still hold.
 - [x] **Decide whether an LLM planner is warranted.** Done 2026-09-01
       (ADR-020). 19/49 answerable questions reached no route, which cleared
       the gate. Built as a third tier emitting a validated plan, never an
