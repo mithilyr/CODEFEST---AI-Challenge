@@ -1,6 +1,6 @@
 # Task checklist
 
-Updated 2026-08-30. Deadline: 9 Sep 2026, 11:30 PM.
+Updated 2026-09-02. Deadline: 9 Sep 2026, 11:30 PM.
 
 ## Blocking — before push/share
 
@@ -47,6 +47,25 @@ are done: `origin` is configured
 - [ ] Compare the sister repo's conflict detector against `src/query/conflict.py`
       (Phase 2 of the comparison; not yet measured — F-024 showed ours
       over-fires when used as a general per-edge filter).
+- [ ] **`ai_usage/` is empty.** Challenge doc §4.1 requires the full AI chat
+      logs exported as plain `.txt` **in the repo**, plus an
+      `ai_usage/ai-usage-disclosure.md` naming which tools, for what, and which
+      decisions the team made. Human–AI collaboration is **15% of the rubric**
+      and is judged from exactly these logs plus the commit history. Mandatory —
+      incomplete submissions are not evaluated. Export as work happens.
+- [ ] **`docs/diagrams/` is empty.** An architecture diagram is required by
+      §5.2 *and* §5.3, and Presentation & documentation (10%) names it. Pipeline
+      to draw: ingest → OCR → evidence units → graph → three query tiers →
+      synthesis → UI, with both LLM entry points marked *off by default*.
+- [ ] **Team names, roles and contributions** are recorded nowhere in the repo
+      and are required in the report (§5.3). Three owners in "Assign" below are
+      still unfilled.
+- [ ] `docs/architecture.md` and `configuration-example/` are named in §5.2's
+      recommended structure; the first does not exist and the second is empty.
+- [ ] Decide F-026: `_strip_possessive` does not strip a bare trailing `s`, so
+      three of 49 frozen questions are told a correctly-spelled name is a typo.
+      MEASURED: stripping it resolves all three exactly. Needs its own
+      measurement against plurals and names ending in `s` — see ADR-021.
 - [ ] Rotate all API keys before 8 Sep (chat-log export day) — logs are a
       mandatory deliverable judges read.
 - [ ] Export AI chat logs to `ai_usage/` as work happens, not at the end.
