@@ -89,6 +89,7 @@ that moves with the provider's free lineup.
 | `src/clients/openrouter.py` | Done — rotation, cache, structured output, timeout, retry classification. Model list verified live 2026-09-01, re-checkable with `--verify` |
 | `src/query/synthesis.py` | Done — prose from a verified chain, `phrasing: model \| template \| none`. Template path needs no key |
 | `src/ui/graphview.py` | Done — all 117 entities as one static SVG, no CDN, no JS, deterministic (ADR-020) |
+| `docs/architecture.md` | Done — the architecture, with `docs/diagrams/architecture.svg`. Hand-authored SVG, no toolchain, self-contained (ADR-022). **Every number in it is re-derived from the live corpus by `tests/test_diagram.py`** and fails the suite if the picture goes stale |
 | `src/ui/` | Done (first version) — stdlib `http.server`, no new dependency; renders all nine demo surfaces; thinness enforced by three architectural tests (ADR-018) |
 
 ### Checkpoint 1 results (reproducible, not just measured)
@@ -200,7 +201,7 @@ python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_
 python -m src.graph.build          # build the graph, print coverage
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 298 tests
+python -m pytest                   # 308 tests
 python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
                                    #   /graph shows the whole graph as one SVG
 python -m src.ui.server --with-model   # enable the LLM planner + phrasing

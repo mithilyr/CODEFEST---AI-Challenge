@@ -1853,3 +1853,89 @@ attached — the failure mode this project exists to prevent.
 *Status: accepted, retroactive. Pinned by the tests added in `626631e` and
 `885b5fd` (`tests/test_fallback.py`); 298 tests total. Reproduce the frozen-set
 numbers with `python -m comparison.harness`.*
+
+---
+
+## ADR-022 — The architecture diagram is a hand-authored SVG, pinned by tests
+
+**Problem**
+
+An architecture diagram is required twice — challenge doc §5.2 ("include
+architecture and design diagrams") and §5.3 ("solution overview and
+architecture, with a diagram") — and Presentation & documentation (10% of the
+rubric) names it explicitly. `docs/diagrams/` was empty.
+
+The question is not whether to draw one. It is what a diagram is *made of* in a
+project whose binding constraint is that every team member must explain and
+modify any part of the submission on demand.
+
+**Options considered**
+
+| Option | Cost | Why not |
+|---|---|---|
+| Mermaid in Markdown | none to author | Renders on GitHub, but the report is a **PDF**. Exporting needs `mermaid-cli` and therefore Node — a toolchain, in a Python repo, for one picture |
+| Graphviz / PlantUML | a new dependency + a binary | Same problem, plus a layout engine whose output we do not control and cannot nudge |
+| Generate SVG from the graph | reuses `src/ui/graphview.py`'s approach | **The diagram is not a rendering of data.** It is a static picture of a design. There is nothing to generate it *from*, so this would mean inventing a data structure whose only consumer is the picture |
+| Hand-authored SVG | ~200 lines of XML | Chosen |
+
+**Decision**
+
+`docs/diagrams/architecture.svg`, written by hand, checked in.
+
+**Why**
+
+1. **No toolchain at all.** A browser renders it, GitHub renders it inline from
+   Markdown, and Word and LaTeX both import it for the PDF. Nothing has to be
+   installed, and nothing can break between now and 9 September.
+2. **A teammate can change it with a text editor.** Every box is a `<rect>` and
+   every label is a `<text>`; fixing a number means editing that number. This is
+   the same standard the rest of the repo is held to, and there is precedent —
+   `src/ui/graphview.py` already emits SVG by hand with no CDN and no JS.
+3. **Self-contained, like the UI.** No external reference of any kind, enforced
+   by a test. A diagram that needs the network renders as a broken box on the
+   judge's machine.
+
+**The part that matters more than the format**
+
+**A diagram is the one artefact nobody re-runs.** Its numbers are claims, and
+nothing in this project would have noticed them going stale — which is not
+hypothetical: ADR-019 recorded "35 of 49" and the true figure was **33** for
+three days, while the committed comparison JSON already held the new number
+(F-026). Prose drifts silently; artefacts do not.
+
+So the diagram is pinned the way ADR-010's twelve templates are pinned. Ten
+tests in `tests/test_diagram.py` re-derive every number from the live corpus —
+file count from the integrity manifest, ingestion counts from a real ingest,
+entities and edges from the built graph, cells and templates by re-parsing the
+wiki — and fail if the picture disagrees. Three further tests assert claims
+rather than counts: that both query-tier model calls are marked *off by default*
+**and that `answer_question`'s signature actually agrees**, that `7/7` never
+appears without `33 of 49` beside it, and that the graph box does not borrow the
+query layer's `7/7` (ADR-016 measures evidence coverage, not correctness — two
+different claims that would read as one).
+
+**A mistake worth recording, because it was the guarded failure reproducing
+itself inside its own guard**
+
+The first version of these tests collected every integer in the file and asked
+whether the measured value was among them. Verified by mutation, as any
+assertion of this kind should be: changing the graph box from **117 to 125**
+left the suite **green**, because `117` still appeared in the UI box's
+"/graph renders all 117 entities". A number present *somewhere* proves nothing
+about the box that should carry it.
+
+That is F-026 exactly — a summary check holding steady while the specific thing
+underneath it regressed — recreated in the test written to prevent it. The tests
+now assert exact rendered sentences (`f"Graph — {n} entities, {m} edges"`), and
+both mutations fail as they should.
+
+**Trade-offs**
+
+Hand-authored SVG means no automatic layout: moving a box means moving the
+arrows that touch it. At this size (about twenty boxes) that is minutes of work,
+and it buys a picture with no build step, no dependency, and no way to drift
+from the measurements without the suite noticing. If the architecture starts
+changing weekly, revisit.
+
+*Status: accepted. 308 tests, 10 of them new. Diagram rendered and visually
+verified end-to-end; number pins verified by deliberate mutation.*

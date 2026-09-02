@@ -53,15 +53,17 @@ are done: `origin` is configured
       decisions the team made. Human–AI collaboration is **15% of the rubric**
       and is judged from exactly these logs plus the commit history. Mandatory —
       incomplete submissions are not evaluated. Export as work happens.
-- [ ] **`docs/diagrams/` is empty.** An architecture diagram is required by
-      §5.2 *and* §5.3, and Presentation & documentation (10%) names it. Pipeline
-      to draw: ingest → OCR → evidence units → graph → three query tiers →
-      synthesis → UI, with both LLM entry points marked *off by default*.
+- [x] **Architecture diagram** — done 2026-09-02. `docs/diagrams/architecture.svg`
+      (hand-authored, no toolchain, self-contained) plus `docs/architecture.md`,
+      which also closes §5.2's `docs/architecture.md` item. ADR-022. Pinned by 10
+      tests in `tests/test_diagram.py` that re-derive every number from the live
+      corpus — verified by mutation, after the first version passed a deliberate
+      117→125 change.
 - [ ] **Team names, roles and contributions** are recorded nowhere in the repo
       and are required in the report (§5.3). Three owners in "Assign" below are
       still unfilled.
-- [ ] `docs/architecture.md` and `configuration-example/` are named in §5.2's
-      recommended structure; the first does not exist and the second is empty.
+- [ ] `configuration-example/` is named in §5.2's recommended structure and is
+      empty. (`docs/architecture.md` is done — see the diagram item above.)
 - [ ] Decide F-026: `_strip_possessive` does not strip a bare trailing `s`, so
       three of 49 frozen questions are told a correctly-spelled name is a typo.
       MEASURED: stripping it resolves all three exactly. Needs its own

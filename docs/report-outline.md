@@ -79,10 +79,12 @@ Source: CLAUDE.md "Corpus facts", each traced to a probe.
 
 ## §2 — Architecture, with diagram
 
-**BLOCKED — `docs/diagrams/` is empty.** The diagram is mandatory in both §5.2
-and §5.3. See the gap register below.
+**Ready.** `docs/diagrams/architecture.svg`, explained in `docs/architecture.md`
+(ADR-022). Self-contained SVG, so it drops straight into the PDF with no export
+step. Every number in it is re-derived by `tests/test_diagram.py`, so the figure
+in the report cannot disagree with the repo.
 
-Pipeline to depict: `ingest → OCR → evidence units → graph build → query tiers
+Depicted: `ingest → OCR → evidence units → graph build → query tiers
 → synthesis → UI`, with the three routing tiers drawn as a decision chain and
 the two LLM entry points marked as *off by default*.
 
@@ -193,10 +195,10 @@ Ordered by risk. The first three are mandatory-deliverable gaps, not polish.
 | # | Gap | Required by | State |
 |---|---|---|---|
 | 1 | `ai_usage/` is **empty** — no chat logs, no `ai-usage-disclosure.md` | §4.1, §5.2, and 15% of the rubric | not started |
-| 2 | `docs/diagrams/` is **empty** — no architecture diagram | §5.2 *and* §5.3 | not started |
+| ~~2~~ | ~~no architecture diagram~~ | §5.2 *and* §5.3 | **done** 2026-09-02, ADR-022 |
 | 3 | Team names, roles, contributions recorded nowhere | §5.3 | not started |
 | 4 | Answer key not two-person verified — every number is PROVISIONAL | ADR-014, F-015 | 2 draft, 6 single_review, 1 unresolved |
-| 5 | No `docs/architecture.md`; `configuration-example/` empty | §5.2 recommended structure | not started |
+| 5 | `configuration-example/` empty (`docs/architecture.md` now done) | §5.2 recommended structure | partly done |
 | 6 | Planner tier unmeasured on the frozen set | open decision, `docs/TODO.md` | deliberate; must be *stated*, not hidden |
 | 7 | Video not recorded; link is the first line of the report | §5.1 | not started |
 
