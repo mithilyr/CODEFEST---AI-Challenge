@@ -4220,7 +4220,7 @@
         "route_success": true,
         "entity_resolution_success": true,
         "answer_correct": false,
-        "complete_evidence": false,
+        "complete_evidence": true,
         "ambiguous": true,
         "no_route_shape": false,
         "wrong_route": false,
@@ -4234,7 +4234,14 @@
           "Brannoc Palefroth",
           "Ederon Coldwater",
           "Ederon Fellgard",
-          "Morwenna Vosgard"
+          "Morwenna Vosgard",
+          "Ashreach",
+          "Blackford",
+          "Crookgate Keep",
+          "Fenthrone",
+          "Marrowwell Abbey",
+          "Mournwatch",
+          "The Ashen Vanguard"
         ],
         "documents": [
           "wiki/ignatz_ashgrove_the_oathless.md",
@@ -4246,17 +4253,35 @@
           "wiki/ederon_coldwater.md",
           "wiki/ederon_fellgard.md",
           "wiki/ironfell_citadel.md",
-          "wiki/morwenna_vosgard.md"
+          "wiki/morwenna_vosgard.md",
+          "wiki/ignatz_marrowgate.md",
+          "wiki/ashreach.md",
+          "wiki/blackford.md",
+          "wiki/crookgate_keep.md",
+          "wiki/fenthrone.md",
+          "wiki/marrowwell_abbey.md",
+          "wiki/mournwatch.md",
+          "wiki/cindermere_hold.md"
         ],
         "relation_routes": [
           [
             "member_of",
             "ruled_by",
             "serves_at"
+          ],
+          [
+            "mentor_of",
+            "member_of",
+            "ruled_by"
+          ],
+          [
+            "mentor_of",
+            "serves_at",
+            "ruled_by"
           ]
         ],
         "hops": 3,
-        "note": "No template matched. Answered by cue-based fallback routing on relation(s) member_of, ruled_by, serves_at. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) member_of, mentor_of, ruled_by, serves_at. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
       },
       {
         "rid": "rb_045",
@@ -4573,7 +4598,7 @@
       "route_success": 35,
       "entity_resolution_success": 38,
       "answer_correct": 22,
-      "complete_evidence": 32,
+      "complete_evidence": 33,
       "ambiguous": 11,
       "no_route_shape": 17,
       "wrong_route": 0,

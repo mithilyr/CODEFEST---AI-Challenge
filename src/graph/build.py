@@ -53,6 +53,10 @@ class RelationMap:
     #: Lowercased forward field name -> relation, so a verb written *inside* a
     #: cell can be checked against the direction the field name implies.
     verbs: dict[str, str]
+    #: relation -> extra *question* vocabulary, from each relation's `cues:` key.
+    #: Read only by the cue-based router; the builder never consults it, because
+    #: these are not field names and no corpus row is keyed on them.
+    question_cues: dict[str, list[str]]
 
     def lookup(self, field_name: str) -> tuple[str, str] | None:
         """Return (relation, "forward"|"reverse"), or None if not a relation."""
@@ -99,8 +103,13 @@ def load_relation_map(path: Path = RELATIONS_PATH) -> RelationMap:
     reverse: dict[str, str] = {}
     inverses: dict[str, str] = {}
 
+    question_cues: dict[str, list[str]] = {}
+
     for relation, spec in (raw.get("relations") or {}).items():
         inverses[relation] = spec.get("inverse", relation)
+        cues = spec.get("cues") or []
+        if cues:
+            question_cues[relation] = list(cues)
         fields = spec.get("fields") or {}
         for name in fields.get("forward") or []:
             forward[name] = relation
@@ -113,6 +122,7 @@ def load_relation_map(path: Path = RELATIONS_PATH) -> RelationMap:
         inverses=inverses,
         attributes=frozenset(raw.get("attributes") or []),
         verbs={name.lower(): relation for name, relation in forward.items()},
+        question_cues=question_cues,
     )
 
 

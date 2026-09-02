@@ -15,6 +15,15 @@
 #   reverse  the page's subject is the TARGET; the cell names the source
 #            `Members | Ravena Stormwell; ...` on a faction page
 #
+# cues:
+#   Extra *question* vocabulary for a relation, used only by the cue-based
+#   fallback router (src/query/fallback.py), never by the graph builder.
+#   Field names describe how the corpus writes a fact; cues describe how a
+#   person asks about it. `Apprentice` is not an infobox field name anywhere in
+#   the archive, so listing it under `fields` would assert something false about
+#   the corpus and would map a future `| Apprentice | [[X]] |` row in whatever
+#   direction we happened to write. It is question vocabulary, and lives here.
+#
 # Reverse matters more than it looks. The Silent Choir's membership is recorded
 # in two disjoint places - 6 names on the faction page's `Members` row, 8 more on
 # individual character pages, with zero overlap. Reading only one direction loses
@@ -87,6 +96,11 @@ relations:
     fields:
       forward: [Mentor of, Mentorship]
       reverse: [Mentor]
+    # The relation name and its inverse both stem to "mentor", so a question
+    # that names the other party's role instead cues nothing. rb_044 asks for
+    # "the apprentice of X" and reached member_of, ruled_by and serves_at but
+    # never mentor_of.
+    cues: [apprentice]
 
   rival_of:
     inverse: rival_of          # symmetric

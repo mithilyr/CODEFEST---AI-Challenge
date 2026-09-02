@@ -183,6 +183,16 @@ def test_a_cell_verb_naming_another_relation_does_not_override(relations):
     assert not relations.states_forward("Wields the [[Hollow Edge]]", "member_of")
 
 
+def test_question_cues_never_leak_into_the_builders_field_map(relations):
+    """ADR-024's whole point: `cues:` is question vocabulary, not corpus field
+    names. `Apprentice` appears in no infobox in the archive, so the builder
+    must not treat it as a mapped field - otherwise a future
+    `| Apprentice | [[X]] |` row would be read in a direction nobody chose."""
+    assert relations.question_cues["mentor_of"] == ["apprentice"]
+    assert relations.lookup("Apprentice") is None
+    assert not relations.is_known("Apprentice")
+
+
 def test_mentor_edges_run_from_mentor_to_apprentice(graph):
     """rb_044's gold path is Ashgrove -> Marrowgate; we had it backwards."""
     pairs = {(e.source, e.target) for e in graph.edges if e.relation == "mentor_of"}

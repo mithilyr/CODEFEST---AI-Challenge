@@ -136,8 +136,9 @@ def _cue_tokens(*names: str) -> set[str]:
 def relation_cues(relations: RelationMap) -> dict[str, set[str]]:
     """relation -> cue words, built entirely from config/relations.yaml.
 
-    Sources per relation: its own name, its inverse's name, and every field
-    name mapped to it in either direction. Built from the same config the graph
+    Sources per relation: its own name, its inverse's name, every field name
+    mapped to it in either direction, and any `cues:` the relation declares -
+    question vocabulary that is not a corpus field name (ADR-024). Built from the same config the graph
     builder reads, so a relation's recognised vocabulary can never drift from
     the edges the graph actually holds - and a new field name added to that
     file extends what this recognises with no code change here.
@@ -151,7 +152,8 @@ def relation_cues(relations: RelationMap) -> dict[str, set[str]]:
     cues: dict[str, set[str]] = {}
     for relation, fields in fields_by_relation.items():
         inverse = relations.inverses.get(relation, relation)
-        cues[relation] = _cue_tokens(relation, inverse, *fields)
+        extra = relations.question_cues.get(relation, ())
+        cues[relation] = _cue_tokens(relation, inverse, *fields, *extra)
     return cues
 
 

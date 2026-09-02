@@ -2037,3 +2037,82 @@ have been answered confidently and incorrectly.
 *Status: accepted. 313 tests, 5 of them new; the three corpus edges and the
 override count are pinned. Reproduce the direction survey with
 `python -m src.graph.build` and read the `direction overrides` line.*
+
+## ADR-024 — A relation's question vocabulary is declared in config, separately from its field names
+
+**Problem**
+
+`relation_cues` builds a relation's recognised vocabulary from three sources,
+all of them in `config/relations.yaml`: the relation's own name, its inverse's
+name, and every field name mapped to it. That is ADR-019's guarantee — the
+router's vocabulary cannot drift from the edges the graph holds.
+
+It has a gap. `mentor_of`'s name is `mentor_of` and its inverse is
+`mentored_by`; both stem to `mentor`. Every field name is `Mentor of`,
+`Mentorship`, `Mentor` — also `mentor`. So the relation's entire vocabulary is
+one word, and a question naming the *other party's role* cues nothing.
+
+MEASURED: `rb_044` — *"Which faction rules the hold where the apprentice of
+Ignatz Ashgrove the Oathless serves?"* — cued `member_of`, `ruled_by` and
+`serves_at`, and never `mentor_of`, which is hop 1 of its gold path.
+
+**Decision**
+
+Relations may declare a `cues:` list. It is read into
+`RelationMap.question_cues` and consumed only by `relation_cues`. The graph
+builder never reads it.
+
+The separation is the point. Field names describe **how the corpus writes a
+fact**; cues describe **how a person asks about it**. `Apprentice` is not an
+infobox field name anywhere in the archive — we checked all 95 wiki pages.
+Listing it under `fields:` would have been the smaller diff and would have
+asserted something false about the corpus, and worse, it would have mapped a
+future `| Apprentice | [[X]] |` row in whichever direction we happened to write
+— the ADR-023 bug, pre-installed. A test pins that `Apprentice` stays invisible
+to `RelationMap.lookup` and `is_known`.
+
+**What we measured**
+
+`python -m comparison.harness`, before and after, diffed per question:
+
+```
+metric                  A templates   B cues   C shipped
+answer_correct                   10       12          17     (unchanged)
+complete_evidence                11       20      26 -> 27
+no_route_shape                   33        4          14     (unchanged)
+ambiguous                         4        5           9     (unchanged)
+```
+
+**Exactly one question changed**: `rb_044`, `complete_evidence` False → True.
+Arms A and B are byte-identical. Nothing regressed.
+
+**What this is not**
+
+It is not a routing improvement, and must not be reported as one.
+
+1. **`answer_correct` did not move.** `rb_044` now finds the gold route
+   `mentor_of → serves_at → ruled_by` and *"The Ashen Vanguard"* is among its
+   values — alongside thirteen others, because the cue tier also walks
+   `member_of → ruled_by → serves_at`. It returns `fallback_ambiguous`, which is
+   the tier declining rather than guessing, and is the correct behaviour at
+   ADR-019's measured 40% precision. The question is still wrong.
+2. **One of 55 frozen questions contains the word "apprentice"** — the one that
+   motivated the change. Adding a cue because a specific question needs it and
+   then quoting the resulting number is fitting to the set, which is the trap
+   CLAUDE.md records for 7/7. The justification here is linguistic, not
+   scored: `apprentice` is the role noun for the party at the other end of
+   `mentor_of`, and the relation already declares that party in `inverse:`.
+   The measurement's job was to show nothing *broke*, and it did that.
+
+**What it exposes**
+
+The single-word-vocabulary gap is not unique to `mentor_of`. Any relation whose
+name, inverse and field names share a stem has the same blind spot, and the
+frozen set cannot detect it because a question has to use the missing word for
+the miss to show. Deliberately not fixed here: adding role nouns for other
+relations would be unmeasurable additions on this set, which is how a cue list
+turns into a pile of unfalsifiable guesses. It wants its own probe over the
+relation table, not a speculative edit.
+
+*Status: accepted. 316 tests, 3 of them new — two pinning the cue, one pinning
+that it never reaches the builder. Reproduce with `python -m comparison.harness`.*

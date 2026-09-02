@@ -157,6 +157,23 @@ def test_a_path_covering_more_relations_beats_a_shorter_one():
 # --------------------------------------------------------------------------
 
 
+def test_a_declared_cue_extends_the_vocabulary_from_config(cues):
+    """MEASURED (ADR-024): rb_044 asks for "the apprentice of X". mentor_of's
+    name and its inverse both stem to "mentor", so the role noun cued nothing
+    and the question reached member_of, ruled_by and serves_at only."""
+    assert "apprentic" in cues["mentor_of"]
+    question = (
+        "Which faction rules the hold where the apprentice of "
+        "Ignatz Ashgrove the Oathless serves?"
+    )
+    assert "mentor_of" in cued_relations(cues, question)
+
+
+def test_mentor_is_still_cued_by_its_own_name(cues):
+    """The declared cue extends the vocabulary; it must not replace it."""
+    assert "mentor_of" in cued_relations(cues, "Who was Ederon Fellgard's mentor?")
+
+
 def test_base_verb_forms_cue_the_same_relation_as_inflected_ones(cues):
     """Measured defect in the sister router: it folds `ruled`/`rules`/`ruling`
     to `rul` but leaves the base form `rule` alone, so "whose rule?" silently
