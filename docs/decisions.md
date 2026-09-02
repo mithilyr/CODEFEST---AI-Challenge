@@ -1939,3 +1939,101 @@ changing weekly, revisit.
 
 *Status: accepted. 308 tests, 10 of them new. Diagram rendered and visually
 verified end-to-end; number pins verified by deliberate mutation.*
+
+## ADR-023 — When a cell's own verb contradicts the field name, the cell wins and the disagreement is counted
+
+**Problem**
+
+`src/graph/build.py` took edge direction from one place: the field name, looked
+up in `config/relations.yaml`. Three rows in the corpus are written
+
+```
+| Mentor | Mentor of [[Ignatz Marrowgate]] |
+```
+
+The field name is `Mentor`, which config maps as **reverse** — "the cell names
+my mentor". The cell text is `Mentor of [[X]]`, which says the opposite: the
+page's subject **is** the mentor. The two disagree, the builder trusted the
+field name, and three edges pointed backwards.
+
+`rb_044`'s hand-traced gold path is
+`Ashgrove --mentor_of--> Marrowgate --serves_at--> Cindermere Hold --ruled_by--> Ashen Vanguard`.
+Hop 1 was inverted in the graph. The graph was asserting, with a real citation
+attached, that Ignatz Marrowgate mentored Ignatz Ashgrove. It is the other way
+round.
+
+**What we measured**
+
+1. **Scale: 3 of 267 edges, 3 of 8 `mentor_of` edges.** Every edge whose cell
+   carries a leading verb naming the same relation the field name mapped, where
+   the field name said reverse. Exactly three, all `Mentor`.
+2. **The other 23 reverse edges are correct.** Enumerated all 26 reverse-built
+   edges. The remaining 23 are bare-link cells under genuinely reverse fields —
+   `Victor | [[The Ashen Vanguard]]` on a conflict page, `Members | [[A]]; [[B]]`
+   on a faction page. The cell states no verb, so nothing contradicts the field.
+   The reverse mapping is sound; only the contradicting rows were wrong.
+3. **No corpus row uses `Mentor` in the reverse sense config assumes.** All nine
+   `Mentor*` rows in the wiki: `Mentor of | [[X]]` ×3 (forward field, bare cell),
+   `Mentorship | Mentor of [[X]]` ×3 (forward field, agreeing cell), and
+   `Mentor | Mentor of [[X]]` ×3 (reverse field, contradicting cell). The
+   `reverse: [Mentor]` entry fired three times and was wrong all three.
+
+**Decision**
+
+The cell's leading verb outranks the field name **when, and only when, the verb
+resolves to the same relation the field name mapped**. `RelationMap.states_forward`
+answers that question; `build_graph` flips the direction and records the flip in
+`Graph.direction_overrides`, printed by the CLI beside `unmapped_fields`.
+
+Deliberately narrow, for the reason ADR-009 keys the parser on table position
+rather than on field names: a rule that fires on "the cell contains a verb"
+would reach cells like `Personnel | [[Orin Veyra]] serves at [[Fenspire]]`,
+which is a two-argument fact ADR-010 already handles, not a direction
+disagreement. Requiring the verb to name *the same relation* keeps the rule to
+the case we measured.
+
+**Why not just delete `Mentor` from the reverse list**
+
+One line, and it fixes today's three rows. Rejected because it fixes the
+instance and not the class: a future `| Mentor | [[X]] |` with a bare cell —
+the sense the config entry was written for — would then be read forward and be
+wrong, and nothing would say so. The rule adopted here reads that row correctly
+in both senses, because the bare cell states no verb and the field name still
+decides.
+
+**Why the override is counted rather than absorbed**
+
+Same reason `unmapped_fields` is printed. A silent flip is precisely what caused
+this bug: the builder resolved a contradiction without recording that a
+contradiction existed, so nothing distinguished "config and corpus agree" from
+"config and corpus disagree and we picked one". `direction_overrides` currently
+reads `{'Mentor -> mentor_of': 3}`. If that number moves, a reviewer sees it.
+
+**Effect on the frozen set: none**
+
+MEASURED, `python -m comparison.harness`, before and after:
+
+```
+metric                  A templates   B cues   C shipped
+route_success                    11       30          30
+answer_correct                   10       12          17
+complete_evidence                11       20          26
+no_route_shape                   33        4          14
+```
+
+Byte-identical. **This fix moved no score.** It is recorded as a correctness fix,
+not an improvement, and must not be reported as one. `rb_044` still fails: it now
+traverses three hops but the cue router matches `member_of`, `ruled_by` and
+`serves_at` and never `mentor_of`, because *"apprentice of"* is not in the cue
+vocabulary for that relation. That is a separate gap and gets its own
+measurement.
+
+The justification for committing it anyway is that the graph was asserting a
+false fact about two named people with a citation attached — the failure class
+this project exists to prevent (ADR-016). A wrong edge that no current question
+happens to traverse is still wrong, and the next question to traverse it would
+have been answered confidently and incorrectly.
+
+*Status: accepted. 313 tests, 5 of them new; the three corpus edges and the
+override count are pinned. Reproduce the direction survey with
+`python -m src.graph.build` and read the `direction overrides` line.*

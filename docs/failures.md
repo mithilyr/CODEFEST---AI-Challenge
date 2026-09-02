@@ -1030,3 +1030,45 @@ is not obviously safe against plurals and against names that legitimately end
 in `s`, and it would change routing outcomes on the frozen set, so it needs its
 own measurement rather than a same-day patch. Recorded in ADR-021 as a known
 limitation so the report does not claim the reporter is clean.
+
+## F-027 — A graph that read direction from the field name and ignored the cell saying otherwise
+
+**What we tried.** `config/relations.yaml` maps each infobox field name to a
+relation *and a direction*, and `build_graph` read direction from that map
+alone. It is the obvious design and it is right for 264 of 267 edges.
+
+**What killed it.** Tracing why `rb_044` fails. Its hand-traced gold path opens
+`Ignatz Ashgrove the Oathless --mentor_of--> Ignatz Marrowgate`, and the built
+graph had that edge pointing the other way. The row is
+
+```
+| Mentor | Mentor of [[Ignatz Marrowgate]] |
+```
+
+The field name `Mentor` is mapped reverse; the cell says `Mentor of`, which is
+forward. The builder never looked at the cell, even though `parse_cell` had
+already extracted `mentor of` into its closed `RELATION_VERBS` set. Three edges
+were inverted — 3 of 267, and **3 of 8 `mentor_of` edges**, so 37% of that
+relation was backwards.
+
+The worst part is what it looked like from outside: a well-formed edge with a
+real document, a real field name, a real row index and a real raw cell. Every
+provenance field ADR-016 requires was present and correct. Only the arrow was
+wrong. Nothing in the summary output, the tests, or the harness said so.
+
+**What we did instead.** ADR-023: the cell's verb outranks the field name when
+it names the same relation, and every flip is counted in
+`Graph.direction_overrides` and printed. The rejected cheaper fix — deleting
+`Mentor` from the reverse list — is recorded there too.
+
+**What it cost, honestly.** Nothing on the scoreboard.
+`python -m comparison.harness` is byte-identical before and after: 17 correct,
+26 complete evidence. `rb_044` still fails, for an unrelated reason (the cue
+router has no `mentor_of` cue for *"apprentice of"*). The edge is now true and
+no question yet asks it. That is the whole lesson: a wrong edge is not detected
+by the score, and waiting for a score to reveal it means shipping a confident
+citation for a false fact.
+
+**Generalises to.** Any place where two sources in the corpus state the same
+thing at different specificity and the code silently prefers one. We now have
+two: emphasis-stripping (ADR-012) and this. Worth a sweep for a third.
