@@ -40,7 +40,9 @@ shapes no template matches, and writing prose from retrieved evidence.
 
 ### Deliberately not used
 
-- **No graph database.** 125 measured entities is a Python dict.
+- **No graph database.** The built graph is 117 entities and 267 edges — a Python
+  dict. (125 is a different quantity: distinct entity *names* in the wiki, ADR-011's
+  namespace measurement. Cite 117/267 when the argument is about graph size.)
 - **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
   (Re-measured from the built index: 13,893,760 bytes / 1024 dims / 4 bytes = 3,392
   exactly. ADR-008's 3,364 is the stale figure.)
@@ -60,9 +62,12 @@ that result and adds no reasoning of its own (ADR-018).
 
 **The query engine is Checkpoint 2, not a finished reasoning system.**
 Routing robustness has been measured (ADR-019): the four templates match no
-route shape on **35 of 49** realistic questions — on 21 *novel* ones they match
+route shape on **33 of 49** realistic questions — on 21 *novel* ones they match
 **one**. Our 7/7 measures fit, not routing capability. Do not quote 7/7 without
-the 35/49 beside it.
+the 33/49 beside it. (ADR-019 records **35**; the near-miss reporter of ADR-021
+reclassified four template-arm misses to `ambiguous_entity` and no answer changed
+correctness. 33 is the current number — re-derive it with
+`python -m comparison.harness`, never quote it from memory.)
 
 Three tiers now exist (templates → cue fallback → LLM plan), each declining
 rather than guessing. **The LLM tiers are off by default** — deterministic-first
@@ -80,7 +85,7 @@ that moves with the provider's free lineup.
 | `eval/answer_key.json` | Drafted, **not two-person verified** — measured `verification.status`: `single_review` ×6, `draft` ×2, `unresolved` ×1, and all seven reviewed entries name the same single reviewer, which is F-015 exactly. (There is no `verified_by` field; this row named one until 30 Aug.) Precision/semantic review is what is outstanding; recall is independently corroborated, `eval/completeness.py` |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016) |
-| `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **17 correct / 26 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default** |
+| `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **17 correct / 26 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default**. Identity questions ("Who is X?") return `EvidenceStatus.PROFILE` — the entity's whole record, labelled as such, never presented as an answer to a narrow question. A near-miss spelling is **reported** at ≥0.90 similarity and never resolved (ADR-021, ADR-011 intact). Known defect: it calls an apostrophe-less possessive a typo, 3 of 49 (F-026) |
 | `src/clients/openrouter.py` | Done — rotation, cache, structured output, timeout, retry classification. Model list verified live 2026-09-01, re-checkable with `--verify` |
 | `src/query/synthesis.py` | Done — prose from a verified chain, `phrasing: model \| template \| none`. Template path needs no key |
 | `src/ui/graphview.py` | Done — all 117 entities as one static SVG, no CDN, no JS, deterministic (ADR-020) |
