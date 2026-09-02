@@ -32,13 +32,16 @@ are done: `origin` is configured
       Templates match no route shape on 35/49 as first measured; on novel
       questions, 1/21. A cue-based fallback tier now runs on a template miss:
       17 correct / 26 complete evidence vs 10 / 11 for templates alone.
-      **Both headline numbers have since moved on reruns, not on this task
-      changing**: no-route-shape is 33/49 as of ADR-021 (four questions
-      reclassified to `ambiguous_entity`, no answer changed), and the shipped
-      tier's complete evidence is 27/49 as of ADR-024 (one question,
-      `rb_044`). Re-verified 2026-09-02, both this session. Reproduce with
+      **Both headline numbers have since moved more than once, not on this
+      task changing**: no-route-shape went 35 → 33 (ADR-021, four questions
+      reclassified to `ambiguous_entity`) → back to **35** (ADR-025 fixed one
+      of those four as a misdiagnosis, F-026 - restores a *more correct*
+      `relation_unavailable` for `ederon fellgards`, not a regression). The
+      shipped tier's complete evidence moved 26 → **27** (ADR-024, one
+      question, `rb_044`) and stayed there through ADR-025. Re-verified
+      2026-09-02, all three sessions. Reproduce with
       `python -m comparison.harness` and `python -m comparison.ablations`;
-      never quote 35 or 26 without checking they still hold.
+      never quote 35, 33 or 26 without checking which still holds.
 - [x] **Decide whether an LLM planner is warranted.** Done 2026-09-01
       (ADR-020). 19/49 answerable questions reached no route, which cleared
       the gate. Built as a third tier emitting a validated plan, never an
@@ -70,10 +73,13 @@ are done: `origin` is configured
       still unfilled.
 - [ ] `configuration-example/` is named in §5.2's recommended structure and is
       empty. (`docs/architecture.md` is done — see the diagram item above.)
-- [ ] Decide F-026: `_strip_possessive` does not strip a bare trailing `s`, so
-      three of 49 frozen questions are told a correctly-spelled name is a typo.
-      MEASURED: stripping it resolves all three exactly. Needs its own
-      measurement against plurals and names ending in `s` — see ADR-021.
+- [x] Decide F-026: `_strip_possessive` did not strip a bare trailing `s`, so
+      three of 49 frozen questions were told a correctly-spelled name is a
+      typo. Done 2026-09-02 (ADR-025) — the fix only suppresses a suggestion
+      already about to be made when the trimmed span resolves exactly
+      (never fuzzy), so it cannot widen what gets flagged as a typo. Measured
+      against the risk ADR-021 flagged: 11 real entity names end in `s`, none
+      collide when trimmed. No answer's correctness changed.
 - [ ] Rotate all API keys before 8 Sep (chat-log export day) — logs are a
       mandatory deliverable judges read.
 - [ ] Export AI chat logs to `ai_usage/` as work happens, not at the end.

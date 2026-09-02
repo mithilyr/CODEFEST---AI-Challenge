@@ -2116,3 +2116,108 @@ relation table, not a speculative edit.
 
 *Status: accepted. 316 tests, 3 of them new — two pinning the cue, one pinning
 that it never reaches the builder. Reproduce with `python -m comparison.harness`.*
+
+---
+
+## ADR-025 — F-026's typo reporter fix: suppress, don't widen
+
+**Problem**
+
+F-026 recorded, deliberately open: the near-miss reporter's `_strip_possessive`
+only strips a *marked* possessive (`'s`, `’s`). Three of 49 frozen questions
+write the possessive with no apostrophe at all -
+
+```
+rb_008  isolde mournvales group won what war
+rb_016  ederon fellgards faction won which accord
+rb_028  what war did ravena stormwells lot end up winning
+```
+
+- all three names spelled correctly - and the reporter announced each as a
+typo. `rb_016` is the sharp case: it previously returned
+`relation_unavailable`, a *more specific and more correct* diagnosis, and the
+near-miss reporter replaced it with a spelling complaint.
+
+F-026 left the obvious fix unmade on purpose: "stripping a bare trailing `s`
+is not obviously safe against plurals and names ending in `s`... it needs its
+own measurement."
+
+**The measurement**
+
+Two questions, both answerable without guessing: does a bare-`s` strip
+manufacture a *new* false suggestion, and does it ever swallow a name that
+legitimately ends in `s`?
+
+1. **11 real entity names end in "s"** ("Ashfall Colossus", "Embercrag
+   Fortress", "The Weeping Marshes", "The High Spires", "Ignatz Ashgrove the
+   Oathless", "The Psalter of Seven Sorrows", "Pale Stag of Omens", "The Crown
+   of Burned Names", "Vharencrag Fortress", "The Ash Wastes", "The
+   Cinder-Wrought Aegis"). Checked every one: none of their bare-`s`-stripped
+   forms collide with a *different* entity's canonical key. A correctly
+   spelled mention of any of them resolves normally before the near-miss
+   reporter ever sees it - the reporter only runs after ordinary resolution
+   has already failed.
+2. Resolution past ADR-011's boundary is still exact/normalised/alias only,
+   never fuzzy. A bare-`s` strip can only suppress a suggestion when the
+   trimmed span is *byte-for-byte* a real canonical key - which is why a
+   genuine English plural near a name ("the wyrms lair") cannot accidentally
+   trigger it: `canonical_key("wyrm")` is not `canonical_key("gravemaw_wyrm")`.
+
+**Decision**
+
+`_resolves_when_bare_s_dropped` (`src/query/engine.py`) is checked only where
+`_best_near_miss` was about to suggest a typo, and only *suppresses* that
+suggestion - it is never added as a new source of suggestions. The asymmetry
+is the point: F-026's risk was about widening what gets flagged as a typo, not
+about missing genuine ones, so the fix is scoped to exactly the failure
+measured and no further.
+
+**Measured result**
+
+```
+python -m comparison.harness, before -> after:
+    ambiguous (arm A)          4  -> 1     (the 3 false positives gone)
+    no_route_shape (arm A)    33  -> 35    (2 of the 3 correctly reclassified
+                                             as no_template_match)
+    no_route_shape (arm C)    14  -> 16    (same 2, in the shipped tier)
+    answer_correct  (all arms)     unchanged: 10 / 12 / 17
+    complete_evidence (all arms)   unchanged: 11 / 20 / 27
+```
+
+**This moved no score**, by design - same shape as ADR-023 and ADR-024. What
+moved is diagnosis quality: `rb_016` (`ederon fellgards`) now returns
+`relation_unavailable` again, matching the pre-regression behaviour F-026
+names as more correct, because Ederon Fellgard names a real member of a real
+faction and the question just asks for a relation shape no template covers.
+`rb_008` and `rb_028` now return `no_template_match` instead of a spelling
+complaint about a name spelled correctly.
+
+Reading `no_route_shape` moving **up** (33→35) as a regression would be
+exactly the mistake ADR-021 itself warns about: a summary bucket does not say
+whether the *reason* inside it is honest. Three questions that were wrongly
+told "this is not a name" are now told, correctly, "no template covers this
+shape" or "the relation this needs is not here." `no_route_shape` counting
+both is the bucket's own coarseness, not a new defect - see the trade-off
+note below.
+
+**What we did not do**
+
+Did not touch `_strip_possessive` itself, and did not add bare-`s` stripping
+as a candidate span for *generating* typo suggestions - only for suppressing
+one already about to be made. Widening the suggestion surface was never the
+problem F-026 identified and would reopen exactly the risk it flagged.
+
+**Trade-off, stated plainly**
+
+`no_route_shape` bundling `NO_TEMPLATE_MATCH` and `PROFILE` (per
+`comparison/harness.py`) but not `RELATION_UNAVAILABLE` means the bucket now
+undercounts arm A's genuine "we understood the entity, not the shape" cases by
+one (`rb_016`) relative to a bucket that grouped all non-answers together.
+That is the harness's existing metric definition, unchanged by this ADR; a
+future metric revision might fold `RELATION_UNAVAILABLE` in explicitly, and if
+it does, these numbers move again for a third, equally legitimate reason.
+
+*Status: accepted. 320 tests, 4 of them new
+(`tests/test_fallback.py::test_an_apostrophe_less_possessive_is_not_reported_as_a_typo`
+and its sibling pinning the "real names ending in s" measurement). Reproduce
+with `python -m comparison.harness`. F-026 updated to record this as closed.*

@@ -190,13 +190,25 @@ def test_diagram_marks_both_query_tier_model_calls_off_by_default(diagram_text):
 
 
 def test_diagram_states_the_robustness_number_beside_the_fit_number(diagram_text):
-    """7/7 never appears without 33 of 49 beside it (CLAUDE.md's standing rule).
+    """7/7 never appears without the robustness number beside it (CLAUDE.md's
+    standing rule).
 
     Quoting the fit number alone is the single most misleading thing this
     submission could do, so the diagram is not allowed to do it.
+
+    THE NUMBER ITSELF IS PINNED, NOT RE-DERIVED. Unlike the entity/edge counts
+    elsewhere in this file, "35 of 49" is not recomputed here from
+    `comparison.harness` - this test only checks the SVG's text against a
+    literal a human must remember to update, which is exactly the gap this
+    file's own docstring describes (ADR-019's 35 went stale to 33 while only
+    the summary metric was checked). It has *already* happened to this literal
+    once: 35 -> 33 (ADR-021) -> 35 again, for a different and correct reason
+    this time (ADR-025, F-026 fixed). Re-run `python -m comparison.harness`
+    before trusting this number in the report; this test only proves the
+    diagram and this string agree with each other, not that either is current.
     """
     assert "7/7" in diagram_text
-    assert "33 of 49" in diagram_text
+    assert "35 of 49" in diagram_text
 
 
 def test_diagram_does_not_claim_the_graph_answers_questions_by_itself(diagram_text):

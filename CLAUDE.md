@@ -62,12 +62,17 @@ that result and adds no reasoning of its own (ADR-018).
 
 **The query engine is Checkpoint 2, not a finished reasoning system.**
 Routing robustness has been measured (ADR-019): the four templates match no
-route shape on **33 of 49** realistic questions — on 21 *novel* ones they match
+route shape on **35 of 49** realistic questions — on 21 *novel* ones they match
 **one**. Our 7/7 measures fit, not routing capability. Do not quote 7/7 without
-the 33/49 beside it. (ADR-019 records **35**; the near-miss reporter of ADR-021
-reclassified four template-arm misses to `ambiguous_entity` and no answer changed
-correctness. 33 is the current number — re-derive it with
-`python -m comparison.harness`, never quote it from memory.)
+the 35/49 beside it. (This number has moved twice, in opposite directions, for
+two different and both legitimate reasons — never quote it from memory,
+re-derive with `python -m comparison.harness`. ADR-019 first measured **35**;
+ADR-021's near-miss reporter reclassified four misses to `ambiguous_entity`,
+dropping it to **33**, but one of those four — `ederon fellgards` — was a
+misdiagnosis of its own (F-026): a correctly-spelled name reported as a typo.
+ADR-025 fixed that specific case, which moved it back to **35** — restoring
+the *more correct* `relation_unavailable` diagnosis for that one question, not
+reopening the regression. No answer's correctness changed at either step.)
 
 Three tiers now exist (templates → cue fallback → LLM plan), each declining
 rather than guessing. **The LLM tiers are off by default** — deterministic-first
@@ -85,7 +90,7 @@ that moves with the provider's free lineup.
 | `eval/answer_key.json` | Drafted, **not two-person verified** — measured `verification.status`: `single_review` ×6, `draft` ×2, `unresolved` ×1, and all seven reviewed entries name the same single reviewer, which is F-015 exactly. (There is no `verified_by` field; this row named one until 30 Aug.) Precision/semantic review is what is outstanding; recall is independently corroborated, `eval/completeness.py` |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
 | `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016). Direction comes from the field name *unless* the cell's own verb contradicts it, in which case the cell wins and the flip is counted in `direction_overrides` (ADR-023). That bug had 3 of 267 edges pointing backwards; fixing it changed no score |
-| `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **17 correct / 26 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default**. Identity questions ("Who is X?") return `EvidenceStatus.PROFILE` — the entity's whole record, labelled as such, never presented as an answer to a narrow question. A near-miss spelling is **reported** at ≥0.90 similarity and never resolved (ADR-021, ADR-011 intact). Known defect: it calls an apostrophe-less possessive a typo, 3 of 49 (F-026) |
+| `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **17 correct / 27 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019, evidence count updated by ADR-024), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default**. Identity questions ("Who is X?") return `EvidenceStatus.PROFILE` — the entity's whole record, labelled as such, never presented as an answer to a narrow question. A near-miss spelling is **reported** at ≥0.90 similarity and never resolved (ADR-021, ADR-011 intact). The apostrophe-less-possessive false-positive (F-026, 3 of 49) is fixed (ADR-025) — the suggestion is suppressed, not the boundary widened |
 | `src/clients/openrouter.py` | Done — rotation, cache, structured output, timeout, retry classification. Model list verified live 2026-09-01, re-checkable with `--verify` |
 | `src/query/synthesis.py` | Done — prose from a verified chain, `phrasing: model \| template \| none`. Template path needs no key |
 | `src/ui/graphview.py` | Done — all 117 entities as one static SVG, no CDN, no JS, deterministic (ADR-020) |
@@ -201,7 +206,7 @@ python -m src.ingest.ocr           # transcribe scans (cached; needs GOOGLE_API_
 python -m src.graph.build          # build the graph, print coverage
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 316 tests
+python -m pytest                   # 320 tests
 python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
                                    #   /graph shows the whole graph as one SVG
 python -m src.ui.server --with-model   # enable the LLM planner + phrasing

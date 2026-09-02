@@ -129,11 +129,16 @@ This section is the submission's strongest asset and the easiest to weaken by
 overclaiming. Rules:
 
 **Never quote 7/7 without the robustness number beside it.** Templates answer
-**7/7 dev 1B** questions (ADR-017) *and* match no route shape on **33 of 49**
+**7/7 dev 1B** questions (ADR-017) *and* match no route shape on **35 of 49**
 independently authored questions — on the 21 novel ones, **one**. Both
 sentences, always together.
 Source: `python -m comparison.harness`. Re-run it the day the report is
-finalised; ADR-019 records 35 and ADR-021 records why it is now 33.
+finalised — this number has moved twice already, in opposite directions, for
+two legitimate reasons: ADR-019 first measured 35; ADR-021's near-miss
+reporter dropped it to 33; ADR-025 fixed a misdiagnosis inside that drop
+(F-026) and it is 35 again, now for the *right* reason. Do not average or
+split the difference — re-derive it, don't guess at a number between two you
+remember.
 
 **The baseline comparison, stated precisely.** Vector baseline: 1B **2/7**, and
 **0/9 complete evidence** — not one question retrieved every document its
@@ -155,8 +160,11 @@ four that carry the most signal:
 - **F-016** — opening a read-only corpus in an editor rewrote 36 files.
 - **F-010** — fuzzy entity matching, killed by the 0.839 measurement.
 - **F-026** — the typo reporter that calls a correctly-spelled name a typo,
-  found by re-running the frozen set, *still open*. Including an open defect is
-  a strength here; §5.3 asks for limitations, not a victory lap.
+  found by re-running the frozen set. **No longer open** — fixed 2026-09-02
+  (ADR-025). Still worth telling as "found by re-running the frozen set, not
+  by a unit test," which is the actual lesson; drop the "still open" framing
+  from whatever prose gets written, or swap in a genuinely open item instead
+  (the planner being unmeasured, gap 6 below, is the honest one left).
 
   *A fifth candidate worth weighing against these four:* **F-027** — a graph
   edge with every provenance field correct (real document, real field, real

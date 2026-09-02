@@ -378,6 +378,12 @@ def _best_near_miss(question: str, resolver: EntityResolver):
                 return None, None
 
             if resolution.status == ResolutionStatus.AMBIGUOUS and resolution.candidates:
+                if _resolves_when_bare_s_dropped(span, resolver):
+                    # F-026: "isolde mournvales" for "Isolde Mournvale's" -
+                    # spelled correctly, just missing the apostrophe entirely.
+                    # `_strip_possessive` only strips a marked possessive; this
+                    # catches the unmarked one without a typo suggestion.
+                    return None, None
                 score = resolution.candidates[0].similarity
                 if score >= _SUGGESTION_FLOOR and (best is None or score > best[0]):
                     best = (score, span, resolution)
@@ -401,6 +407,33 @@ def _strip_possessive(span: str) -> str:
         if span.endswith(suffix):
             return span[: -len(suffix)]
     return span
+
+
+def _resolves_when_bare_s_dropped(span: str, resolver: EntityResolver) -> bool:
+    """True if dropping an unmarked trailing "s" makes `span` resolve cleanly.
+
+    F-026: `_strip_possessive` only catches a *marked* possessive - "Ederon
+    Fellgard's". Three of 49 frozen questions omit the apostrophe entirely
+    ("isolde mournvales", "ederon fellgards", "ravena stormwells"), spelled
+    correctly apart from that, and the reporter announced each as a typo -
+    a regression from the more specific `relation_unavailable` these
+    questions got before the near-miss reporter existed.
+
+    Deliberately narrow, per F-026's own caution that a bare `s`-strip "is not
+    obviously safe against plurals and names ending in s": this function never
+    widens what gets *suggested* as a typo, only suppresses a suggestion when
+    the trimmed form resolves through `resolve()`'s exact/normalised/alias
+    tiers - never fuzzy (ADR-011), so it can only fire when the trimmed span
+    is byte-for-byte a real canonical key. MEASURED against the corpus's own
+    risk case: 11 entity names themselves end in "s" ("Ashfall Colossus",
+    "Embercrag Fortress", ...); none of their bare-s-stripped forms collide
+    with a different entity, so a correctly-spelled mention of one of them
+    never reaches this function in the first place - it already resolves
+    before `_best_near_miss` considers it a candidate at all.
+    """
+    if len(span) < 2 or not span.endswith("s"):
+        return False
+    return resolver.resolve(span[:-1]).resolved
 
 
 def _unrouted(

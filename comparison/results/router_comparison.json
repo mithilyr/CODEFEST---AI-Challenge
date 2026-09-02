@@ -165,13 +165,13 @@
       {
         "rid": "rb_008",
         "group": "A_paraphrase",
-        "status": "ambiguous_entity",
+        "status": "no_template_match",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": true,
-        "no_route_shape": false,
+        "ambiguous": false,
+        "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -180,7 +180,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'isolde mournvales' is not a name in the corpus. Closest: Isolde Mournvale (0.970), Isolde Thornwald (0.727). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "no deterministic template's trigger phrase matched"
       },
       {
         "rid": "rb_009",
@@ -413,12 +413,12 @@
       {
         "rid": "rb_016",
         "group": "A_paraphrase",
-        "status": "ambiguous_entity",
+        "status": "relation_unavailable",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": true,
+        "ambiguous": false,
         "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
@@ -428,7 +428,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'ederon fellgards' is not a name in the corpus. Closest: Ederon Fellgard (0.968), Caedmon Fellgard (0.812). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "victory_membership trigger fired with no resolved entity"
       },
       {
         "rid": "rb_017",
@@ -693,13 +693,13 @@
       {
         "rid": "rb_028",
         "group": "A_paraphrase",
-        "status": "ambiguous_entity",
+        "status": "no_template_match",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": true,
-        "no_route_shape": false,
+        "ambiguous": false,
+        "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -708,7 +708,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'ravena stormwells' is not a name in the corpus. Closest: Ravena Stormwell (0.970). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "no deterministic template's trigger phrase matched"
       },
       {
         "rid": "rb_029",
@@ -1267,8 +1267,8 @@
       "entity_resolution_success": 19,
       "answer_correct": 16,
       "complete_evidence": 17,
-      "ambiguous": 5,
-      "no_route_shape": 37,
+      "ambiguous": 2,
+      "no_route_shape": 39,
       "wrong_route": 0,
       "unnecessary_depth": 0,
       "would_escalate": 0
@@ -3011,13 +3011,13 @@
       {
         "rid": "rb_008",
         "group": "A_paraphrase",
-        "status": "ambiguous_entity",
+        "status": "no_template_match",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": true,
-        "no_route_shape": false,
+        "ambiguous": false,
+        "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -3026,7 +3026,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'isolde mournvales' is not a name in the corpus. Closest: Isolde Mournvale (0.970), Isolde Thornwald (0.727). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "no deterministic template's trigger phrase matched"
       },
       {
         "rid": "rb_009",
@@ -3290,12 +3290,12 @@
       {
         "rid": "rb_016",
         "group": "A_paraphrase",
-        "status": "ambiguous_entity",
+        "status": "relation_unavailable",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": true,
+        "ambiguous": false,
         "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
@@ -3305,7 +3305,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'ederon fellgards' is not a name in the corpus. Closest: Ederon Fellgard (0.968), Caedmon Fellgard (0.812). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "victory_membership trigger fired with no resolved entity"
       },
       {
         "rid": "rb_017",
@@ -3793,13 +3793,13 @@
       {
         "rid": "rb_028",
         "group": "A_paraphrase",
-        "status": "ambiguous_entity",
+        "status": "no_template_match",
         "route_success": false,
         "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
-        "ambiguous": true,
-        "no_route_shape": false,
+        "ambiguous": false,
+        "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -3808,7 +3808,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": "'ravena stormwells' is not a name in the corpus. Closest: Ravena Stormwell (0.970). Resolution is exact-match only and never picks a winner (ADR-011) - retry with the exact name."
+        "note": "no deterministic template's trigger phrase matched"
       },
       {
         "rid": "rb_029",
@@ -4599,8 +4599,8 @@
       "entity_resolution_success": 38,
       "answer_correct": 22,
       "complete_evidence": 33,
-      "ambiguous": 11,
-      "no_route_shape": 17,
+      "ambiguous": 8,
+      "no_route_shape": 19,
       "wrong_route": 0,
       "unnecessary_depth": 3,
       "would_escalate": 0
@@ -4614,8 +4614,8 @@
         "entity_resolution_success": 10,
         "answer_correct": 9,
         "complete_evidence": 10,
-        "ambiguous": 4,
-        "no_route_shape": 15,
+        "ambiguous": 1,
+        "no_route_shape": 17,
         "wrong_route": 0,
         "unnecessary_depth": 0,
         "would_escalate": 0

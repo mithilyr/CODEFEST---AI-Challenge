@@ -1025,11 +1025,17 @@ count moved 35 → 33 and these three questions changed status. A summary metric
 held steady while a per-question behaviour regressed underneath it. Diff the
 per-question records, not just the totals.
 
-**Status: open, deliberately.** The obvious fix — strip a bare trailing `s` —
-is not obviously safe against plurals and against names that legitimately end
-in `s`, and it would change routing outcomes on the frozen set, so it needs its
-own measurement rather than a same-day patch. Recorded in ADR-021 as a known
-limitation so the report does not claim the reporter is clean.
+**Status: closed by ADR-025.** The obvious fix — strip a bare trailing `s` —
+was withheld here because it is not obviously safe against plurals and against
+names that legitimately end in `s`. ADR-025 is that measurement: 11 real
+entity names end in `s`, none of their bare-`s`-stripped forms collide with a
+different entity, and the fix is scoped to *suppress* a false suggestion
+rather than *generate* new ones — it never widens what counts as a typo, only
+narrows a false positive. `rb_016` now returns `relation_unavailable` again,
+the more specific diagnosis this entry names as correct; `rb_008` and `rb_028`
+return `no_template_match`. No answer's correctness changed. Left here rather
+than deleted, per this file's own rule: a mistake fixed is still worth the
+record of how it was found.
 
 ## F-027 — A graph that read direction from the field name and ignored the cell saying otherwise
 

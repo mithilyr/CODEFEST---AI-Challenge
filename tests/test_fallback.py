@@ -324,6 +324,59 @@ def test_a_correctly_spelled_possessive_is_not_reported_as_a_typo(graph):
     assert "is not a name in the corpus" not in (answer.note or "")
 
 
+@pytest.mark.parametrize(
+    "question,expected_status",
+    # Exact wording from the frozen set, `eval/robustness/routing_robustness_v1.json`.
+    # All three names are spelled correctly, missing only the apostrophe -
+    # `_strip_possessive` catches "Ederon Fellgard's"; none of these have a
+    # mark to strip at all.
+    [
+        ("isolde mournvales group won what war", None),  # rb_008
+        (
+            "ederon fellgards faction won which accord",  # rb_016
+            # The MORE SPECIFIC diagnosis F-026 says the reporter regressed:
+            # relation_unavailable, not a typo complaint, because Ederon
+            # Fellgard names a real member of a real faction and the
+            # question just asks for a relation the templates don't cue.
+            EvidenceStatus.RELATION_UNAVAILABLE,
+        ),
+        ("what war did ravena stormwells lot end up winning", None),  # rb_028
+    ],
+)
+def test_an_apostrophe_less_possessive_is_not_reported_as_a_typo(
+    question, expected_status, graph
+):
+    """F-026, fixed. `_strip_possessive` only strips a *marked* possessive.
+
+    Three of 49 frozen questions write the possessive with no apostrophe at
+    all ("isolde mournvales" for "Isolde Mournvale's") - spelled correctly,
+    and the reporter announced each as a typo. `_resolves_when_bare_s_dropped`
+    suppresses the suggestion without widening what counts as a typo: it only
+    fires when the trimmed span resolves through the resolver's own exact/
+    normalised/alias tiers, never fuzzy.
+    """
+    answer = answer_question(question, graph)
+    assert answer.status != EvidenceStatus.AMBIGUOUS_ENTITY
+    assert "is not a name in the corpus" not in (answer.note or "")
+    if expected_status is not None:
+        assert answer.status == expected_status
+
+
+def test_bare_s_stripping_never_swallows_a_name_that_really_ends_in_s(graph):
+    """The measured risk F-026 flagged: 11 real entity names end in "s"
+    ("Ashfall Colossus", "Embercrag Fortress", ...). None of their
+    bare-s-stripped forms happen to be a different entity's canonical key, so
+    a correctly spelled mention of one never even reaches the near-miss path -
+    it resolves normally first."""
+    from src.query.resolve import EntityResolver
+
+    resolver = EntityResolver(graph)
+    names_ending_s = [n.name for n in graph.nodes.values() if n.name.rstrip().lower().endswith("s")]
+    assert len(names_ending_s) >= 10, "fixture assumption: the corpus has such names"
+    for name in names_ending_s:
+        assert resolver.resolve(name).resolved
+
+
 def test_a_name_with_no_near_match_stays_an_ordinary_miss(graph):
     """"Ashen Era" resolves to nothing at all - no candidates - so it must not
     be dressed up as a spelling suggestion."""

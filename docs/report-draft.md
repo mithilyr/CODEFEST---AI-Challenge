@@ -1,5 +1,19 @@
 # Report draft — query layer material for §2 and §3
 
+> **Update, same day, commit `<pending>` (ADR-025).** Every `33` below is now
+> **35** again, and `no_route_shape 33/4/14` is now `35/4/16` — not a typo in
+> this draft, a real third move of the same number. ADR-025 fixed F-026 (a
+> correctly-spelled apostrophe-less name reported as a typo); one of the four
+> questions ADR-021 reclassified to `ambiguous_entity` moves back to
+> `relation_unavailable`, the more correct diagnosis. `answer_correct` and
+> `complete_evidence` are unchanged (10/12/17, 11/20/27) — this is a diagnosis
+> fix, not a routing improvement, same as ADR-023 and ADR-024 before it. Left
+> the body below as originally drafted rather than silently edited, per this
+> project's own rule for a number that moves — see `docs/TODO.md` for the
+> blow-by-blow. **If citing "no route shape" in the final report, re-run
+> `python -m comparison.harness` and use whatever it says now — this number
+> has moved three times in two days.**
+
 Drafted 2026-09-02, against commit `15c2194`. Prose only for the slots
 `docs/report-outline.md` allocates to the query layer — not a full report, and
 not a replacement for the outline. Every claim below was reproduced by the
