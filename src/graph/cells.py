@@ -199,7 +199,7 @@ def parse_cell(value: str, *, link_types: dict[str, str] | None = None) -> Parse
         if not _strip_links(raw):
             return ParsedCell("bare link", references=(Reference(links[0]),), raw=raw)
 
-        verb = _known_verb(raw)
+        verb = leading_verb(raw)
         if verb in SECRET_VERBS:
             return ParsedCell(
                 "secret / association relation",
@@ -236,7 +236,7 @@ def parse_cell(value: str, *, link_types: dict[str, str] | None = None) -> Parse
     return ParsedCell("prose containing an incidental link", raw=raw)
 
 
-def _known_verb(raw: str) -> str | None:
+def leading_verb(raw: str) -> str | None:
     """The leading phrase before a link, if it is one the corpus uses as a verb.
 
     Returns the phrase lowercased with any trailing article dropped, so
@@ -281,6 +281,6 @@ def _two_argument(
     return ParsedCell(
         "two-argument clause",
         references=(Reference(primary, qualifier=secondary),),
-        verb=_known_verb(raw),
+        verb=leading_verb(raw),
         raw=raw,
     )

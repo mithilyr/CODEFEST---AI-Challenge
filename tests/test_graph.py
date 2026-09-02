@@ -159,6 +159,45 @@ def test_repeated_field_names_produce_one_edge_each(graph):
     assert len({e.row for e in edges}) == 3, "row index is what keeps them apart"
 
 
+# --------------------------------------------------------------------------
+# Direction: the cell's own verb outranks the field name (ADR-023)
+# --------------------------------------------------------------------------
+
+
+def test_cell_verb_outranks_a_contradicting_field_name(relations):
+    """MEASURED: `| Mentor | Mentor of [[X]] |` occurs 3x and config maps
+    `Mentor` as reverse. The cell says the subject IS the mentor."""
+    assert relations.lookup("Mentor") == ("mentor_of", "reverse")
+    assert relations.states_forward("Mentor of [[Ignatz Marrowgate]]", "mentor_of")
+
+
+def test_a_bare_link_under_a_reverse_field_stays_reverse(relations):
+    """The override must not fire on the 23 reverse edges that are correct.
+    `| Victor | [[The Ashen Vanguard]] |` on a conflict page really is reverse."""
+    assert not relations.states_forward("[[The Ashen Vanguard]]", "victor_of")
+    assert not relations.states_forward("[[Halvard Crowhurst]]", "member_of")
+
+
+def test_a_cell_verb_naming_another_relation_does_not_override(relations):
+    """Narrowness is the point: only a verb naming the SAME relation flips it."""
+    assert not relations.states_forward("Wields the [[Hollow Edge]]", "member_of")
+
+
+def test_mentor_edges_run_from_mentor_to_apprentice(graph):
+    """rb_044's gold path is Ashgrove -> Marrowgate; we had it backwards."""
+    pairs = {(e.source, e.target) for e in graph.edges if e.relation == "mentor_of"}
+    assert ("ignatz_ashgrove_the_oathless", "ignatz_marrowgate") in pairs
+    assert ("ignatz_marrowgate", "ignatz_ashgrove_the_oathless") not in pairs
+    assert ("maelis_harrowick_the_pale", "ignatz_marrowgate") in pairs
+    assert ("morwenna_ashgrove", "caedmon_fellgard") in pairs
+    assert not any(e.inferred_inverse for e in graph.edges if e.relation == "mentor_of")
+
+
+def test_direction_overrides_are_counted_not_absorbed(graph):
+    """A silent flip is what caused the bug; the count is the audit trail."""
+    assert graph.direction_overrides == {"Mentor -> mentor_of": 3}
+
+
 def test_every_edge_carries_enough_provenance_to_be_audited(graph):
     for edge in graph.edges:
         assert edge.document and edge.field_name and edge.template

@@ -106,6 +106,11 @@ class Graph:
     #: Field names seen in the corpus that config/relations.yaml does not map.
     #: Surfaced rather than swallowed: an unmapped field is a lost relation.
     unmapped_fields: dict[str, int] = field(default_factory=dict)
+    #: Rows where the cell's own verb contradicted the field name's direction,
+    #: keyed "<field> -> <relation>". The cell wins (ADR-023), and the override
+    #: is counted here so a reviewer sees the disagreement instead of trusting a
+    #: silently flipped edge.
+    direction_overrides: dict[str, int] = field(default_factory=dict)
 
     def add_node(self, node: Node) -> None:
         """Add a node, preferring a page-backed record over an edge-only one."""
@@ -165,6 +170,13 @@ class Graph:
             lines.append(f"unmapped field names : {len(self.unmapped_fields)}")
             for name, count in sorted(
                 self.unmapped_fields.items(), key=lambda x: -x[1]
+            ):
+                lines.append(f"    {name} ({count})")
+        if self.direction_overrides:
+            total = sum(self.direction_overrides.values())
+            lines.append(f"direction overrides  : {total}")
+            for name, count in sorted(
+                self.direction_overrides.items(), key=lambda x: -x[1]
             ):
                 lines.append(f"    {name} ({count})")
         return "\n".join(lines)

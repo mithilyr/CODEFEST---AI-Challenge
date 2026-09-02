@@ -26,7 +26,7 @@ from pathlib import Path
 
 import yaml
 
-from src.graph.cells import Reference, parse_cell
+from src.graph.cells import Reference, leading_verb, parse_cell
 from src.graph.entities import canonical_key, display_name
 from src.graph.schema import Edge, Graph, Node
 from src.ingest.metadata import discover
@@ -50,6 +50,9 @@ class RelationMap:
     reverse: dict[str, str]
     inverses: dict[str, str]
     attributes: frozenset[str]
+    #: Lowercased forward field name -> relation, so a verb written *inside* a
+    #: cell can be checked against the direction the field name implies.
+    verbs: dict[str, str]
 
     def lookup(self, field_name: str) -> tuple[str, str] | None:
         """Return (relation, "forward"|"reverse"), or None if not a relation."""
@@ -58,6 +61,23 @@ class RelationMap:
         if field_name in self.reverse:
             return self.reverse[field_name], "reverse"
         return None
+
+    def states_forward(self, raw: str, relation: str) -> bool:
+        """True when the cell's own leading verb asserts `relation` of the subject.
+
+        MEASURED: three cells in the corpus are written `Mentor of [[X]]` under
+        the field name `Mentor`, which config maps as *reverse*. The field name
+        and the cell disagree, and the cell is the more specific statement -
+        "Mentor of X" names the subject as the mentor, whichever way the row is
+        labelled. Trusting the field name alone inverted all three edges, and
+        `rb_044`'s gold path runs through one of them.
+
+        Deliberately narrow: this fires only when the verb resolves to the *same*
+        relation the field name mapped. A cell whose verb names a different
+        relation is not a direction disagreement and is left alone.
+        """
+        verb = leading_verb(raw)
+        return verb is not None and self.verbs.get(verb) == relation
 
     def is_known(self, field_name: str) -> bool:
         return (
@@ -92,6 +112,7 @@ def load_relation_map(path: Path = RELATIONS_PATH) -> RelationMap:
         reverse=reverse,
         inverses=inverses,
         attributes=frozenset(raw.get("attributes") or []),
+        verbs={name.lower(): relation for name, relation in forward.items()},
     )
 
 
@@ -212,6 +233,18 @@ def build_graph(
 
             relation, direction = mapping
             cell = parse_cell(value, link_types=types)
+
+            # The cell's own verb outranks the field name when the two
+            # disagree, and the disagreement is counted rather than absorbed
+            # (ADR-023). Silently preferring either one is how three mentor_of
+            # edges pointed backwards for a week.
+            if direction == "reverse" and relations.states_forward(value, relation):
+                direction = "forward"
+                key = f"{field_name} -> {relation}"
+                graph.direction_overrides[key] = (
+                    graph.direction_overrides.get(key, 0) + 1
+                )
+
             references = cell.references
             extraction = "link"
 
