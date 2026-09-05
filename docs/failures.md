@@ -1288,3 +1288,82 @@ known defect is being read backwards.
 Edges are now 261, entities unchanged at 117, and the corroboration figure is
 **255 of 261, 97.7%** — the number this entry already called the honest one.
 Quote that; 255/267 is superseded.
+
+---
+
+## F-031 — A template fires on a two-hop shape it recognises *inside* a three-hop question, and answers confidently
+
+**Where it was found.** Drafting `eval/multihop_3hop_draft.json` on 6 Sep, to
+close the gap that every acceptable path in `answer_key.json` is two hops while
+the sub-track's whole claim is connecting facts across documents.
+
+**Reproduce it.**
+
+```bash
+python -m src.query.engine "Which war was won by the faction that Hesper Wrenfield's mentor belongs to?"
+```
+
+```
+status   sufficient
+values   ('The War of Endless Vigil',)
+template victory_membership
+chain    ('member_of', 'victor_of')
+```
+
+The correct answer is **The War of Drowned Light**, by
+`mentor_of -> member_of -> victor_of`. Verified against the graph: exactly one
+route, and the answer is unreachable in two hops or fewer.
+
+**What went wrong.** The question contains the substring shape
+`member_of -> victor_of` that `victory_membership` is built to match. The
+template matched, resolved the start entity to Hesper Wrenfield, and walked two
+hops from *Hesper* — silently answering **"which war did Hesper's own faction
+win"**, which is a different question. The mentor hop was never walked. Nothing
+in the router asks whether the template consumed the whole question.
+
+**Why this one matters more than a wrong answer.** It returns
+`EvidenceStatus.SUFFICIENT`. Every other failure mode in this system declines:
+`no_template_match`, `relation_unavailable`, `no_path`,
+`fallback_ambiguous`. Those are all safe — a decline is a result, and ADR-026
+made the UI render it as one. This is the only measured case of the engine being
+**confidently wrong**, and "deterministic-first, declines rather than guesses"
+is the project's headline claim. One counter-example to the headline is worth
+more attention than several to a secondary one.
+
+It is also the same failure as ADR-017's `walk_relations`, one layer up.
+`walk_relations` exists because the *shortest* path reaching the right endpoint
+travelled `belligerent_in` where the question required `victor_of` — right
+endpoint, wrong route. This is right *shape*, wrong question. Constraining hops
+fixed the traversal tier and left the routing tier with the same class of hole.
+
+**What we did instead: logged it, deliberately, and did not fix it.**
+
+Three days from the deadline, with the report and the video both unwritten and
+team roles recorded nowhere, the ordering is not close. Specifically:
+
+- It fires on a question **we invented today**. All nine `answer_key.json`
+  questions and the frozen 55 are unaffected; no measured number moves.
+- The plausible fix — a coverage check that declines when the question carries
+  relation cues the matched template's chain does not consume — is *not* the
+  one-line change F-030's was. It sits in routing, which the 7/7 dev result
+  depends on, and its real cost is re-measuring `comparison.harness` and
+  `comparison.ablations` to prove no regression, not writing it.
+- Logging it scores directly. "Technical judgment & decisions" rewards honest
+  analysis of failures; a judge who asks *"when does it get things wrong?"*
+  should get this, with the reproduction, rather than a claim that it doesn't.
+
+**The precedent cuts both ways and was checked.** F-030 deferred a one-line fix
+for blast radius and was overturned the same day, concluding that *"a guard that
+stops you fixing a known defect is being read backwards"*. That reasoning holds
+where a test proves the ripple safe — `test_diagram.py` did exactly that for
+F-030. Here there is no such proof available without a measured sweep, and the
+deliverables the deferral protects are mandatory rather than cosmetic. Deferring
+because a fix is unproven and the calendar is short is not the same as deferring
+because a fix is inconvenient.
+
+**Condition for fixing.** After the report, the video and the team-roles item
+land. Then: add the coverage check, and re-run
+`python -m comparison.harness` plus `python -m eval.run_eval` before and after.
+If templates' 91% precision or the 7/7 dev result moves at all, revert — the
+right behaviour here is a decline, and buying it with a regression elsewhere is
+a bad trade.

@@ -92,7 +92,13 @@ are done: `origin` is configured
 - [x] Rotate all API keys — done **5 Sep**, before the log export, not 8 Sep as
       planned. Do not rotate again unless a *new* key reaches a transcript.
 - [x] Export AI chat logs to `ai_usage/` as work happens — 12 exported; rerun before submission (see above).
-- [ ] Write the ≤5-page PDF report.
+- [ ] Write the ≤5-page PDF report. Include F-031 — it is the only measured
+      case of the engine answering *confidently wrong* rather than declining,
+      and §6's "honest analysis of failures" is where it scores.
+- [ ] STRETCH, only after the report, video and team-roles items land: fix
+      F-031 (a template consuming a two-hop shape inside a three-hop question).
+      Gate: `comparison.harness` and `eval.run_eval` before and after; revert if
+      templates' 91% precision or the 7/7 dev result moves at all.
 - [ ] Record the ≤10-minute video, ≥3–4 min unedited live demo, **against a
       warm cache** (never a cold one).
 
