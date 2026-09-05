@@ -94,6 +94,21 @@ Source: `python -m src.graph.build`.
 **Claim: three tiers, each declining rather than guessing.**
 Source: ADR-017, ADR-019, ADR-020; `src/query/evidence.py` `routing_tier`.
 
+**Claim: every answered hop arrives carrying attestation from the other three
+collections.** The graph is built from wiki infobox rows, because only wiki
+pages have infobox tables — but each edge is matched against the 27,415
+non-wiki paragraphs and carries up to three passages that name both of its
+ends, with document, locator, collection and tier.
+Source: ADR-027; `python -m src.graph.corroborate`.
+
+> **CAVEAT — the diagram does not show this yet.** `architecture.svg` depicts
+> `ingest → OCR → evidence units → graph → tiers → synthesis → UI` and has no
+> corroboration box. `tests/test_diagram.py` re-derives every *number* in the
+> figure and would not notice a missing *component*, so the guard that protects
+> the rest of §2 does not cover this. Either add the box before the figure goes
+> in the PDF, or do not make the claim beside a diagram that contradicts it.
+> Logged as gap 8.
+
 **Claim: the UI adds no reasoning of its own.**
 Source: ADR-018, pinned by three architectural tests.
 
@@ -148,12 +163,13 @@ Caveat that must appear: 7/7 complete evidence is **evidence coverage, not
 answer correctness**, and ADR-016 says so itself.
 
 **Every number is PROVISIONAL until the key is two-person verified.**
-Source: `eval/results/baseline_latest.md` prints this banner itself: 2 draft,
-6 single_review, 1 unresolved. `python -m eval.completeness` reports 0 recall
+Source: `eval/results/baseline_latest.md` prints this banner itself. Measured
+2026-09-06: **7 single_review, 2 draft, 0 confirmed** — `1b_006`'s
+`unresolved` was settled on evidence (F-028). `python -m eval.completeness` reports 0 recall
 risks and 1 dispute needing a human (`1c_000`). Say this plainly — a team that
 labels its own numbers provisional reads as more credible, not less.
 
-**Failed approaches — pick four from `docs/failures.md` (F-001…F-027).** The
+**Failed approaches — pick four from `docs/failures.md` (F-001…F-030).** The
 four that carry the most signal:
 - **F-025** — an LLM plan that was well-formed, validated, and about nothing.
   Well-formedness is not relevance.
@@ -177,6 +193,32 @@ four that carry the most signal:
   Not substituted in here — that trade is an editorial call for whoever
   drafts this section, not one to make silently in the outline.
 
+**The cross-collection claim, stated precisely.** **255 of 261 edges (97.7%)**
+are independently named by a codex, chronicle or ephemera passage — 416
+attestations from the codex on 238 edges, 114 from the chronicles on 85, 25
+from the ephemera on 23. So an answer assembled from wiki infoboxes visibly
+spans collections, with citations a judge can open.
+Source: ADR-027, ADR-028; `python -m src.graph.corroborate`.
+Two caveats that must travel with it, because both are the section's own rule:
+- **Co-mention is not proof.** A passage naming both ends is evidence the
+  archive discusses them together, not a second assertion of the relation. The
+  page says "also attested in", and a test forbids "confirms"/"proves" in the
+  rendered HTML. F-014's lesson mirrored: proximity is not agreement.
+- **Volume is not evidence.** The chronicles are 82% of the corpus by evidence
+  unit and produce the *fewest* useful attestations per unit; the codex, at 808
+  paragraphs, carries the restatements. Worth one sentence — it is the most
+  counter-intuitive measurement in the repo.
+
+**A refusal worth reporting as a result.** We did not wire the corroborating
+passages into the conflict detector. `_DENIAL_RE` matches 5 units across the
+whole non-wiki corpus, **0** attached to any edge, and **all 5 are false
+positives** — two of them *affirm* the claim they appear to deny ("entered
+without triumph or lament: The Silent Choir victor of The War of Drowned
+Light"). Wiring it would let a tier-1 codex passage render as a denial of a
+tier-2 wiki edge, manufacturing a conflict and resolving it against the truth.
+A test pins the zero.
+Source: ADR-027; `tests/test_corroborate.py`.
+
 **Two claims that are dead and must not be revived.** The 1C baseline does
 *not* answer 360 AS — measured, false. And the authority-tier layer is *not*
 load-bearing for score: all 7 conflicts are codex-vs-ephemera and the codex
@@ -185,7 +227,12 @@ retained for auditability; ADR-013 records the condition for deleting it.
 
 ## §5 — AI Usage Disclosure
 
-**BLOCKED — `ai_usage/` is empty.** See the gap register.
+**Ready.** `ai_usage/` holds **12 session transcripts** plus
+`ai-usage-disclosure.md`, exported by `python ai_usage/export_logs.py`
+(commit `b17ad1e`). All three API keys were rotated **5 Sep**, before the
+export. **Rerun the export before submission with every other Claude Code
+window closed** — a live session exports truncated, and three of the twelve
+were open during the 5 Sep run.
 
 Must state: which tools, for what, and **which decisions were made by the
 team**. The rubric (15%) says evidence comes from the chat logs, the disclosure,
@@ -211,19 +258,27 @@ person owned. `docs/TODO.md` still has three unassigned owners.
 
 Ordered by risk. The first three are mandatory-deliverable gaps, not polish.
 
+Re-checked 2026-09-06. Three of the seven closed since this table was written.
+
 | # | Gap | Required by | State |
 |---|---|---|---|
-| 1 | `ai_usage/` is **empty** — no chat logs, no `ai-usage-disclosure.md` | §4.1, §5.2, and 15% of the rubric | not started |
+| ~~1~~ | ~~`ai_usage/` empty~~ | §4.1, §5.2, 15% of rubric | **done** — 12 transcripts + disclosure, `b17ad1e`; keys rotated 5 Sep. Rerun the export with other sessions closed |
 | ~~2~~ | ~~no architecture diagram~~ | §5.2 *and* §5.3 | **done** 2026-09-02, ADR-022 |
-| 3 | Team names, roles, contributions recorded nowhere | §5.3 | not started |
-| 4 | Answer key not two-person verified — every number is PROVISIONAL | ADR-014, F-015 | 2 draft, 6 single_review, 1 unresolved |
-| 5 | `configuration-example/` empty (`docs/architecture.md` now done) | §5.2 recommended structure | partly done |
+| 3 | Team names, roles, contributions recorded nowhere | §5.3 | **not started — now the top risk** |
+| 4 | Answer key not two-person verified — every number is PROVISIONAL | ADR-014, F-015 | 7 single_review, 2 draft, **0 confirmed**; one human. An AI re-derivation agreed with all nine and does *not* close it (F-029) |
+| ~~5~~ | ~~`configuration-example/` empty~~ | §5.2 recommended structure | **done** — README, `authority.yaml`, `relations.yaml`, `env.example` |
 | 6 | Planner tier unmeasured on the frozen set | open decision, `docs/TODO.md` | deliberate; must be *stated*, not hidden |
 | 7 | Video not recorded; link is the first line of the report | §5.1 | not started |
+| 8 | `architecture.svg` has no corroboration box, but §2 and §4 now claim the layer | §5.2 | **new** — the diagram test pins numbers, not components, so nothing catches this |
 
-Gaps 1–3 are cheap and are worth more marks per hour than any further code.
-Gap 1 in particular compounds: the logs must be exported **as work happens**,
-and all API keys rotated before the export on 8 Sep.
+**Gaps 3 and 7 are the only mandatory-deliverable gaps left**, and 3 is four
+names in a file. Gap 4 cannot be closed by more AI review — F-029 records that
+attempt and why it failed; the honest move is to label the numbers provisional,
+which the harness already does itself.
+
+Gap 8 is cheap and worth doing *before* the figure is exported: making the claim
+in §4 beside a diagram that omits the component is the kind of small
+inconsistency a judge notices and generalises from.
 
 ## Drafting rule
 
