@@ -1,0 +1,218 @@
+{
+  "_about": {
+    "purpose": "Three-hop questions, to close the gap that every measured path in eval/answer_key.json is two hops. Sub-track 1B's claim is connecting facts across documents; nothing in the frozen set currently exercises a chain longer than two.",
+    "status": "DRAFT - NOT VERIFIED BY ANYONE. Derived by an AI assistant from the built graph, then traced back to the infobox rows. Kept in a separate file rather than merged into answer_key.json on purpose: that key's verification accounting is 'single_review x7, draft x2, 0 of 9 confirmed', and dropping three unreviewed entries into it would quietly change the denominator of a number the report depends on. Merge only after human review.",
+    "how_these_were_chosen": "Enumerated every 3-relation chain from every page-backed entity (1,454 candidates), then kept only those where (a) the chain lands on exactly one entity, so the answer is unambiguous, and (b) that entity is NOT reachable from the start in two hops or fewer. Criterion (b) is the important one: a 'three-hop' question with a two-hop shortcut tests nothing, because a shorter search would answer it without ever walking three edges.",
+    "schema": "Matches eval/answer_key.json v2 so these can be merged verbatim once reviewed.",
+    "verified_against": "src/graph/build.py at 117 entities / 261 edges. Every hop below was printed from the live graph with its document, field name, row index and raw cell - none of it was written from memory.",
+    "measured_through_the_live_engine": {
+      "on": "2026-09-06",
+      "score": "2 of 3 correct",
+      "3h_001": "CORRECT (House Morvain) via the cue-fallback tier, chain wields->housed_in->ruled_by, complete evidence across all 3 documents. No template matched, so the deterministic top tier did not route it.",
+      "3h_002": "WRONG. Answers 'The War of Endless Vigil'. The victory_membership template matched and routed member_of->victor_of from Hesper Wrenfield directly, skipping the mentor hop entirely - it answers 'which war did Hesper's OWN faction win', a different question. status=sufficient, so it is confidently wrong rather than declining. This is the failure mode walk_relations was built to prevent, reappearing at the routing tier: a template that fires on a two-hop shape it recognises inside a three-hop question.",
+      "3h_003": "CORRECT but ambiguous - The Ashen Vanguard appears among 6 values, status=fallback_ambiguous, 9 documents instead of 3. The cue tier found the right chain and did not narrow it.",
+      "what_this_means": "The graph answers all three (proved separately: single route, no two-hop shortcut). The query layer is what limits three-hop, and it limits it in three different ways - no template match, a template matching a sub-shape and confidently answering the wrong question, and a correct chain left unnarrowed. That is a more useful finding than a pass mark."
+    }
+  },
+  "questions": [
+    {
+      "qid": "3h_001",
+      "track": "1B",
+      "question": "Which house rules the stronghold where the relic borne by Cerys Sablewood the Ashen is kept?",
+      "answer_cardinality": "single",
+      "accepted_answers": [
+        {
+          "answer": "House Morvain",
+          "aliases": [
+            "Morvain"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "wiki/cerys_sablewood_the_ashen.md",
+        "wiki/the_cinder_wrought_aegis.md",
+        "wiki/gloamreach.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "custody_chain_extended",
+          "hops": [
+            {
+              "from": "Cerys Sablewood the Ashen",
+              "relation": "wields",
+              "to": "The Cinder-Wrought Aegis",
+              "source": "wiki/cerys_sablewood_the_ashen.md",
+              "field": "Wields",
+              "row": 6,
+              "raw": "[[The Cinder-Wrought Aegis]], since 356 AS"
+            },
+            {
+              "from": "The Cinder-Wrought Aegis",
+              "relation": "housed_in",
+              "to": "Gloamreach",
+              "source": "wiki/the_cinder_wrought_aegis.md",
+              "field": "Place of housing",
+              "row": 2,
+              "raw": "[[Gloamreach]]"
+            },
+            {
+              "from": "Gloamreach",
+              "relation": "ruled_by",
+              "to": "House Morvain",
+              "source": "wiki/gloamreach.md",
+              "field": "Ruled by",
+              "row": 4,
+              "raw": "[[House Morvain]]"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "Deliberately the same start as dev question 1b_003, carried one hop further. 1b_003 stops at Gloamreach; this asks who rules it. That makes it the clearest possible demo pair - identical entity, identical first two hops, one extra edge - and it means a regression that breaks three-hop traversal shows up next to a passing two-hop question rather than in isolation. Spans three documents, one per hop. Verified to have no two-hop shortcut.",
+      "verification": {
+        "status": "draft",
+        "reviewers": [],
+        "reviewed_on": null,
+        "reviewer_confidence": null,
+        "drafted_by": "ai_assistant",
+        "drafted_on": "2026-09-06",
+        "needs": "One human to confirm the three infobox rows say what this file claims, then a second for independent sign-off per ADR-014."
+      }
+    },
+    {
+      "qid": "3h_002",
+      "track": "1B",
+      "question": "Which war was won by the faction that Hesper Wrenfield's mentor belongs to?",
+      "answer_cardinality": "single",
+      "accepted_answers": [
+        {
+          "answer": "The War of Drowned Light",
+          "aliases": [
+            "War of Drowned Light"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "wiki/corvus_hollowmere_the_pale.md",
+        "wiki/the_war_of_drowned_light.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "mentorship_affiliation_outcome",
+          "hops": [
+            {
+              "from": "Hesper Wrenfield",
+              "relation": "mentor_of",
+              "to": "Corvus Hollowmere the Pale",
+              "source": "wiki/corvus_hollowmere_the_pale.md",
+              "field": "Mentorship",
+              "row": 7,
+              "raw": "Mentor of [[Hesper Wrenfield]]",
+              "note": "REVERSE. The edge is written Corvus -> Hesper, because Corvus is the mentor. The question therefore has to ask for Hesper's *mentor*; asking for a student would be a different and unanswerable question, and getting that backwards is the easiest way to write a wrong test."
+            },
+            {
+              "from": "Corvus Hollowmere the Pale",
+              "relation": "member_of",
+              "to": "The Silent Choir",
+              "source": "wiki/corvus_hollowmere_the_pale.md",
+              "field": "Membership",
+              "row": 4,
+              "raw": "Member of [[The Silent Choir]]"
+            },
+            {
+              "from": "The Silent Choir",
+              "relation": "victor_of",
+              "to": "The War of Drowned Light",
+              "source": "wiki/the_war_of_drowned_light.md",
+              "field": "Victor",
+              "row": 5,
+              "raw": "[[The Silent Choir]]",
+              "note": "REVERSE. The Silent Choir records no victories on its own page; this edge exists only on the conflict's page."
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "Exercises `mentor_of`, which no current template routes on, so this tests routing capability rather than fit - the weakness ADR-019 measured as 35 of 49. Two of the three hops are reverse lookups. HONEST LIMITATION: only two documents, because hops one and two are both rows on Corvus's page, so this is a weaker demonstration of *spanning documents* than 3h_001 or 3h_003 even though it is a genuine three-edge chain. Verified to have no two-hop shortcut.",
+      "verification": {
+        "status": "draft",
+        "reviewers": [],
+        "reviewed_on": null,
+        "reviewer_confidence": null,
+        "drafted_by": "ai_assistant",
+        "drafted_on": "2026-09-06",
+        "needs": "A human should check the mentor direction first - it is the one thing here most likely to be wrong."
+      }
+    },
+    {
+      "qid": "3h_003",
+      "track": "1B",
+      "question": "Which faction rules the place where the relic wielded by Halvard Vane the Grave-Sworn was forged?",
+      "answer_cardinality": "single",
+      "accepted_answers": [
+        {
+          "answer": "The Ashen Vanguard",
+          "aliases": [
+            "Ashen Vanguard"
+          ]
+        }
+      ],
+      "required_evidence": [
+        "wiki/halvard_vane_the_grave_sworn.md",
+        "wiki/the_thrice_bound_lantern.md",
+        "wiki/stormmarch.md"
+      ],
+      "acceptable_paths": [
+        {
+          "label": "forging_authority",
+          "hops": [
+            {
+              "from": "Halvard Vane the Grave-Sworn",
+              "relation": "wields",
+              "to": "The Thrice-Bound Lantern",
+              "source": "wiki/halvard_vane_the_grave_sworn.md",
+              "field": "Weapon or Relic",
+              "row": 5,
+              "raw": "Wields [[The Thrice-Bound Lantern]] since 364 AS"
+            },
+            {
+              "from": "The Thrice-Bound Lantern",
+              "relation": "forged_at",
+              "to": "Stormmarch",
+              "source": "wiki/the_thrice_bound_lantern.md",
+              "field": "Forged at",
+              "row": 2,
+              "raw": "[[Stormmarch]]"
+            },
+            {
+              "from": "Stormmarch",
+              "relation": "ruled_by",
+              "to": "The Ashen Vanguard",
+              "source": "wiki/stormmarch.md",
+              "field": "Ruled by",
+              "row": 4,
+              "raw": "[[The Ashen Vanguard]]"
+            }
+          ]
+        }
+      ],
+      "conflicts": [],
+      "expected_conflict_status": "none",
+      "confidence": "high",
+      "notes": "The discriminating question of the three. It asks where a relic was FORGED, while 3h_001 asks where one is HOUSED, and both then ask who rules that place. The Checkpoint 1 baseline failed 1b_003 by answering Vharencrag Fortress - the forging site - when the question asked about housing, so a system that has merely learned to prefer one of the two relations passes one of these and fails the other. Answering both correctly is the evidence that the relation is being read from the question rather than guessed. Note the field name is `Weapon or Relic`, not `Wields`: this also exercises the field-name synonym mapping. Spans three documents. Verified to have no two-hop shortcut.",
+      "verification": {
+        "status": "draft",
+        "reviewers": [],
+        "reviewed_on": null,
+        "reviewer_confidence": null,
+        "drafted_by": "ai_assistant",
+        "drafted_on": "2026-09-06",
+        "needs": "Check especially that `Weapon or Relic` maps to `wields` in config/relations.yaml and that this is intended."
+      }
+    }
+  ]
+}
