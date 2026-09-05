@@ -1,6 +1,6 @@
 # Task checklist
 
-Updated 2026-09-02. Deadline: 9 Sep 2026, 11:30 PM.
+Updated 2026-09-06. Deadline: 9 Sep 2026, 11:30 PM.
 
 ## Blocking — before push/share
 
@@ -56,12 +56,12 @@ are done: `origin` is configured
 - [ ] Compare the sister repo's conflict detector against `src/query/conflict.py`
       (Phase 2 of the comparison; not yet measured — F-024 showed ours
       over-fires when used as a general per-edge filter).
-- [ ] **`ai_usage/` is empty.** Challenge doc §4.1 requires the full AI chat
-      logs exported as plain `.txt` **in the repo**, plus an
-      `ai_usage/ai-usage-disclosure.md` naming which tools, for what, and which
-      decisions the team made. Human–AI collaboration is **15% of the rubric**
-      and is judged from exactly these logs plus the commit history. Mandatory —
-      incomplete submissions are not evaluated. Export as work happens.
+- [x] **AI chat logs exported.** Done 5 Sep — `ai_usage/` holds 12 session
+      transcripts plus `ai-usage-disclosure.md` (`b17ad1e`), written by
+      `python ai_usage/export_logs.py`. **Rerun before submission with every
+      other Claude Code window closed**: a live session's `.jsonl` is still
+      being appended to and exports truncated, and three of the twelve were
+      open during the 5 Sep run. Then re-run the secret grep in CLAUDE.md.
 - [x] **Architecture diagram** — done 2026-09-02. `docs/diagrams/architecture.svg`
       (hand-authored, no toolchain, self-contained) plus `docs/architecture.md`,
       which also closes §5.2's `docs/architecture.md` item. ADR-022. Pinned by 10
@@ -69,10 +69,19 @@ are done: `origin` is configured
       corpus — verified by mutation, after the first version passed a deliberate
       117→125 change.
 - [ ] **Team names, roles and contributions** are recorded nowhere in the repo
-      and are required in the report (§5.3). Three owners in "Assign" below are
-      still unfilled.
-- [ ] `configuration-example/` is named in §5.2's recommended structure and is
-      empty. (`docs/architecture.md` is done — see the diagram item above.)
+      and are required in the report (§5.3). Two owner lines in "Assign" below
+      are still unfilled. **This is now one of only two mandatory-deliverable
+      gaps left** (the other is the video).
+      MEASURED 2026-09-06: all **78 commits** from 2026-08-28 to today carry a
+      single author, `mithilyr <mithilrajapakse11@gmail.com>`. CLAUDE.md says a
+      team of four. The rubric has judges read the commit history to verify
+      sustained work, and §5.3 asks who did what — a one-author history cannot
+      evidence four contributors, and it is too late to rewrite it. The honest
+      options are (a) state in §6 how the team actually worked and why the
+      history has one committer, or (b) have the other three author their own
+      commits from here to the deadline. Decide, do not leave it implicit.
+- [x] `configuration-example/` — done. README, `authority.yaml`,
+      `relations.yaml`, `env.example`. (`docs/architecture.md` done too.)
 - [x] Decide F-026: `_strip_possessive` did not strip a bare trailing `s`, so
       three of 49 frozen questions were told a correctly-spelled name is a
       typo. Done 2026-09-02 (ADR-025) — the fix only suppresses a suggestion
@@ -80,9 +89,9 @@ are done: `origin` is configured
       (never fuzzy), so it cannot widen what gets flagged as a typo. Measured
       against the risk ADR-021 flagged: 11 real entity names end in `s`, none
       collide when trimmed. No answer's correctness changed.
-- [ ] Rotate all API keys before 8 Sep (chat-log export day) — logs are a
-      mandatory deliverable judges read.
-- [ ] Export AI chat logs to `ai_usage/` as work happens, not at the end.
+- [x] Rotate all API keys — done **5 Sep**, before the log export, not 8 Sep as
+      planned. Do not rotate again unless a *new* key reaches a transcript.
+- [x] Export AI chat logs to `ai_usage/` as work happens — 12 exported; rerun before submission (see above).
 - [ ] Write the ≤5-page PDF report.
 - [ ] Record the ≤10-minute video, ≥3–4 min unedited live demo, **against a
       warm cache** (never a cold one).
