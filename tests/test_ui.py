@@ -48,6 +48,53 @@ def views(graph):
     }
 
 
+@pytest.fixture(scope="module")
+def corroborated_view(graph, corpus_root):
+    """1b_013's view, built with the attestation index attached (ADR-027)."""
+    from src.graph.corroborate import build_index
+    from src.ingest.pipeline import ingest
+
+    index = build_index(graph, ingest().evidence)
+    return build_view(answer_question(Q_013, graph), graph, index)
+
+
+def test_a_hop_carries_no_attestations_when_none_are_supplied(views):
+    """The index is optional: every existing call site passes nothing, and the
+    page must render exactly as before rather than raising."""
+    for view in views.values():
+        for route in view["routes"]:
+            for hop in route["hops"]:
+                assert hop["attestations"] == []
+
+
+def test_the_answer_page_shows_cross_collection_attestation(corroborated_view):
+    """The deliverable: a wiki-derived answer visibly spanning other collections."""
+    html = page_answer(corroborated_view)
+    assert "also attested in" in html
+
+    attested = [
+        hop
+        for route in corroborated_view["routes"]
+        for hop in route["hops"]
+        if hop["attestations"]
+    ]
+    assert attested, "1b_013's hops should be attested in the codex"
+    for hop in attested:
+        for attestation in hop["attestations"]:
+            assert attestation["collection"] != "wiki"
+            assert attestation["document"] in html
+            assert attestation["locator"] in html
+
+
+def test_attestation_is_worded_as_attestation_not_as_support(corroborated_view):
+    """F-014 in a new place: a passage naming both ends is not a second
+    assertion of the relation, and the page must not imply that it is."""
+    html = page_answer(corroborated_view).lower()
+    assert "not a second" in html
+    for forbidden in ("confirms", "proves", "corroborates the claim"):
+        assert forbidden not in html
+
+
 # -- architectural: the UI must stay a presentation layer --------------------
 
 #: Every entry point that reasons. If one of these names appears in the view

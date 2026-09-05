@@ -142,7 +142,38 @@ def _is_disputed(edge: Edge, answer: Answer) -> bool:
     )
 
 
-def _hop(graph: Graph, edge: Edge, from_key: str, position: int, answer: Answer) -> dict:
+def _attestations(corroboration, edge: Edge) -> list[dict]:
+    """Non-wiki passages naming both ends of `edge`, as plain data.
+
+    `corroboration` is duck-typed on purpose: the import allowlist in
+    `tests/test_ui.py` pins exactly which modules this file may import, and the
+    corroboration index is not one of them (it reaches the gazetteer, which
+    reaches the resolver). The view asks it for data and renders what it gets;
+    it decides nothing.
+    """
+    if corroboration is None:
+        return []
+    return [
+        {
+            "document": a.document,
+            "collection": a.collection,
+            "locator": a.locator,
+            "tier": a.tier,
+            "tier_label": tier_label(a.tier),
+            "quote": a.quote,
+        }
+        for a in corroboration.for_edge(edge)
+    ]
+
+
+def _hop(
+    graph: Graph,
+    edge: Edge,
+    from_key: str,
+    position: int,
+    answer: Answer,
+    corroboration=None,
+) -> dict:
     forward = edge.source == from_key
     to_key = edge.target if forward else edge.source
     return {
@@ -170,14 +201,18 @@ def _hop(graph: Graph, edge: Edge, from_key: str, position: int, answer: Answer)
         "qualifier": edge.qualifier,
         "inferred_inverse": edge.inferred_inverse,
         "disputed": _is_disputed(edge, answer),
+        # Cross-collection attestation (ADR-027). Co-mention, not proof: these
+        # passages name both ends, which is why the page says "also attested
+        # in" rather than claiming they assert the relation.
+        "attestations": _attestations(corroboration, edge),
     }
 
 
-def _route(graph: Graph, path, index: int, answer: Answer) -> dict:
+def _route(graph: Graph, path, index: int, answer: Answer, corroboration=None) -> dict:
     hops = []
     current = path.start
     for position, edge in enumerate(path.edges, start=1):
-        hop = _hop(graph, edge, current, position, answer)
+        hop = _hop(graph, edge, current, position, answer, corroboration)
         hops.append(hop)
         current = hop["to_key"]
     return {
@@ -303,14 +338,17 @@ def _diagnostics(answer: Answer) -> dict | None:
     }
 
 
-def build_view(answer: Answer, graph: Graph) -> dict:
+def build_view(answer: Answer, graph: Graph, corroboration=None) -> dict:
     """Everything the page needs, read off one `Answer`.
 
     The returned dict is plain data - no engine objects leak into the
     template, so `render.py` cannot call back into the query layer even if
     someone later tries to make it.
     """
-    routes = [_route(graph, p, i, answer) for i, p in enumerate(answer.paths, start=1)]
+    routes = [
+        _route(graph, p, i, answer, corroboration)
+        for i, p in enumerate(answer.paths, start=1)
+    ]
 
     # Tier per document, collected from the edges that already carry it. The
     # engine's `answer.documents` stays the authority on *which* documents were

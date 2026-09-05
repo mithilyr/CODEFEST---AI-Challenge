@@ -176,6 +176,12 @@ def _status_class(status: str) -> str:
     return _STATUS_CLASS.get(status, "bad")
 
 
+def _clip(text: str, limit: int = 320) -> str:
+    """Trim a corroborating passage to a readable length, marking the trim."""
+    text = " ".join(text.split())
+    return text if len(text) <= limit else text[:limit].rstrip() + " [...]"
+
+
 def _e(value) -> str:
     """Escape anything for HTML. Every dynamic value on the page goes through here."""
     return escape("" if value is None else str(value), quote=True)
@@ -317,6 +323,35 @@ def _status_block(view: dict) -> str:
     return f"<section><h2>Evidence sufficiency</h2>{''.join(parts)}</section>"
 
 
+def _attestation_html(hop: dict) -> str:
+    """"Also attested in" - the other collections that name both ends of a hop.
+
+    Deliberately worded as attestation and not as support. These passages were
+    found by naming both entities (ADR-027); a paragraph that names two people
+    is evidence the archive discusses them together, not proof it asserts the
+    relation between them. Overstating that here would be F-014's mistake in a
+    new place, and the citation would look every bit as solid.
+    """
+    attestations = hop.get("attestations") or []
+    if not attestations:
+        return ""
+    rows = "".join(
+        f'<li><span class="doc">{_e(a["document"])}</span> '
+        f'<span class="mono">{_e(a["locator"])}</span> '
+        f'<span class="tag">{_e(a["collection"])}</span>'
+        f'{_tier_tag(a["tier"], a["tier_label"])}'
+        f'<p class="passage">{_e(_clip(a["quote"]))}</p></li>'
+        for a in attestations
+    )
+    return (
+        f'<div class="attest"><p class="prov">also attested in '
+        f"{len(attestations)} other document"
+        f'{"" if len(attestations) == 1 else "s"} '
+        f'&mdash; these name both ends of the hop; they are not a second '
+        f'assertion of it</p><ul>{rows}</ul></div>'
+    )
+
+
 def _hop_html(hop: dict) -> str:
     tags = [_tier_tag(hop["tier"], hop["tier_label"])]
     if hop["disputed"]:
@@ -347,6 +382,7 @@ def _hop_html(hop: dict) -> str:
         f'| parsed by: {_e(hop["cell_template"])}</p>'
         f'<p class="passage">{_e(hop["raw"])}</p>'
         f"{qual_html}"
+        f"{_attestation_html(hop)}"
         "</div>"
     )
 

@@ -25,6 +25,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from src.graph.build import build_graph, load_relation_map
+from src.graph.corroborate import build_index
 from src.graph.schema import Graph
 from src.ingest.pipeline import ingest
 from src.query.catalogue import build_catalogue
@@ -69,6 +70,14 @@ class Engine:
         self.evidence_units = (
             evidence_units if evidence_units is not None else ingest().evidence
         )
+        #: Cross-collection attestation (ADR-027). Built once here from the
+        #: evidence already ingested above - one pass over the 27,415 non-wiki
+        #: paragraphs, ~2s - so a request costs a dict lookup per hop. Skipped
+        #: when there are no units, which keeps the `evidence_units=[]` test
+        #: path free of it.
+        self.corroboration = (
+            build_index(self.graph, self.evidence_units) if self.evidence_units else None
+        )
         self._catalogue: dict | None = None
         #: Both default OFF, matching `answer_question`'s own default. The demo
         #: is deterministic unless someone asks for otherwise, so an unattended
@@ -109,7 +118,7 @@ class Engine:
         synthesis = synthesise(
             answer, self.graph, use_model=self.use_model_phrasing
         )
-        view = build_view(answer, self.graph)
+        view = build_view(answer, self.graph, self.corroboration)
         view["prose"] = synthesis.text
         view["phrasing"] = synthesis.phrasing
         view["phrasing_model"] = synthesis.model

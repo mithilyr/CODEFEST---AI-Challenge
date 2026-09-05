@@ -1231,3 +1231,49 @@ submission.
 `is_second_human_reviewer: false` and `counts_toward_confirmed: false`, and a
 test asserts both stay false while status stays in `{draft, single_review}`.
 `confirmed` remains 0 of 9 and the PROVISIONAL banners stay up.
+
+## F-030 — Six edges that run from a node to itself, and a `_SELF_FIELDS` set with one entry in it
+
+**What we tried.** `build.py` skips rows whose field name names the page's own
+subject, via `_SELF_FIELDS = frozenset({"Name"})`. One field name, hard-coded.
+
+**What killed it.** Building the ADR-027 corroboration index, which asks "which
+non-wiki passages name *both* ends of this edge". Six edges have one end:
+
+```
+ironfell_citadel      --in_region-->       ironfell_citadel
+accord_of_mournthrone --belligerent_in--> accord_of_mournthrone
+leaden_accord         --belligerent_in--> leaden_accord
+war_of_drowned_light  --belligerent_in--> war_of_drowned_light
+war_of_endless_vigil  --belligerent_in--> war_of_endless_vigil
+winter_reckoning      --belligerent_in--> winter_reckoning
+```
+
+Every one is row 0 of its own page's infobox: `| Conflict | [[The Leaden
+Accord]] |` on the Leaden Accord page, `| Location | [[Ironfell Citadel]] |` on
+the Ironfell Citadel page. The page is naming itself — a title row, same as
+`Name`, written under a different field name. `_SELF_FIELDS` catches `Name` and
+nothing else, so five conflict pages and one location page each emitted a
+meaningless self-edge.
+
+They are not harmful in traversal (a self-loop adds a hop that returns to where
+it started, and no route in the frozen set walks one), which is why nothing
+noticed. They are 6 of the 267 edges we quote in CLAUDE.md, the README, the
+report and the architecture SVG.
+
+**What we did instead: nothing, deliberately.** The fix is one line — skip a row
+whose resolved target is the page's own subject, regardless of field name — but
+it moves the edge count 267 → 261, and that number is re-derived by
+`tests/test_diagram.py`, printed in `docs/diagrams/architecture.svg`, and
+quoted in CLAUDE.md, README.md, ADR-016 and the draft report. Three days before
+the deadline that is a wide blast radius for a defect that changes no answer.
+
+**Logged rather than fixed**, with the number, so the report can state it as a
+known defect instead of a judge finding it. If it is fixed, every one of those
+call sites moves together and the diagram test is the thing that proves it.
+
+**What it cost the measurement it was found in.** ADR-027 reports 255 of 267
+edges corroborated (95.5%). Six of the twelve misses are these, and they can
+never be corroborated by construction. Against the 261 edges that connect two
+distinct entities the figure is 255 of 261 — 97.7%. Both numbers are true; the
+report quotes 255/267 with this note attached.
