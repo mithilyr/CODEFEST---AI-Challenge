@@ -236,8 +236,10 @@ These are graded — 30% of the rubric — and cannot be reconstructed at the en
   rather than editing it out. Being wrong cheaply is the process working.
 - **Keep a failure log** — approaches tried and rejected, with the number that killed
   them. The report requires this section.
-- **Never commit API keys.** `.env` is gitignored. Rotate all keys before exporting AI
-  chat logs on 8 Sep — the logs are a mandatory deliverable that judges read.
+- **Never commit API keys.** `.env` is gitignored. All three keys were rotated on
+  **5 Sep**, before the AI chat logs were exported to `ai_usage/` — the logs are a
+  mandatory deliverable that judges read. Done, not pending: do not rotate again
+  unless a *new* key reaches a transcript after that export.
 - **Do not commit the corpus** (~123 MB). `data/` is gitignored; the README documents
   the download.
 - **The corpus is read-only, and that is not enforced by anything but us.** Opening it
