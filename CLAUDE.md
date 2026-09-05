@@ -40,9 +40,9 @@ shapes no template matches, and writing prose from retrieved evidence.
 
 ### Deliberately not used
 
-- **No graph database.** The built graph is 117 entities and 267 edges — a Python
+- **No graph database.** The built graph is 117 entities and 261 edges — a Python
   dict. (125 is a different quantity: distinct entity *names* in the wiki, ADR-011's
-  namespace measurement. Cite 117/267 when the argument is about graph size.)
+  namespace measurement. Cite 117/261 when the argument is about graph size.)
 - **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
   (Re-measured from the built index: 13,893,760 bytes / 1024 dims / 4 bytes = 3,392
   exactly. ADR-008's 3,364 is the stale figure.)
@@ -93,7 +93,7 @@ that moves with the provider's free lineup.
 | `src/baseline/` | Done — chunker, vector index, naive RAG (Checkpoint 1) |
 | `eval/answer_key.json` | Drafted, **not two-person verified** — measured `verification.status`: `single_review` ×7, `draft` ×2, **0 of 9 confirmed**. Every entry names the same single human reviewer, which is F-015 exactly. `1b_006` left `unresolved` until 6 Sep; its 2-vs-14 dispute is now settled *on evidence* (the Annals, tier 1, state membership for 10 of the 14 — F-028), so it reads `single_review` like the rest. A second, **AI** re-derivation on 6 Sep worked each answer from the primary documents and agreed with all nine, and found two defects in the 1C conflict inventories (1c_000 missed one source of the 286 AS claim; 1c_003 listed 4 of the 9 sources bearing on it). It does **not** count toward `confirmed`: not a second human, and not blind. Recall is independently corroborated by `eval/completeness.py` (0 defects) |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
-| `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016). Direction comes from the field name *unless* the cell's own verb contradicts it, in which case the cell wins and the flip is counted in `direction_overrides` (ADR-023). That bug had 3 of 267 edges pointing backwards; fixing it changed no score. `corroborate.py` attaches non-wiki attestation to edges without modifying them (ADR-027): **255 of 267 edges (95.5%) are named by a codex, chronicle or ephemera passage**, so an answer built from wiki infoboxes visibly spans collections. Known defect: 6 edges are self-loops from a page naming itself, unfixed because the count ripples through the SVG and four documents (F-030) |
+| `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016). Direction comes from the field name *unless* the cell's own verb contradicts it, in which case the cell wins and the flip is counted in `direction_overrides` (ADR-023). That bug had 3 of 267 edges pointing backwards; fixing it changed no score. A row whose value resolves to the page's own subject is a title row whatever field name it wears, and is skipped and counted in `self_references` (ADR-028) — that took the edge count **267 → 261** and removed six self-loops (F-030). `corroborate.py` attaches non-wiki attestation to edges without modifying them (ADR-027): **255 of 261 edges (97.7%) are named by a codex, chronicle or ephemera passage**, so an answer built from wiki infoboxes visibly spans collections |
 | `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **17 correct / 27 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019, evidence count updated by ADR-024), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default**. Identity questions ("Who is X?") return `EvidenceStatus.PROFILE` — the entity's whole record, labelled as such, never presented as an answer to a narrow question. A near-miss spelling is **reported** at ≥0.90 similarity and never resolved (ADR-021, ADR-011 intact). The apostrophe-less-possessive false-positive (F-026, 3 of 49) is fixed (ADR-025) — the suggestion is suppressed, not the boundary widened |
 | `src/clients/openrouter.py` | Done — rotation, cache, structured output, timeout, retry classification. Model list verified live 2026-09-01, re-checkable with `--verify` |
 | `src/query/synthesis.py` | Done — prose from a verified chain, `phrasing: model \| template \| none`. Template path needs no key |
@@ -211,7 +211,7 @@ python -m src.graph.build          # build the graph, print coverage
 python -m src.graph.corroborate    # cross-collection attestation, ADR-027's numbers
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 359 tests
+python -m pytest                   # 360 tests
 python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
                                    #   /graph shows the whole graph as one SVG
 python -m src.ui.server --with-model   # enable the LLM planner + phrasing

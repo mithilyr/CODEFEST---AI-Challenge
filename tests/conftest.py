@@ -37,7 +37,7 @@ def corpus_root():
 
 @pytest.fixture(scope="session")
 def graph(corpus_root):
-    """The built knowledge graph: 117 entities, 267 edges. Built once."""
+    """The built knowledge graph: 117 entities, 261 edges. Built once."""
     return build_graph()
 
 

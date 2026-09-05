@@ -2445,3 +2445,91 @@ new dependency; no cache file; the graph is untouched.
 
 *Status: accepted. 359 tests, 14 of them new. Graph counts unchanged at 117/267,
 so `tests/test_diagram.py` and `docs/diagrams/architecture.svg` are unaffected.*
+
+**AMENDMENT (same day, ADR-028).** F-030's six self-loops are now fixed at the
+source and no longer built, so the graph holds **261** edges. The corroboration
+numerator is untouched — the same 255 edges are attested — and the figure this
+ADR reported as 255/267 (95.5%) is now **255/261, 97.7%**, which is the number
+this ADR already identified as the honest one. Quote 255/261. The 95.5% above
+is left as written because it was correct against the graph of the day.*
+
+## ADR-028 — A row is a self-reference if its target resolves to the page's subject, whatever the field is called
+
+**Problem**
+
+`build.py` skipped title rows with `_SELF_FIELDS = frozenset({"Name"})` — a
+closed list of field names, one entry long. F-030 measured what that misses:
+six rows across six wiki pages name the page's own subject under a field name
+that is a genuine relation somewhere else.
+
+```
+wiki/the_leaden_accord.md         | Conflict | [[The Leaden Accord]] |
+wiki/the_winter_reckoning.md      | Conflict | [[The Winter Reckoning]] |
+wiki/the_war_of_drowned_light.md  | Conflict | [[The War of Drowned Light]] |
+wiki/the_war_of_endless_vigil.md  | Conflict | [[The War of Endless Vigil]] |
+wiki/the_accord_of_mournthrone.md | Conflict | [[The Accord of Mournthrone]] |
+wiki/ironfell_citadel.md          | Location | [[Ironfell Citadel]] |
+```
+
+Each produced an edge from a node to itself. `Conflict` is a real
+`belligerent_in` field on a *character* page and a title row on the conflict's
+own page, so this cannot be decided from the field name at all — only from the
+target.
+
+**Decision**
+
+Skip a reference whose canonical key equals the page subject's key, at the
+point of emission, regardless of field name. `_SELF_FIELDS` stays for the
+literal `Name` field; the target test is what actually does the work.
+
+Skipped rows are **counted**, not swallowed: `Graph.self_references` is keyed
+`"<field> on <document>"` and printed by the CLI beside `unmapped_fields` and
+`direction_overrides`. Same reason as both of those — a corpus fact resolved
+silently is indistinguishable from a corpus fact that was never there. This is
+ADR-023's rule applied to a second kind of disagreement.
+
+**MEASURED**
+
+```
+edges                : 261        (was 267)
+    in_region            31        (was 32)
+    belligerent_in       21        (was 26)
+self-reference rows  : 6 (skipped, F-030)
+entities             : 117  page-backed 95, edge-only 22, isolated 0
+```
+
+Entities, page-backed, edge-only and isolated are all unchanged: the six
+targets were already nodes by virtue of other edges, so removing the self-loops
+removed no entity and orphaned none. 15 relations, 0 unmapped, unchanged.
+
+**Effect on answers: none.** `python -m comparison.harness` is byte-identical
+and the seven dev 1B questions still answer 7/7. No route in either set ever
+walked a self-loop — a hop that returns to where it started cannot advance a
+traversal, which is exactly why nothing noticed for a week.
+
+**Effect on ADR-027's corroboration figure**
+
+The numerator does not move. 255 edges are attested outside the wiki, before
+and after. The denominator drops from 267 to 261, so the figure goes from
+**255/267 (95.5%)** to **255/261 (97.7%)** — and 97.7% was already the number
+ADR-027 said was the honest one, because six of its twelve misses were these
+self-loops, uncorroborable by construction. The fix makes the headline figure
+and the honest figure the same number. **Quote 255/261, 97.7%.**
+
+**Why it was deferred once, and why it is done now**
+
+F-030 recorded it as found-but-unfixed on 6 Sep: the count is re-derived by
+`tests/test_diagram.py`, printed in `docs/diagrams/architecture.svg`, and
+quoted in CLAUDE.md, README.md, `docs/architecture.md`,
+`configuration-example/README.md` and the report outline. That is a wide blast
+radius three days from the deadline for a defect that changes no answer.
+
+Done now because the ripple is exactly what the diagram test exists to catch,
+and it caught it — the suite went red on the stale SVG label the moment the
+count moved, which is the design working rather than a cost. Every call site
+moved together in one commit, and the historical statements in ADR-016,
+ADR-023 and the failure log keep their original numbers: those measured 267
+edges and were correct when written.
+
+*Status: accepted. 360 tests, 1 of them new (the self-reference count). SVG
+updated to "117 entities, 261 edges" and re-pinned.*

@@ -39,7 +39,7 @@ evidence. A global dedup rule is wrong in one direction or the other.
 `src/graph/` — `python -m src.graph.build`
 
 The graph is built from wiki infobox rows, one row at a time, into **117
-entities and 267 edges** across **15 relations**, with **0 unmapped field
+entities and 261 edges** across **15 relations**, with **0 unmapped field
 names**. It is a Python dict of lists. Three measured findings shape the parser:
 
 - **The infobox is the first pipe table, not the `## Infobox` section** (ADR-009).
@@ -128,7 +128,7 @@ over a parsed data structure.
 
 ## Deliberately not used
 
-- **No graph database.** 117 entities and 267 edges is a dict.
+- **No graph database.** 117 entities and 261 edges is a dict.
 - **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
 - **No agent framework.** LangChain / LangGraph / CrewAI would be code we did not
   write.
@@ -143,7 +143,7 @@ to a judge is a liability regardless of what it saves.
 ```bash
 python -m src.ingest.integrity                  # 341 files, 0 modified
 python -m src.ingest.pipeline                   # 340 -> 317 docs, 30,553 units
-python -m src.graph.build                       # 117 entities, 267 edges
+python -m src.graph.build                       # 117 entities, 261 edges
 python -m eval.probes.corpus_shape              # 651 cells, 12 templates
 python -m eval.run_eval --checkpoint baseline   # Checkpoint 1 (needs the vector
                                                 #   index; see README)

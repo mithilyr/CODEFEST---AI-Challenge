@@ -111,6 +111,11 @@ class Graph:
     #: is counted here so a reviewer sees the disagreement instead of trusting a
     #: silently flipped edge.
     direction_overrides: dict[str, int] = field(default_factory=dict)
+    #: Rows whose value resolved to the page's own subject, keyed
+    #: "<field> on <document>". These are title rows wearing a relation
+    #: field's name (F-030); emitting them made six edges run from a node
+    #: to itself. Counted so the corpus fact stays visible.
+    self_references: dict[str, int] = field(default_factory=dict)
 
     def add_node(self, node: Node) -> None:
         """Add a node, preferring a page-backed record over an edge-only one."""
@@ -170,6 +175,13 @@ class Graph:
             lines.append(f"unmapped field names : {len(self.unmapped_fields)}")
             for name, count in sorted(
                 self.unmapped_fields.items(), key=lambda x: -x[1]
+            ):
+                lines.append(f"    {name} ({count})")
+        if self.self_references:
+            total = sum(self.self_references.values())
+            lines.append(f"self-reference rows  : {total} (skipped, F-030)")
+            for name, count in sorted(
+                self.self_references.items(), key=lambda x: -x[1]
             ):
                 lines.append(f"    {name} ({count})")
         if self.direction_overrides:

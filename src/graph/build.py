@@ -39,6 +39,14 @@ RELATIONS_PATH = PROJECT_ROOT / "config" / "relations.yaml"
 _ROW_RE = re.compile(r"^\|\s*(?P<field>[^|]+?)\s*\|\s*(?P<value>.*?)\s*\|\s*$")
 
 #: Fields that name the page's own subject rather than a relation.
+#:
+#: A closed list is not enough on its own. MEASURED (F-030): five conflict
+#: pages carry `| Conflict | [[The Leaden Accord]] |` and one location page
+#: carries `| Location | [[Ironfell Citadel]] |` - title rows written under a
+#: field name that is a real relation elsewhere. Keying self-detection on the
+#: field name alone emitted six edges from a node to itself. The test that
+#: matters is whether the *resolved target is the page's own subject*, which
+#: `build_graph` applies to every reference regardless of field name.
 _SELF_FIELDS = frozenset({"Name"})
 
 
@@ -266,6 +274,21 @@ def build_graph(
 
             for reference in references:
                 target_key = canonical_key(reference.target)
+
+                # A row naming the page's own subject is a title row, whatever
+                # it is labelled (F-030). `Conflict` is a genuine relation
+                # field on a *character* page and a self-reference on the
+                # conflict's own page, so this cannot be decided from the field
+                # name - only from the target. Counted, not swallowed: a page
+                # that names itself twelve times is a corpus fact a reviewer
+                # should see, the same reason `unmapped_fields` is printed.
+                if target_key == subject_key:
+                    key = f"{field_name} on {doc_id}"
+                    graph.self_references[key] = (
+                        graph.self_references.get(key, 0) + 1
+                    )
+                    continue
+
                 graph.add_node(
                     Node(
                         key=target_key,

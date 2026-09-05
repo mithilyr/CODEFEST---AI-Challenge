@@ -88,7 +88,7 @@ Depicted: `ingest → OCR → evidence units → graph build → query tiers
 → synthesis → UI`, with the three routing tiers drawn as a decision chain and
 the two LLM entry points marked as *off by default*.
 
-**Claim: 117 entities, 267 edges, 15 relations, 0 unmapped field names.**
+**Claim: 117 entities, 261 edges, 15 relations, 0 unmapped field names.**
 Source: `python -m src.graph.build`.
 
 **Claim: three tiers, each declining rather than guessing.**
@@ -105,7 +105,7 @@ in the order they most reward reading:
 1. **Deterministic-first, LLM as a counted fallback** — ADR-002. The LLM tiers
    are *off by default*; F-025 is why (a well-formed plan, confidently wrong).
 2. **No graph database / no vector DB / no agent framework** — 117 entities and
-   267 edges is a Python dict; 3,392 chunks is a NumPy matmul. The binding
+   261 edges is a Python dict; 3,392 chunks is a NumPy matmul. The binding
    reason is not performance, it is that every member must defend every part
    (challenge doc §4.1).
 3. **The infobox parser keys on table position, not headings or field names** —

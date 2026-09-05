@@ -38,21 +38,36 @@ def index(graph, ingested):
 
 
 def test_most_edges_are_attested_outside_the_wiki(graph, index):
-    """MEASURED: 255 of 267 edges are named by a non-wiki passage.
+    """MEASURED: 255 of 261 edges are named by a non-wiki passage.
 
-    The remaining 12 are 6 self-loops (excluded by construction - a page naming
-    itself, see F-030) and 6 genuine misses.
+    Was 255 of 267 when ADR-027 was written. The numerator did not move: the
+    six self-loops F-030 recorded are no longer built at all (ADR-028), so the
+    denominator dropped to the edges that connect two distinct entities - which
+    is the population this measurement was always about.
     """
     corroborated = index.corroborated_edges(graph)
     assert len(corroborated) == 255
-    assert len(graph.edges) == 267
+    assert len(graph.edges) == 261
 
 
-def test_self_loops_are_never_corroborated(graph, index):
-    """F-030: 6 edges run from a node to itself, so "both ends" is one end."""
-    loops = [e for e in graph.edges if e.source == e.target]
-    assert len(loops) == 6
-    assert all(not index.for_edge(e) for e in loops)
+def test_the_graph_holds_no_self_loops(graph):
+    """F-030, fixed in ADR-028: a row naming the page's own subject is a title
+    row whatever field name it wears, and no longer becomes an edge."""
+    assert [e for e in graph.edges if e.source == e.target] == []
+
+
+def test_the_skipped_self_references_are_still_counted(graph):
+    """Skipped, not swallowed. Six rows across six pages, and a reviewer can
+    see which - the same reason `unmapped_fields` is printed."""
+    assert sum(graph.self_references.values()) == 6
+    assert set(graph.self_references) == {
+        "Location on wiki/ironfell_citadel.md",
+        "Conflict on wiki/the_accord_of_mournthrone.md",
+        "Conflict on wiki/the_leaden_accord.md",
+        "Conflict on wiki/the_war_of_drowned_light.md",
+        "Conflict on wiki/the_war_of_endless_vigil.md",
+        "Conflict on wiki/the_winter_reckoning.md",
+    }
 
 
 def test_attestations_come_only_from_the_other_collections(graph, index):
@@ -178,4 +193,4 @@ def test_corroboration_never_adds_or_alters_an_edge(graph, ingested):
     build_index(graph, ingested.evidence)
     after = [(e.source, e.relation, e.target) for e in graph.edges]
     assert before == after
-    assert len(build_graph().edges) == 267
+    assert len(build_graph().edges) == 261

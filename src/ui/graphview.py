@@ -77,7 +77,7 @@ def _seeded_position(key: str) -> Point:
 def layout(graph: Graph, iterations: int = ITERATIONS) -> dict[str, Point]:
     """Fruchterman-Reingold: edges pull, every pair pushes, motion cools.
 
-    Plain arithmetic on 117 nodes and 267 edges. No library, and nothing here
+    Plain arithmetic on 117 nodes and 261 edges. No library, and nothing here
     that a teammate could not step through in a debugger.
     """
     keys = sorted(graph.nodes)

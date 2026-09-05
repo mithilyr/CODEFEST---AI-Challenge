@@ -1275,5 +1275,16 @@ call sites moves together and the diagram test is the thing that proves it.
 **What it cost the measurement it was found in.** ADR-027 reports 255 of 267
 edges corroborated (95.5%). Six of the twelve misses are these, and they can
 never be corroborated by construction. Against the 261 edges that connect two
-distinct entities the figure is 255 of 261 — 97.7%. Both numbers are true; the
-report quotes 255/267 with this note attached.
+distinct entities the figure is 255 of 261 — 97.7%.
+
+**FIXED, same day, in ADR-028.** The deferral above was overturned within the
+session that wrote it. The reasoning that deferred it — "wide blast radius for
+a defect that changes no answer" — was half right: the blast radius is real
+(six documents, the SVG and its test), but `tests/test_diagram.py` going red on
+the stale SVG the instant the count moved is the mechanism that makes the
+ripple *safe*, not the reason to avoid it. A guard that stops you fixing a
+known defect is being read backwards.
+
+Edges are now 261, entities unchanged at 117, and the corroboration figure is
+**255 of 261, 97.7%** — the number this entry already called the honest one.
+Quote that; 255/267 is superseded.

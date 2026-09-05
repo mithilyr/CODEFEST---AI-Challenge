@@ -371,7 +371,7 @@ def test_relation_unavailable_shows_the_relations_the_entity_does_have(
 def test_catalogue_lists_every_entity_and_relation(graph):
     catalogue = build_catalogue(graph, load_relation_map())
     assert catalogue["counts"]["entities"] == len(graph.nodes) == 117
-    assert catalogue["counts"]["edges"] == len(graph.edges) == 267
+    assert catalogue["counts"]["edges"] == len(graph.edges) == 261
     assert catalogue["counts"]["relations"] == 15
     assert sum(r["edges"] for r in catalogue["relations"]) == len(graph.edges)
     for relation in catalogue["relations"]:

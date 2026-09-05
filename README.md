@@ -117,7 +117,7 @@ buys.
 python -m src.ingest.integrity   # is your corpus the corpus we measured against?
 python -m pytest                 # 345 tests
 python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
-python -m src.graph.build        # 117 entities, 267 edges, 15 relations
+python -m src.graph.build        # 117 entities, 261 edges, 15 relations
 ```
 
 All four run with no API key and no network.
@@ -145,7 +145,7 @@ The short version. One pipeline, four stages:
    `EvidenceUnit`s. Provenance is attached once, here, so nothing downstream
    reconstructs it and disagrees.
 2. **Evidence units → graph** (`src/graph/`) — wiki infobox rows parsed one row at
-   a time into 117 entities and 267 edges across 15 relations, held as a Python
+   a time into 117 entities and 261 edges across 15 relations, held as a Python
    dict of lists.
 3. **Question → answer** (`src/query/`) — three routing tiers, below.
 4. **Answer → prose → screen** (`src/query/synthesis.py`, `src/ui/`) — the model
@@ -178,7 +178,7 @@ off by default.
 
 ### Deliberately not used
 
-- **No graph database.** 117 entities and 267 edges is a dict of lists.
+- **No graph database.** 117 entities and 261 edges is a dict of lists.
 - **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
 - **No agent framework.** LangChain/LangGraph/CrewAI would be code we did not write.
 
@@ -288,7 +288,7 @@ complete evidence   0/7 on 1B      0/9 across all scored questions
 
 ```
 entities 117  (95 page-backed, 22 edge-only, 0 isolated)
-edges    267  across 15 relations, 3 direction overrides
+edges    261  across 15 relations, 3 direction overrides, 6 self-references skipped
 ```
 
 On the seven dev 1B questions the query layer answers **7 of 7 correctly**
