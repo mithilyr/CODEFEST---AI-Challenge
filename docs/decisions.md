@@ -1694,7 +1694,7 @@ it.
 
 **Decision 5 — the graph visualiser is ours, not vis-network**
 
-`src/ui/graphview.py` draws all 117 entities and 267 edges as one static SVG:
+`src/ui/graphview.py` draws all 117 entities and 261 edges as one static SVG:
 ~60 lines of Fruchterman-Reingold, seeded from node keys so the drawing is
 byte-identical every run. No CDN, no JavaScript, no dependency.
 

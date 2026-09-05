@@ -286,7 +286,7 @@ resolves deterministically first and escalates to a model only on an explicit,
 testable failure condition, with the escalation recorded. The assistant was told
 it may not add an LLM call, a dependency or a framework without stating what it
 measurably improves over the simpler option. This is why there is no graph
-database (the graph is 117 entities and 267 edges — a Python dict), no vector
+database (the graph is 117 entities and 261 edges — a Python dict), no vector
 database (3,392 chunks is a NumPy matmul), and no agent framework. F-025 is the
 case where this rule was violated in practice by a default value, noticed, and
 fixed.
