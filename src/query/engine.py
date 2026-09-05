@@ -19,6 +19,13 @@ from src.graph.build import RelationMap, load_relation_map
 from src.graph.schema import Graph
 from src.graph.traverse import Path, walk_relations
 from src.query.conflict import ConflictReport, check_conflict
+from src.query.diagnostics import (
+    Diagnostics,
+    for_no_path,
+    for_relation_unavailable,
+    for_template_miss,
+    for_unresolved_mention,
+)
 from src.query.evidence import (
     EvidenceStatus,
     check_abstention,
@@ -57,6 +64,13 @@ class Answer:
     conflict: ConflictReport | None = None
     resolutions: tuple[Resolution, ...] = ()
     note: str | None = None
+    #: What the engine established before it declined - resolved entities and
+    #: their records, near-miss candidates, the relations that DO exist, how
+    #: far a traversal got. Always None on an answered result: it exists so a
+    #: decline renders as reasoning rather than as a bare status string
+    #: (ADR-026). Built in `src/query/diagnostics.py`, because collecting it
+    #: reads the graph and the UI may not.
+    diagnostics: Diagnostics | None = None
 
     def explain(self) -> str:
         """Human-readable trace: every hop, with the evidence that produced it."""
@@ -129,7 +143,10 @@ def answer_question(
             planned = _planned_answer(question, graph, relation_map, planner_pool)
             if planned is not None:
                 return planned
-        return _unrouted(question, routed, resolver, evidence_units)
+        return _unrouted(
+            question, routed, resolver, evidence_units,
+            graph=graph, gazetteer=gazetteer, relation_map=relation_map,
+        )
 
     paths = walk_relations(graph, routed.start_key, list(routed.chain))
     base_status = classify_traversal(graph, routed.start_key, routed.chain, paths)
@@ -145,9 +162,19 @@ def answer_question(
         return Answer(
             question=question, status=base_status, template=routed.template,
             chain=routed.chain, start_key=routed.start_key,
+            diagnostics=(
+                for_relation_unavailable(
+                    graph, routed.start_key, routed.chain, relation_map
+                )
+                if base_status == EvidenceStatus.RELATION_UNAVAILABLE
+                else for_no_path(
+                    graph, routed.start_key, routed.chain, paths, None, relation_map
+                )
+            ),
         )
 
     if routed.goal_key is not None:
+        reached_paths = paths
         paths = [p for p in paths if p.end == routed.goal_key]
         if not paths:
             return Answer(
@@ -155,9 +182,17 @@ def answer_question(
                 template=routed.template, chain=routed.chain, start_key=routed.start_key,
                 goal_key=routed.goal_key,
                 note="the chain reached other endpoints but never the named goal",
+                # `reached_paths`, not `paths` - the endpoints the traversal
+                # actually found are the whole point of this block, and `paths`
+                # has just been filtered down to the empty set.
+                diagnostics=for_no_path(
+                    graph, routed.start_key, routed.chain, reached_paths,
+                    routed.goal_key, relation_map,
+                ),
             )
         filt_status = EvidenceStatus.SUFFICIENT
     else:
+        unfiltered = paths
         paths, filt_status = filter_endpoints(
             graph, paths,
             entity_type=routed.type_hint_entity_type,
@@ -169,6 +204,12 @@ def answer_question(
             question=question, status=filt_status, template=routed.template,
             chain=routed.chain, start_key=routed.start_key,
             note=f"type hint {routed.type_hint_word!r} eliminated every candidate",
+            # The candidates the type filter removed are exactly what makes
+            # this decline legible - F-022 recorded that they were dropped and
+            # unreachable. Here they are the content of the block.
+            diagnostics=for_no_path(
+                graph, routed.start_key, routed.chain, unfiltered, None, relation_map
+            ),
         )
 
     conflict = None
@@ -437,7 +478,14 @@ def _resolves_when_bare_s_dropped(span: str, resolver: EntityResolver) -> bool:
 
 
 def _unrouted(
-    question: str, miss: RouteMiss, resolver: EntityResolver, evidence_units: list | None
+    question: str,
+    miss: RouteMiss,
+    resolver: EntityResolver,
+    evidence_units: list | None,
+    *,
+    graph: Graph,
+    gazetteer: list[tuple[str, str]],
+    relation_map: RelationMap,
 ) -> Answer:
     """Turn a template miss into the most specific status the evidence allows.
 
@@ -472,6 +520,9 @@ def _unrouted(
             question=question,
             status=EvidenceStatus.AMBIGUOUS_ENTITY,
             resolutions=(resolution,),
+            diagnostics=for_unresolved_mention(
+                graph, resolution, relation_map, evidence_units
+            ),
             note=(
                 f"{span!r} is not a name in the corpus. Closest: "
                 f"{suggestions}. Resolution is exact-match only and never "
@@ -480,7 +531,20 @@ def _unrouted(
         )
 
     if "no resolved entity" not in miss.reason and "did not find exactly one" not in miss.reason:
-        return Answer(question=question, status=EvidenceStatus.NO_TEMPLATE_MATCH, note=miss.reason)
+        # The dominant decline: 18 of 23 on the frozen robustness set. It used
+        # to carry `miss.reason` and nothing else, which on screen is a red
+        # word where an answer should be. It now carries whichever entities the
+        # question named that the graph does know, each with its record, plus
+        # the closed relation vocabulary that bounds what could have been
+        # asked (ADR-026).
+        return Answer(
+            question=question,
+            status=EvidenceStatus.NO_TEMPLATE_MATCH,
+            note=miss.reason,
+            diagnostics=for_template_miss(
+                question, graph, resolver, gazetteer, relation_map
+            ),
+        )
 
     for candidate in _CAPITALISED_SPAN_RE.findall(question):
         resolution = resolver.resolve(candidate)
@@ -491,10 +555,25 @@ def _unrouted(
             if mentioned_in_corpus(candidate, evidence_units):
                 status = EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE
         return Answer(
-            question=question, status=status, resolutions=(resolution,), note=miss.reason
+            question=question, status=status, resolutions=(resolution,),
+            note=miss.reason,
+            diagnostics=for_unresolved_mention(
+                graph, resolution, relation_map, evidence_units
+            ),
         )
 
-    return Answer(question=question, status=EvidenceStatus.RELATION_UNAVAILABLE, note=miss.reason)
+    # No start entity is known on this branch - a trigger fired but nothing in
+    # the question resolved - so `for_relation_unavailable` has nothing to
+    # describe. The template-miss block is the honest one here: it reports what
+    # (if anything) was recognised, and says so plainly when that is nothing.
+    return Answer(
+        question=question,
+        status=EvidenceStatus.RELATION_UNAVAILABLE,
+        note=miss.reason,
+        diagnostics=for_template_miss(
+            question, graph, resolver, gazetteer, relation_map
+        ),
+    )
 
 
 def main(argv: list[str] | None = None) -> None:

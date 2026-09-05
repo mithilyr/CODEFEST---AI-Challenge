@@ -230,6 +230,79 @@ def _conflict(graph: Graph, answer: Answer) -> dict | None:
     }
 
 
+def _entity_ref(ref) -> dict | None:
+    """Transcribe one `diagnostics.EntityRef`. Plain data out, nothing derived."""
+    if ref is None:
+        return None
+    return {
+        "key": ref.key,
+        "name": ref.name,
+        "type": ref.entity_type,
+        "page": ref.page,
+        "similarity": ref.similarity,
+    }
+
+
+def _diagnostics(answer: Answer) -> dict | None:
+    """Transcribe what the engine established before it declined.
+
+    Every value below was computed in `src/query/diagnostics.py`. This function
+    renames nothing into a claim and computes nothing new - it flattens
+    dataclasses into dicts so `render.py` can walk them without importing the
+    engine. That is the whole of the UI's involvement in a decline (ADR-026).
+    """
+    diag = answer.diagnostics
+    if diag is None:
+        return None
+    return {
+        "span": diag.span,
+        "asked_relation": diag.asked_relation,
+        "relation_vocabulary": list(diag.relation_vocabulary),
+        "suggestions": [_entity_ref(c) for c in diag.suggestions],
+        "candidates": [_entity_ref(c) for c in diag.candidates],
+        "start": _entity_ref(diag.start),
+        "goal": _entity_ref(diag.goal),
+        "reached": [_entity_ref(e) for e in diag.reached],
+        "reached_count": diag.reached_count,
+        "hops_completed": diag.hops_completed,
+        "established": [
+            {
+                "entity": _entity_ref(n.entity),
+                "relations_present": list(n.relations_present),
+                "fact_count": n.fact_count,
+                "facts": [
+                    {
+                        "relation": f.relation,
+                        "direction": f.direction,
+                        "other": _entity_ref(f.other),
+                        "document": f.document,
+                        "field_name": f.field_name,
+                        "row": f.row,
+                        "raw": f.raw,
+                        "tier": f.tier,
+                        "tier_label": tier_label(f.tier),
+                    }
+                    for f in n.facts
+                ],
+            }
+            for n in diag.established
+        ],
+        "presence": [
+            {
+                "collection": pr.collection,
+                "tier": pr.tier,
+                "tier_label": tier_label(pr.tier),
+                "documents": list(pr.documents),
+                "unit_count": pr.unit_count,
+                "evidence_id": pr.evidence_id,
+                "locator": pr.locator,
+                "quote": pr.quote,
+            }
+            for pr in diag.presence
+        ],
+    }
+
+
 def build_view(answer: Answer, graph: Graph) -> dict:
     """Everything the page needs, read off one `Answer`.
 
@@ -275,6 +348,8 @@ def build_view(answer: Answer, graph: Graph) -> dict:
         # This is the fallback-reason surface; when it is None there was no
         # fallback to explain.
         "note": answer.note,
+        # Partial evidence for a decline. None on an answered result.
+        "diagnostics": _diagnostics(answer),
         "resolutions": [
             {
                 "mention": r.mention,

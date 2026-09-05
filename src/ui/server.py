@@ -24,8 +24,10 @@ import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
-from src.graph.build import build_graph
+from src.graph.build import build_graph, load_relation_map
 from src.graph.schema import Graph
+from src.ingest.pipeline import ingest
+from src.query.catalogue import build_catalogue
 from src.query.engine import answer_question
 from src.query.resolve import EntityResolver
 from src.query.route import build_gazetteer
@@ -51,10 +53,23 @@ class Engine:
         *,
         use_planner: bool = False,
         use_model_phrasing: bool = False,
+        evidence_units: list | None = None,
     ) -> None:
         self.graph = graph if graph is not None else build_graph()
         self.resolver = EntityResolver(self.graph)
         self.gazetteer = build_gazetteer(self.graph, self.resolver)
+        self.relation_map = load_relation_map()
+        #: MEASURED DEFECT, fixed here: without evidence units,
+        #: `answer_question` cannot tell `OUTSIDE_STRUCTURED_COVERAGE` from
+        #: `UNRESOLVED_ENTITY`, and the UI never passed them. The demo
+        #: therefore told a judge that Halvard Cindervale - a person with 21
+        #: passages across tier-1 codex, tier-2 wiki and tier-4 ephemera - was
+        #: a name the corpus does not contain. Ingest is ~5s at startup and
+        #: cached thereafter. Pass `[]` in tests that do not need it.
+        self.evidence_units = (
+            evidence_units if evidence_units is not None else ingest().evidence
+        )
+        self._catalogue: dict | None = None
         #: Both default OFF, matching `answer_question`'s own default. The demo
         #: is deterministic unless someone asks for otherwise, so an unattended
         #: run cannot spend daily quota and a cold network cannot break it.
@@ -62,6 +77,12 @@ class Engine:
         self.use_planner = use_planner
         self.use_model_phrasing = use_model_phrasing
         self._svg: str | None = None
+
+    def catalogue(self) -> dict:
+        """Entity list and relation vocabulary for the front page, built once."""
+        if self._catalogue is None:
+            self._catalogue = build_catalogue(self.graph, self.relation_map)
+        return self._catalogue
 
     def graph_svg(self) -> str:
         """Render the graph once and hold it.
@@ -80,6 +101,7 @@ class Engine:
             resolver=self.resolver,
             gazetteer=self.gazetteer,
             use_planner=self.use_planner,
+            evidence_units=self.evidence_units,
         )
         # Phrasing is additive and never replaces the evidence trail - the page
         # renders both, so a viewer can always check the sentence against the
@@ -109,7 +131,7 @@ def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
         def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler's name
             parsed = urlparse(self.path)
             if parsed.path == "/":
-                self._send(page_index())
+                self._send(page_index(engine.catalogue()))
                 return
             if parsed.path == "/graph":
                 self._send(
@@ -127,7 +149,7 @@ def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
 
             question = (parse_qs(parsed.query).get("q") or [""])[0].strip()
             if not question:
-                self._send(page_index())
+                self._send(page_index(engine.catalogue()))
                 return
             try:
                 view = engine.ask(question)
@@ -150,7 +172,10 @@ def serve(
 ) -> None:
     print("building the graph ...")
     engine = Engine(use_planner=with_model, use_model_phrasing=with_model)
-    print(f"  {len(engine.graph.nodes)} entities, {len(engine.graph.edges)} edges")
+    print(
+        f"  {len(engine.graph.nodes)} entities, {len(engine.graph.edges)} edges, "
+        f"{len(engine.evidence_units)} evidence units"
+    )
     print(
         "  model tiers: ON (planner + phrasing)"
         if with_model

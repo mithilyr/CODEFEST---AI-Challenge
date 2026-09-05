@@ -1078,3 +1078,59 @@ citation for a false fact.
 **Generalises to.** Any place where two sources in the corpus state the same
 thing at different specificity and the code silently prefers one. We now have
 two: emphasis-stripping (ADR-012) and this. Worth a sweep for a third.
+
+
+---
+
+## F-028 - A status the demo could never reach, telling judges a real person did not exist
+
+**Approach.** `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE` exists to separate
+two very different declines: "the corpus has never heard this name" and "this
+is a real, documented entity that the wiki-infobox-only graph (ADR-016) has no
+node for". ADR-017 introduced it with Halvard Cindervale as the worked example -
+tier-1 codex prose, an ephemera contract, a faction membership, and no wiki
+infobox.
+
+`engine.answer_question` can only draw that distinction by scanning evidence
+units, so the check is guarded: `if evidence_units is not None`.
+
+**Result.** `src/ui/server.py` never passed them. Measured with the UI's exact
+call signature, "Which faction won the war that Halvard Cindervale was a member
+of?" returns **`UNRESOLVED_ENTITY`** - whose gloss on screen reads "does not
+appear anywhere in the corpus - most likely a typo or an invented name."
+
+He appears **21 times**, across three collections and three authority tiers:
+
+    codex      5 passages, 1 doc,  tier 1   codex/the_annals_of_the_ashen_era#198
+    wiki       8 passages, 2 docs, tier 2   wiki/fenthrone.md, wiki/the_ashen_vanguard.md
+    ephemera   8 passages, 3 docs, tier 4   contract + petition (incl. a scan)
+
+So the demo's most defensible decline - the one that explains an *architectural
+boundary we chose* rather than a gap in the corpus - was unreachable, and in its
+place the system confidently told a judge that a documented person was probably
+a typo. Exactly the confidently-wrong-with-a-straight-face failure this project
+exists to prevent, in the component built to prevent it.
+
+**Why it failed.** The guard is correct and the wiring was never done. Nothing
+caught it because no test asserted the status was *reachable through the path
+the demo actually uses* - the engine tests pass `evidence_units` directly, so
+they exercised a code path the product did not. A status can be fully
+implemented, fully tested, and still dead in the only place it matters.
+
+**What changed.** `Engine.__init__` loads evidence units at startup (~5s, once,
+`ingest()`) and passes them on every call.
+`tests/test_declines.py::test_outside_coverage_is_unreachable_without_evidence_units`
+pins the underlying distinction, and
+`::test_the_ui_engine_loads_what_outside_coverage_needs` asserts the
+`Engine` signature that fixes it - so removing the wiring to save 5 seconds of
+startup fails the suite with a message saying why. The page now names the
+collections, quotes a passage from each with its evidence id and locator, and
+points at `src/graph/build.py`'s `if unit.collection == "wiki":` as the line
+that draws the boundary.
+
+**The general lesson.** Two of this project's failure entries are now the same
+shape: F-021's `PATH_MISSING_ATTRIBUTE` was unreachable dead code, and this one
+was unreachable in production while live in tests. Both were *named states that
+could not occur*. A named state deserves a test that reaches it the way the
+product does, not the way the unit test finds convenient.
+

@@ -103,6 +103,15 @@ static SVG with no CDN and no JavaScript. The UI **adds no reasoning of its own*
 — three architectural tests enforce that, because a presentation layer that
 quietly re-ranks results makes every measurement above meaningless.
 
+**A decline renders as a result, not as an error** (ADR-026). Since routing
+declines on **23 of 55** frozen questions - and a judge typing their own question
+at the demo most likely hits one - every declining status shows the partial
+evidence the engine established, cited the same way an answer is: the entities
+that did resolve with their full records, near-miss spellings offered for the
+user to confirm, how far a traversal got and what it could not join, and the
+declared 15-relation vocabulary that bounds the whole thing. `src/query/diagnostics.py`
+collects it, because collecting it reads the graph and the UI may not.
+
 ## Where models are called, and where they are not
 
 Four places, all isolated, none of them in the traversal that produces an answer:

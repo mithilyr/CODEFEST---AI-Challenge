@@ -148,6 +148,20 @@ td.mono { font-family: ui-monospace, Consolas, monospace; font-size: .82rem; }
 .examples .qid { font-family: ui-monospace, Consolas, monospace;
                  font-weight: 700; margin-right: .35rem; color: #5c5c66; }
 footer { color: #7a7a86; font-size: .8rem; text-align: center; margin: 1.5rem 0 0; }
+.suggest { margin: .7rem 0; padding: .7rem .85rem; background: #fff8e6;
+           border-left: 3px solid #d99b1c; border-radius: 0 5px 5px 0; }
+.suggest ul { margin: .3rem 0 0; padding-left: 1.2rem; }
+.suggest a { font-weight: 700; color: #7a4c06; }
+.mono { font-family: ui-monospace, Consolas, monospace; font-size: .85em; }
+details { border: 1px solid #e6e6ec; border-radius: 6px; margin: 0 0 .4rem;
+          background: #fcfcfd; }
+summary { cursor: pointer; padding: .5rem .7rem; font-weight: 600;
+          font-size: .9rem; }
+ul.entitylist { columns: 3 14rem; margin: 0; padding: 0 .7rem .7rem 1.9rem;
+                font-size: .87rem; }
+ul.entitylist li { break-inside: avoid; margin: .1rem 0; }
+ul.entitylist a { color: #26263a; text-decoration: none; }
+ul.entitylist a:hover { text-decoration: underline; }
 """
 
 _STATUS_CLASS = {
@@ -183,7 +197,10 @@ def _search_form(question: str = "") -> str:
         '<form action="/ask" method="get">'
         f'<input type="text" name="q" value="{_e(question)}" '
         'placeholder="Ask a question about the Ashen Era archive" '
-        'autocomplete="off" autofocus>'
+        # Native autocomplete against the 117 entity names. The list is only
+        # emitted on the index page; elsewhere the attribute simply matches no
+        # datalist and the input behaves as a plain text box.
+        'list="entities" autocomplete="off" autofocus>'
         "<button type=\"submit\">Ask</button>"
         "</form>"
     )
@@ -430,6 +447,373 @@ def _conflict_block(view: dict) -> str:
     )
 
 
+# -- decline evidence: what the engine DID establish ------------------------
+#
+# A decline is a result, and a result nobody can inspect is indistinguishable
+# from a bug (ADR-026). Everything below renders data
+# `src/query/diagnostics.py` collected at the decline site. Nothing here
+# derives a fact, re-ranks anything, or softens a status.
+
+
+def _fact_html(fact: dict) -> str:
+    """One edge, with the infobox row it was read from - same citation as a hop."""
+    arrow = "&rarr;" if fact["direction"] == "out" else "&larr;"
+    return (
+        '<div class="hop">'
+        f'<p class="step"><span class="rel">{_e(fact["relation"])}</span> '
+        f'{arrow} {_e(fact["other"]["name"])}'
+        f'{_tier_tag(fact["tier"], fact["tier_label"])}</p>'
+        f'<p class="prov"><span class="doc">{_e(fact["document"])}</span> '
+        f'| {_e(fact["field_name"])} (row {_e(fact["row"])})</p>'
+        f'<p class="passage">{_e(fact["raw"])}</p>'
+        "</div>"
+    )
+
+
+def _established_block(view: dict) -> str:
+    """The entities the question named that the system does know, with their records.
+
+    This is the block that turns the commonest decline into something a judge
+    can read. Measured: `no_template_match` is 18 of 23 declines on the frozen
+    robustness set, and it used to carry a one-line reason and nothing else.
+    """
+    diag = view["diagnostics"]
+    if not diag:
+        return ""
+    established = diag["established"]
+    if not established:
+        # When a span was identified, `_suggestion_block` has already said "we
+        # read this as a name and could not place it", and the coverage block
+        # may be about to show where it does appear. Repeating "nothing matched"
+        # underneath those reads as a second, harsher failure for the same fact.
+        if diag["span"]:
+            return ""
+        return (
+            "<section><h2>What the system recognised</h2>"
+            '<p class="gloss"><strong>Nothing in this question matched a known '
+            "entity.</strong> The graph holds a closed set of names; a question "
+            "that mentions none of them cannot be routed to any of them. "
+            '<a href="/#entities">Browse the entity list</a> to see what is '
+            "there.</p></section>"
+        )
+
+    blocks = []
+    for item in established:
+        entity = item["entity"]
+        facts = "".join(_fact_html(f) for f in item["facts"])
+        shown = len(item["facts"])
+        total = item["fact_count"]
+        more = (
+            f'<p class="gloss">Showing {shown} of {total} recorded facts.</p>'
+            if total > shown
+            else ""
+        )
+        page = (
+            f'<p class="prov"><span class="doc">{_e(entity["page"])}</span></p>'
+            if entity["page"]
+            else '<p class="gloss">No wiki page documents this entity directly '
+            "&mdash; it is known only as a link target on other pages.</p>"
+        )
+        rels = "".join(
+            f'<span class="tag">{_e(r)}</span>' for r in item["relations_present"]
+        )
+        kind = f" &mdash; {_e(entity['type'])}" if entity["type"] else ""
+        blocks.append(
+            f'<div class="route"><p class="rhead">{_e(entity["name"])}{kind}'
+            f'</p>{page}'
+            f'<p class="gloss">Relations recorded for it: {rels or "none"}</p>'
+            f"{facts}{more}</div>"
+        )
+    return (
+        "<section><h2>What the system did establish</h2>"
+        '<p class="gloss">These names in the question resolved to entities the '
+        "graph knows. Every fact below cites the infobox row it came from.</p>"
+        f"{''.join(blocks)}</section>"
+    )
+
+
+def _suggestion_block(view: dict) -> str:
+    """A name that did not become a node: the span, the near misses, where to look."""
+    diag = view["diagnostics"]
+    if not diag or not diag["span"]:
+        return ""
+
+    parts = [
+        '<p class="gloss">The engine read <strong>'
+        f'{_e(diag["span"])}</strong> as an entity name and could not match it '
+        "to exactly one node.</p>"
+    ]
+
+    if diag["suggestions"]:
+        items = "".join(
+            f'<li><a href="/ask?q={_e_url(view["question"].replace(diag["span"], s["name"]))}">'
+            f'{_e(s["name"])}</a> '
+            f'<span class="tag">{_e(s["key"])}</span> '
+            f'similarity {s["similarity"]:.3f}'
+            + (
+                f' &mdash; <span class="doc">{_e(s["page"])}</span>'
+                if s["page"]
+                else ""
+            )
+            + "</li>"
+            for s in diag["suggestions"]
+        )
+        parts.append(
+            '<div class="suggest"><p style="margin:0 0 .4rem"><strong>Did you '
+            "mean?</strong> A suggestion, not a correction &mdash; nothing has "
+            "been applied. Entity resolution is exact-match only and never picks "
+            "a winner (ADR-011), because two real people sit at 0.839 similarity. "
+            "Click one to re-ask with that spelling.</p>"
+            f"<ul>{items}</ul></div>"
+        )
+
+    others = [c for c in diag["candidates"] if c not in diag["suggestions"]]
+    if others:
+        rows = "".join(
+            f'<tr><td>{_e(c["name"])}</td>'
+            f'<td class="mono">{_e(c["type"] or "unrecorded")}</td>'
+            f'<td class="mono">{_e(c["page"] or "no page")}</td>'
+            f'<td class="mono">{c["similarity"]:.3f}</td></tr>'
+            for c in others
+        )
+        parts.append(
+            '<p class="gloss">Every other candidate it matched, with its type and '
+            "the document that records it:</p>"
+            "<table><tr><th>Candidate</th><th>Type</th><th>Source document</th>"
+            f"<th>Similarity</th></tr>{rows}</table>"
+        )
+
+    parts.append(
+        '<p class="gloss"><a href="/#entities">Browse all entities</a> to find the '
+        "exact spelling.</p>"
+    )
+    return f"<section><h2>The name we could not place</h2>{''.join(parts)}</section>"
+
+
+def _coverage_block(view: dict) -> str:
+    """Where an out-of-graph name DOES appear. The honest limit, with citations.
+
+    `OUTSIDE_STRUCTURED_COVERAGE` is the one decline that is purely an
+    architectural boundary rather than a gap in the corpus, and saying so is
+    only credible with the documents named.
+    """
+    diag = view["diagnostics"]
+    if not diag or not diag["presence"]:
+        return ""
+    rows = []
+    for pr in diag["presence"]:
+        docs = "".join(
+            f'<li class="mono">{_e(d)}</li>' for d in pr["documents"][:6]
+        )
+        rows.append(
+            f'<div class="route"><p class="rhead">{_e(pr["collection"])}'
+            f'{_tier_tag(pr["tier"], pr["tier_label"])} &mdash; '
+            f'{pr["unit_count"]} passage(s) in {len(pr["documents"])} document(s)</p>'
+            f"<ul>{docs}</ul>"
+            f'<p class="prov"><span class="doc">{_e(pr["evidence_id"])}</span> '
+            f'| {_e(pr["locator"])}</p>'
+            f'<p class="passage">{_e(pr["quote"])}</p></div>'
+        )
+    return (
+        "<section><h2>Present in the corpus, absent from the graph</h2>"
+        '<p class="gloss"><strong>The graph is built from wiki infobox rows only</strong> '
+        "(<span class=\"mono\">src/graph/build.py</span>, "
+        '<span class="mono">if unit.collection == &quot;wiki&quot;:</span>). An entity '
+        "described at length in prose but never given an infobox row has no node, so "
+        "no chain can be walked through it. That is a declared boundary of this "
+        "checkpoint (ADR-016), not a failure to find the text &mdash; here is the text:</p>"
+        f"{''.join(rows)}</section>"
+    )
+
+
+def _traversal_block(view: dict) -> str:
+    """How far the chain got, and what it could not join to what."""
+    diag = view["diagnostics"]
+    if not diag or not diag["start"]:
+        return ""
+    start = diag["start"]
+    goal = diag["goal"]
+
+    lead = (
+        f'<p class="answer" style="font-size:1.05rem">Could not join '
+        f'<strong>{_e(start["name"])}</strong> to '
+        f'<strong>{_e(goal["name"])}</strong>.</p>'
+        if goal
+        else f'<p class="answer" style="font-size:1.05rem">Started from '
+        f'<strong>{_e(start["name"])}</strong> and reached no endpoint the '
+        "question would accept.</p>"
+    )
+
+    rows = [
+        f'<tr><th>Start</th><td>{_e(start["name"])} '
+        f'<span class="tag">{_e(start["key"])}</span></td></tr>'
+    ]
+    if goal:
+        rows.append(
+            f'<tr><th>Goal</th><td>{_e(goal["name"])} '
+            f'<span class="tag">{_e(goal["key"])}</span></td></tr>'
+        )
+    if diag["asked_relation"]:
+        rows.append(
+            "<tr><th>Relation asked for</th><td>"
+            f'<span class="rel">{_e(diag["asked_relation"])}</span></td></tr>'
+        )
+    rows.append(
+        f'<tr><th>Hops completed</th><td>{diag["hops_completed"]}</td></tr>'
+    )
+
+    reached = ""
+    if diag["reached"]:
+        items = "".join(
+            f'<li>{_e(r["name"])}'
+            + (f' <span class="tag">{_e(r["type"])}</span>' if r["type"] else "")
+            + "</li>"
+            for r in diag["reached"]
+        )
+        extra = (
+            f' (showing {len(diag["reached"])} of {diag["reached_count"]})'
+            if diag["reached_count"] > len(diag["reached"])
+            else ""
+        )
+        reached = (
+            f'<p class="gloss">The traversal did reach {diag["reached_count"]} '
+            f"endpoint(s){extra} &mdash; they are real, sourced results that simply "
+            "are not what this question asked for:</p>"
+            f"<ul>{items}</ul>"
+        )
+
+    return (
+        "<section><h2>How far the traversal got</h2>"
+        f"{lead}<table>{''.join(rows)}</table>{reached}</section>"
+    )
+
+
+def _vocabulary_block(view: dict) -> str:
+    """The relation vocabulary, so the boundary reads as declared, not accidental."""
+    diag = view["diagnostics"]
+    if not diag or not diag["relation_vocabulary"]:
+        return ""
+    asked = diag["asked_relation"]
+    tags = "".join(
+        f'<span class="tag{" dispute" if r == asked else ""}">{_e(r)}</span>'
+        for r in diag["relation_vocabulary"]
+    )
+    asked_line = (
+        f'<p class="gloss">This question asked for '
+        f'<span class="rel">{_e(asked)}</span>, highlighted above.</p>'
+        if asked
+        else ""
+    )
+    return (
+        "<section><h2>The relations this system knows</h2>"
+        f'<p class="gloss">{len(diag["relation_vocabulary"])} relations, declared in '
+        '<span class="mono">config/relations.yaml</span> and read by the same map the '
+        "graph builder used. A question outside this vocabulary is outside the "
+        "system&rsquo;s reach by design &mdash; the boundary is declared, not "
+        f"accidental.</p><p>{tags}</p>{asked_line}"
+        '<p class="gloss"><a href="/#relations">See each relation&rsquo;s field names '
+        "and question vocabulary</a>.</p></section>"
+    )
+
+
+def _decline_blocks(view: dict) -> str:
+    """Every partial-evidence block that applies, in reading order.
+
+    Rendered only for a decline. Each block returns "" when the engine did not
+    establish the thing it shows, so a page never claims more than was found.
+    """
+    if view["answerable"]:
+        return ""
+    return (
+        _suggestion_block(view)
+        + _traversal_block(view)
+        + _established_block(view)
+        + _coverage_block(view)
+        + _vocabulary_block(view)
+    )
+
+
+# -- the front page: what can be asked, before anything is asked ------------
+#
+# A judge typing a first question is guessing against a closed 117-entity
+# graph, and `python -m comparison.harness` measures how that goes: no route
+# shape on 35 of 49 independently written questions. Publishing the entity list
+# and the relation vocabulary widens what the system can answer by exactly
+# nothing - it stops the boundary being discovered by failing at it.
+
+
+def _entity_datalist(catalogue: dict | None) -> str:
+    """Native browser autocomplete on the question box. No JavaScript.
+
+    A `<datalist>` suggests as the judge types without a script tag, a CDN or a
+    dependency - the same constraint `graphview.py` works under.
+    """
+    if not catalogue:
+        return ""
+    options = "".join(
+        f'<option value="{_e(e["name"])}"></option>' for e in catalogue["entities"]
+    )
+    return f'<datalist id="entities">{options}</datalist>'
+
+
+def _catalogue_block(catalogue: dict | None) -> str:
+    """The browsable entity list and the relation vocabulary."""
+    if not catalogue:
+        return ""
+    counts = catalogue["counts"]
+
+    by_type: dict[str, list] = {}
+    for entity in catalogue["entities"]:
+        by_type.setdefault(entity["type"], []).append(entity)
+
+    groups = []
+    for kind in sorted(by_type, key=lambda k: (-len(by_type[k]), k)):
+        items = "".join(
+            # Every name links to a question the system can actually answer:
+            # "Who is X?" routes to EvidenceStatus.PROFILE, the entity's whole
+            # sourced record. So the list is not a catalogue of names, it is a
+            # set of working entry points.
+            f'<li><a href="/ask?q={_e_url("Who is " + e["name"] + "?")}">'
+            f'{_e(e["name"])}</a>'
+            + ("" if e["page"] else ' <span class="tag">no page</span>')
+            + "</li>"
+            for e in by_type[kind]
+        )
+        groups.append(
+            f"<details><summary>{_e(kind)} "
+            f'<span class="tag">{len(by_type[kind])}</span></summary>'
+            f'<ul class="entitylist">{items}</ul></details>'
+        )
+
+    rel_rows = "".join(
+        f'<tr><td><span class="rel">{_e(r["name"])}</span></td>'
+        f'<td>{r["edges"]}</td>'
+        f'<td class="mono">{_e(", ".join(r["fields"][:4]))}'
+        + (f' +{len(r["fields"]) - 4}' if len(r["fields"]) > 4 else "")
+        + "</td>"
+        f'<td class="mono">{_e(", ".join(r["cues"]) or "-")}</td></tr>'
+        for r in catalogue["relations"]
+    )
+
+    return (
+        '<section id="entities"><h2>What you can ask about</h2>'
+        f'<p class="gloss">The graph holds <strong>{counts["entities"]} entities</strong> '
+        f'and <strong>{counts["edges"]} edges</strong> across '
+        f'<strong>{counts["relations"]} relations</strong>. '
+        f'{counts["page_backed"]} entities have a wiki page; the rest are known only '
+        "as link targets. Click any name to see its full record.</p>"
+        f"{''.join(groups)}</section>"
+        '<section id="relations"><h2>The relations it can follow</h2>'
+        '<p class="gloss">Declared in <span class="mono">config/relations.yaml</span>. '
+        "<em>Field names</em> are how the corpus writes a fact; <em>question cues</em> "
+        "are how a person asks about it, kept separate on purpose (ADR-024). A question "
+        "outside this vocabulary will decline &mdash; and say so, with what it did "
+        "establish.</p>"
+        "<table><tr><th>Relation</th><th>Edges</th><th>Infobox field names</th>"
+        f"<th>Question cues</th></tr>{rel_rows}</table></section>"
+    )
+
+
 # -- pages -------------------------------------------------------------------
 
 
@@ -447,10 +831,19 @@ def _shell(title: str, body: str) -> str:
     )
 
 
-def page_index() -> str:
+def page_index(catalogue: dict | None = None) -> str:
+    """The front page: ask, or browse what there is to ask about.
+
+    `catalogue` is optional so the page still renders without one (tests, and
+    any caller that has not built the graph yet); when present it supplies the
+    autocomplete list and the browsable entity/relation tables.
+    """
     return _shell(
         "Ashen Era Intelligence Assistant",
-        _search_form() + _examples_block(),
+        _search_form()
+        + _entity_datalist(catalogue)
+        + _examples_block()
+        + _catalogue_block(catalogue),
     )
 
 
@@ -482,6 +875,10 @@ def page_answer(view: dict) -> str:
         + _status_block(view)
         + _strategy_block(view)
         + _conflict_block(view)
+        # Partial evidence for a decline, immediately after the status that
+        # named it and before the (empty) route section - so the page reads
+        # "here is why, and here is what we did find", not "nothing".
+        + _decline_blocks(view)
         + _routes_block(view)
         + _documents_block(view)
         + _examples_block()

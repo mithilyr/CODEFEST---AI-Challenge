@@ -2221,3 +2221,108 @@ it does, these numbers move again for a third, equally legitimate reason.
 (`tests/test_fallback.py::test_an_apostrophe_less_possessive_is_not_reported_as_a_typo`
 and its sibling pinning the "real names ending in s" measurement). Reproduce
 with `python -m comparison.harness`. F-026 updated to record this as closed.*
+
+
+---
+
+## ADR-026 - A decline renders what it established, because an uninspectable result is indistinguishable from a bug
+
+**Problem**
+
+Technical execution and robustness is 25% of the rubric, and judges assess it
+on whether the system works end-to-end *on inputs the team did not script*. The
+submission includes a live demo where a judge may type their own question.
+
+Measured, and the number is not close: `python -m comparison.harness` reports
+the four templates match **no route shape on 35 of 49** independently authored
+questions; on the 21 novel ones they match **one** (ADR-019, ADR-025). Running
+the shipped three-tier engine over the frozen robustness set, **23 of 55
+questions decline**, and **18 of those 23 are `no_template_match`**.
+
+So on a judge-typed question the most likely outcome is a decline. Those
+declines are architecturally correct - each ends at a named `EvidenceStatus`
+rather than at an invented answer, and that is this project's central claim.
+But the page showed the status string and nothing else, and **a bare status
+string in a red pill looks exactly like a crash**. A principled refusal that
+reads as breakage loses the 25% just as thoroughly as breakage would.
+
+**Decision**
+
+Every declining status renders the partial evidence the engine established on
+the way to declining, with the same citations the `SUFFICIENT` path already
+carries - document id and locator for everything displayed.
+
+| Status | What the page now shows |
+|---|---|
+| `NO_TEMPLATE_MATCH` | the entities in the question that *did* resolve, each with its full neighbourhood - every edge, its relation, and the infobox row it was read from - plus the 15-relation vocabulary from `config/relations.yaml` |
+| `UNRESOLVED_ENTITY` | the span read as a name, and a link to the entity list |
+| `AMBIGUOUS_ENTITY` | every candidate with its type, source document and similarity; near misses at >=0.90 (ADR-021) offered as a **suggestion the user clicks**, never applied |
+| `RELATION_UNAVAILABLE` | the resolved entity, the relation asked for, and the relations it *does* have edges for |
+| `NO_PATH` / `PATH_MISSING_ATTRIBUTE` | start, goal, hops completed, and the endpoints the traversal did reach - stated as "could not join X to Y", naming both |
+| `OUTSIDE_STRUCTURED_COVERAGE` | that the graph is wiki-infobox-only, and which collections *do* carry the name, quoted with evidence ids |
+
+Plus, on `/`: a `<datalist>` autocomplete over all 117 entity names and a
+browsable list grouped by type, with the relation vocabulary and each
+relation's field names and question cues. Every entity name links to
+`Who is X?`, which routes to `PROFILE` - so the list is a set of working entry
+points, not a catalogue. This widens what the system can answer by **exactly
+nothing**. It stops the boundary being discovered by failing at it.
+
+**Where the collecting happens, and why not in the UI**
+
+Collecting this is reasoning: it reads edges, walks neighbourhoods, consults
+the relation map and scans 30,553 evidence units. `src/ui/view.py` is forbidden
+to do any of that by ADR-018's three architectural tests, and those tests are
+the only reason "the UI adds no reasoning" is a fact rather than a claim.
+
+So it lives in **`src/query/diagnostics.py`**, hangs off `Answer.diagnostics`,
+and the UI transcribes it into dicts and draws them. The thinness tests were
+not relaxed by one line - the view's `src.*` imports are still exactly
+`{graph.schema, query.engine, query.evidence}`, it still touches `graph.nodes`
+exactly once, and `render.py` still imports nothing from the project at all.
+`Diagnostics` reaches the view as an attribute of `Answer`, which needs no new
+import.
+
+**Measured result**
+
+```
+All 23 declines on the frozen robustness set now carry diagnostics; 0 do not.
+
+  no_template_match     18   -> resolved entities + their records + vocabulary
+  relation_unavailable   2   -> the relations the entity does have
+  path_missing_attribute 1   -> the endpoints the type filter removed (F-022's gap)
+  ambiguous_entity       1   -> candidates + a clickable corrected question
+  unresolved_entity      1   -> the span, and the entity list
+
+22 new tests, 342 total (was 320). The router comparison is byte-identical
+before and after: 35 / 4 / 16 no_route_shape across the three arms, every
+other metric unchanged. This ADR adds no reasoning and changes no answer.
+```
+
+**What this is not**
+
+It is not a widening of the system's reach, and deliberately so. No template
+was added, no threshold was loosened, nothing is auto-corrected. A 0.960
+near-miss is still not resolved - it is *offered*, as a link the user chooses,
+because ADR-011's reason for exact-match-only (`caedmon_fellgard` and
+`ederon_fellgard` at 0.839 are different people) is unaffected by how helpfully
+the refusal is presented. F-028 is the one defect this work fixed, and it was a
+reporting defect, not a routing one.
+
+**Trade-offs**
+
+A decline page is now long - the `no_path` case lists fourteen endpoints and a
+neighbourhood. That is the right direction for a judge reading it once, and the
+wrong direction for a user asking twenty questions. Accepted for this
+checkpoint, because the failure mode being fixed is "looks broken", and terseness
+is what caused it.
+
+`Engine` now ingests at startup (~5s, once) to make
+`OUTSIDE_STRUCTURED_COVERAGE` reachable at all - see F-028. That is real
+startup cost bought for one status, and it is worth it: that status is the only
+one that explains an architectural boundary rather than a corpus gap, and it was
+silently unreachable in the demo.
+
+*Status: accepted, validated by 22 tests, the 23/23 diagnostics measurement, and
+an unchanged router comparison.*
+
