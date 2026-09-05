@@ -245,7 +245,14 @@ These are graded — 30% of the rubric — and cannot be reconstructed at the en
 - **The corpus is read-only, and that is not enforced by anything but us.** Opening it
   in an editor once cost us 36 rewritten files and a phantom document (F-016). Run
   `python -m src.ingest.integrity` before trusting a measurement you did not expect.
-- **Export AI chat logs to `ai_usage/` as you go.**
+- **Export AI chat logs to `ai_usage/` as you go** — `python ai_usage/export_logs.py`,
+  one `.txt` per session, deterministic and safe to rerun. **Rerun it before
+  submission with every other Claude Code window closed.** A session that is still
+  open keeps appending to its `.jsonl`, so it exports truncated mid-conversation;
+  three of the twelve were live during the 5 Sep export. Then check the export with
+  `git grep -inE "AIza[0-9A-Za-z_-]{25,}|AQ\.[0-9A-Za-z_.-]{30,}|\bpa-[0-9A-Za-z_-]{30,}|sk-or-v1-[0-9a-f]{20,}" -- ai_usage/`,
+  which must return nothing. Do not use a bare `sk-` pattern — it matches
+  `<task-notification>` and gives a false alarm every time.
 
 ## How to work here
 
