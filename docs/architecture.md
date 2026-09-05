@@ -136,7 +136,8 @@ python -m src.ingest.integrity                  # 341 files, 0 modified
 python -m src.ingest.pipeline                   # 340 -> 317 docs, 30,553 units
 python -m src.graph.build                       # 117 entities, 267 edges
 python -m eval.probes.corpus_shape              # 651 cells, 12 templates
-python -m eval.run_eval --checkpoint baseline   # Checkpoint 1 (cached, free)
+python -m eval.run_eval --checkpoint baseline   # Checkpoint 1 (needs the vector
+                                                #   index; see README)
 python -m comparison.harness                    # the 35/49 and 17/27 figures
 python -m pytest                                # the whole suite
 ```

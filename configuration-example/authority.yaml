@@ -1,0 +1,100 @@
+# Source authority model for the Ashen Era Archive.
+#
+# WHY THIS EXISTS
+# ---------------
+# The archive deliberately contradicts itself, and the least reliable sources are
+# often the most confident. Verified example - the forging year of the Gauntlet of
+# Sorrowfell:
+#
+#   ephemera/sermon_concerning_malchior_cindervale_the_flame_touched.txt
+#       "Its forged year is 360 AS."                      <- confident, wrong
+#   wiki/gauntlet_of_sorrowfell.md
+#       "contested ... refer to the Annals and Codex"      <- abstains, names authority
+#   codex_vaeloria_ii (para 170)
+#       "The authoritative record states plainly: ... 391 AS.
+#        Popular accounts wrongly claim otherwise."        <- authoritative
+#
+# The sermon chunk is short, names the entity, and contains a year, so a similarity
+# search ranks it first and a naive system answers 360 AS. Ranking claims by source
+# authority is what produces 391 AS instead.
+#
+# The corpus README states the premise directly:
+#   "ephemera/ ... WARNING: in-world authors are not always reliable."
+#
+# HOW IT IS USED
+# --------------
+# Claims are ordered by (tier, subtier) ascending; lower wins. Ordering is applied
+# deterministically in src/query/conflict.py - no LLM judgement is involved in
+# deciding which source outranks which.
+
+# ---------------------------------------------------------------------------
+# Primary tiers, keyed by corpus folder.
+# ---------------------------------------------------------------------------
+tiers:
+  codex:
+    tier: 1
+    label: Authoritative codex
+    rationale: >
+      Self-declared authority. Explicitly overrides competing claims
+      ("Popular accounts wrongly claim otherwise. Such accounts are rejected.").
+      Contains the Annals and both Codex Vaeloria volumes.
+
+  wiki:
+    tier: 2
+    label: Canonical reference
+    rationale: >
+      Structured canonical record. Notably abstains on disputed fields and names
+      the authority to consult ("Founded | Contested; consult the Annals and Codex"),
+      which makes it reliable about its own limits.
+
+  chronicles:
+    tier: 3
+    label: Narrative account
+    rationale: >
+      Novelised retelling. Broadly consistent with canon but dramatised, and not a
+      register of facts.
+
+  ephemera:
+    tier: 4
+    label: In-world document
+    rationale: >
+      Written by in-world authors with their own interests and limits. The corpus
+      README warns explicitly that these authors are not always reliable. Ranked
+      further by document type below.
+
+# ---------------------------------------------------------------------------
+# Sub-ranking within ephemera (tier 4), by document type.
+#
+# The principle is proximity to an administrative record. A quartermaster counting
+# stores has little reason to invent a number; a ballad exists to be memorable.
+# All 12 doctypes present in the corpus are covered.
+# ---------------------------------------------------------------------------
+ephemera_subtiers:
+  # Administrative and official records - kept to be accurate.
+  decree:               {subtier: 1, rationale: Official promulgation with legal force.}
+  muster_roll:          {subtier: 1, rationale: Headcount record; auditable by nature.}
+  quartermaster_ledger: {subtier: 1, rationale: Accounting record; numbers are its purpose.}
+  contract:             {subtier: 1, rationale: Binding instrument; terms are enforceable.}
+
+  # Observational reporting - honest intent, single viewpoint.
+  field_report:         {subtier: 2, rationale: First-hand observation, but one observer.}
+
+  # Testimony - recorded faithfully, but the speaker may not be truthful.
+  trial_transcript:     {subtier: 2, rationale: Accurate record of possibly false statements.}
+  interrogation_record: {subtier: 3, rationale: Testimony obtained under pressure; unreliable content.}
+
+  # Interested parties - accurate about themselves, motivated elsewhere.
+  letter:               {subtier: 3, rationale: Private correspondence; audience-shaped.}
+  petition:             {subtier: 3, rationale: Advocacy; argues a position.}
+  auction_catalogue:    {subtier: 3, rationale: Sales copy; commercial incentive to embellish.}
+
+  # Performative works - composed for effect, not for record.
+  ballad:               {subtier: 4, rationale: Composed to be memorable, not accurate.}
+  sermon:               {subtier: 4, rationale: Composed to persuade; asserts contested facts confidently.}
+
+# Applied when a doctype is not in the table above, so an unrecognised in-world
+# document is treated cautiously rather than trusted by default.
+default_ephemera_subtier: 3
+
+# Non-ephemera sources have no doctype sub-ranking.
+default_subtier: 1

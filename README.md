@@ -17,7 +17,8 @@ mentions Ederon Fellgard. The two share no vocabulary, and the second hop is a
 *reverse* lookup — given a faction, find the conflict it won.
 
 We measured what conventional semantic retrieval does with this. A competent
-Voyage-embedding vector RAG baseline over the deduplicated corpus:
+Voyage-embedding vector RAG baseline over the deduplicated corpus, on the seven
+development 1B questions:
 
 ```
 1B answer correctness      2 / 7
@@ -25,9 +26,9 @@ complete evidence          0 / 7      <- the number that matters
 ```
 
 Not one question retrieved every document its answer needs. **Three of seven
-reached neither required document**, so the join never got a chance to fail.
-Both questions it scored "correct" reached one document of two — right answers by
-the wrong route.
+reached neither required document** (recall 0.00), so the join never got a chance
+to fail. Both questions it scored "correct" reached exactly one required document
+— of the three and two they respectively needed. Right answers by the wrong route.
 
 Raising `k` cannot manufacture a join. So the system is **graph-first with vector
 fallback**: parse the explicit relationships the corpus states structurally,
@@ -40,6 +41,12 @@ traverse them deterministically, and keep every hop's evidence attached.
 Python 3.11+. Windows paths shown; substitute `source .venv/bin/activate` and
 `.venv/bin/python` on macOS or Linux.
 
+### Run the demo
+
+From a clean clone to a working UI at **http://127.0.0.1:8000**.
+**No API key is needed for any of this** — the answer path is deterministic
+Python over committed caches, and the model tiers are off by default.
+
 ```bash
 git clone https://github.com/mithilyr/CODEFEST---AI-Challenge.git
 cd CODEFEST---AI-Challenge
@@ -48,45 +55,72 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### Get the corpus
-
-The archive is ~123 MB of read-only competition data and is **not committed**.
+Get the corpus (~123 MB, not committed):
 
 ```bash
-curl -o Ashen_Era_Archive.zip \
-  https://benchdata792fda32.blob.core.windows.net/codefest2026/Ashen_Era_Archive.zip
+curl -o Ashen_Era_Archive.zip https://benchdata792fda32.blob.core.windows.net/codefest2026/Ashen_Era_Archive.zip
 ```
 
-Extract it so that `data/Ashen_Era_Archive/` contains `chronicles/`, `codex/`,
-`ephemera/`, `images/` and `wiki/` — or put it anywhere and set `CORPUS_PATH` in
-`.env`.
-
-### Configure
+Extract it so that **`data/Ashen_Era_Archive/` is the directory that directly
+contains** `chronicles/`, `codex/`, `ephemera/`, `images/` and `wiki/`. If your
+unzip tool adds an extra nesting level, move the inner folder up — or put the
+archive anywhere you like and point `CORPUS_PATH` at it instead. Then:
 
 ```bash
 cp .env.example .env
 ```
 
-Fill in the keys you need. **Everything below runs from cache without any key**;
-keys are only required to re-transcribe scans or rebuild the embedding index.
+Leave every key blank. The only line that matters is `CORPUS_PATH`, which already
+defaults to `data/Ashen_Era_Archive`. Now start the demo:
+
+```bash
+python -m src.ui.server
+```
+
+It prints the graph size, confirms `model tiers: off - fully deterministic`, and
+serves on **http://127.0.0.1:8000**. Three surfaces:
+
+| URL | What it shows |
+|---|---|
+| `/` | The seven development 1B questions, each a link |
+| `/ask?q=...` | One answer, with every hop's source document, row and authority tier |
+| `/graph` | All 117 entities as one static SVG — no CDN, no JavaScript |
+
+To answer one question without the browser:
+
+```bash
+python -m src.query.engine "Which accord was ultimately won by the faction of which Ederon Fellgard is a member?"
+```
+
+With no argument it runs the `1b_013` vertical slice. `python -m src.ui.server
+--with-model` enables the LLM planner and model phrasing; it needs
+`OPENROUTER_API_KEY` and is **off by default** on purpose (F-025), so an
+unattended demo cannot spend quota or break on a cold network.
+
+### Configure
+
+`.env` is gitignored and must never be committed. Every key is optional;
+`configuration-example/env.example` is an annotated copy explaining what each one
+buys.
 
 | Variable | Needed for | Free tier |
 |---|---|---|
-| `CORPUS_PATH` | everything | — |
-| `GOOGLE_API_KEY` | OCR of the 17 scanned PDFs, LLM synthesis | [aistudio.google.com](https://aistudio.google.com/apikey) |
-| `VOYAGE_API_KEY` | rebuilding the embedding index | [voyageai.com](https://dashboard.voyageai.com) |
+| `CORPUS_PATH` | everything — the only variable the demo path reads | — |
+| `GOOGLE_API_KEY` | **re**-transcribing the 17 scanned PDFs, and the Checkpoint 1 baseline's generation. All 17 transcripts are committed under `ocr_cache/`, so OCR completes 17/17 from cache with this blank | [aistudio.google.com](https://aistudio.google.com/apikey) |
+| `VOYAGE_API_KEY` | building the Checkpoint 1 vector index, which is **not** committed (`.cache/` is gitignored). See the caveat under *Measured results* | [voyageai.com](https://dashboard.voyageai.com) |
 | `VOYAGE_TIER` | set to `paid` once a card is added — removes a throttle that turns a 5-minute index build into 2 hours | — |
-
-`.env` is gitignored and must never be committed.
+| `OPENROUTER_API_KEY` | the tier-3 LLM planner and model phrasing — both off by default | [openrouter.ai](https://openrouter.ai) |
 
 ### Verify the setup
 
 ```bash
 python -m src.ingest.integrity   # is your corpus the corpus we measured against?
-python -m pytest                 # 143 tests
+python -m pytest                 # 320 tests
 python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
-python -m src.graph.build        # 117 entities, 267 edges
+python -m src.graph.build        # 117 entities, 267 edges, 15 relations
 ```
+
+All four run with no API key and no network.
 
 The integrity check exists because our corpus once silently drifted from the
 shipped bytes — a text editor rewrote 36 files and left an empty note behind that
@@ -98,26 +132,49 @@ difference.
 
 ## Architecture
 
-```
-Corpus ─→ Ingestion ─→ Collection-aware dedup ─→ Authority ─→ Evidence units
-                                                                    │
-                                    ┌───────────────────────────────┴────┐
-                                    ▼                                    ▼
-                          Deterministic graph                     Vector index
-                     (cell parsing → provenance)              (Voyage + NumPy)
-                                    │                                    │
-                                    └──────────→ Question ←──────────────┘
-                                                    │
-                    entity resolution → traversal → sufficiency → synthesis
-                                                    │
-                                            answer + evidence path
-```
+**[`docs/architecture.md`](docs/architecture.md) is the architecture**, with the
+diagram at [`docs/diagrams/architecture.svg`](docs/diagrams/architecture.svg) —
+hand-authored, no toolchain, self-contained (ADR-022). Every number in that
+diagram is re-derived from the live corpus by `tests/test_diagram.py`, so the
+picture cannot go stale without the suite going red.
+
+The short version. One pipeline, four stages:
+
+1. **Corpus → evidence units** (`src/ingest/`) — discover, deduplicate, assign
+   authority, load. 340 files become 317 canonical documents and 30,553
+   `EvidenceUnit`s. Provenance is attached once, here, so nothing downstream
+   reconstructs it and disagrees.
+2. **Evidence units → graph** (`src/graph/`) — wiki infobox rows parsed one row at
+   a time into 117 entities and 267 edges across 15 relations, held as a Python
+   dict of lists.
+3. **Question → answer** (`src/query/`) — three routing tiers, below.
+4. **Answer → prose → screen** (`src/query/synthesis.py`, `src/ui/`) — the model
+   rewords an already-verified chain; it never selects one.
+
+### The three routing tiers
+
+Each tier runs **only if the one before it declined**, and each declines rather
+than guesses. A question no tier can route ends at a named `EvidenceStatus`,
+never at an empty result and never at an invented answer.
+
+| Tier | Module | Measured |
+|---|---|---|
+| 1 — templates | `route.py` | **7/7** on the dev 1B questions (ADR-017); matches no route shape on **35 of 49** independently written questions |
+| 2 — cue fallback | `fallback.py` | **17 correct / 27 complete evidence** of 49, against templates-alone's 10 / 11 (ADR-019, evidence count updated by ADR-024) — at 40% precision against templates' 91% |
+| 3 — LLM plan | `planner.py` | Emits a validated *plan*, never an answer. **Off by default**, and deliberately unmeasured on the frozen set |
+
+**Never quote the 7/7 without the 35/49 beside it.** 7/7 measures fit to seven
+development questions; 35/49 measures routing capability on questions written
+independently and frozen before either router ran. Reporting the first alone
+would misrepresent the system. Reproduce both with `python -m comparison.harness`.
 
 **Deterministic-first. An LLM is a fallback, not a default — and every fallback is
 counted.** Ingestion, deduplication, authority ranking, cell parsing, graph
 construction, traversal, conflict extraction and scoring are all ordinary Python.
-LLMs are confined to ambiguous entity disambiguation, question shapes no template
-matches, OCR, and writing prose from evidence already retrieved.
+Models are confined to four isolated call sites, none of them in the traversal
+that produces an answer: OCR (ingest-time, cached, zero calls at query time), the
+Checkpoint 1 baseline arm, the tier-3 planner, and prose phrasing — the last two
+off by default.
 
 ### Deliberately not used
 
@@ -134,38 +191,61 @@ liability, not a feature.
 ## Repository layout
 
 ```
-src/ingest/     discovery, dedup, OCR, authority, evidence units, integrity
-src/clients/    Gemini model rotation, Voyage embeddings, retry/timeout
-src/baseline/   Checkpoint 1: chunker, vector index, naive RAG
-src/graph/      cell parsers, entity keys, schema+provenance, build, traversal
-eval/           answer key, deterministic scorer, harness, corpus probes
-config/         authority.yaml, relations.yaml, corpus_manifest.sha256
-docs/           ADRs, failure log, limitations, roadmap
-tests/          143 tests
+src/ingest/            discovery, dedup, OCR, authority, evidence units, integrity
+src/clients/           Gemini rotation, Voyage embeddings, OpenRouter, retry/timeout
+src/baseline/          Checkpoint 1: chunker, vector index, naive RAG
+src/graph/             cell parsers, entity keys, schema + provenance, build, traversal
+src/query/             the three routing tiers — resolution, routing, traversal,
+                       evidence sufficiency, conflict detection, synthesis
+src/ui/                the demo: stdlib http.server, HTML rendering, graph SVG
+eval/                  answer key, deterministic scorer, harness, corpus probes,
+                       completeness check, the frozen routing-robustness set
+comparison/            the router comparison and guard ablations behind ADR-019
+config/                authority.yaml, relations.yaml, corpus_manifest.sha256
+configuration-example/ annotated copies of the above, readable without the tree
+docs/                  ADRs, failure log, limitations, architecture, diagram, TODO
+tests/                 320 tests
+ai_usage/              exported AI collaboration transcripts (deliverable §4.1)
+ocr_cache/             the 17 scan transcripts, committed so OCR needs no key
+data/                  where the corpus goes; gitignored, ships empty
 ```
 
 Two configuration files are deliberately *not* code, so a judge can disagree with
 a line without touching Python: `config/authority.yaml` ranks source
-trustworthiness, and `config/relations.yaml` maps 109 infobox field names onto 15
-relations.
+trustworthiness, and `config/relations.yaml` declares which infobox field names
+carry which relation — 67 field names across 15 relations, plus 43 names declared
+non-relational so that a genuinely new one is *reported* rather than silently
+ignored. `configuration-example/README.md` explains both at length.
 
 ---
 
 ## Commands
 
-```bash
-python -m src.ingest.integrity                   # verify corpus against manifest
-python -m src.ingest.pipeline                    # ingest, print summary
-python -m src.ingest.ocr                         # transcribe scans (cached)
-python -m src.graph.build                        # build graph, print coverage
-python -m eval.probes.corpus_shape               # reproduce every ADR-009..013 number
-python -m eval.run_eval --checkpoint baseline    # reproduce Checkpoint 1
-python -m eval.verify_key                        # regenerate answer-key review pack
-python -m eval.completeness                      # is the key narrower than the corpus?
-python -m pytest                                 # 143 tests
-```
+Everything here runs **with no API key**, from the committed caches, unless the
+line says otherwise.
 
-Everything is cached. Re-running costs no API quota.
+```bash
+# Setup and verification
+python -m src.ingest.integrity                   # verify corpus against the manifest
+python -m src.ingest.pipeline                    # ingest, print summary
+python -m src.ingest.ocr                         # transcribe scans (17/17 from cache)
+python -m src.graph.build                        # build graph, print coverage
+python -m pytest                                 # 320 tests
+
+# Answering
+python -m src.ui.server                          # the demo, http://127.0.0.1:8000
+python -m src.ui.server --with-model             # + LLM planner and phrasing (needs a key)
+python -m src.query.engine "<question>"          # one question end-to-end
+
+# Reproducing the measurements
+python -m eval.probes.corpus_shape               # every ADR-009..013 number
+python -m comparison.harness                     # ADR-019's router comparison (35/49, 17/27)
+python -m comparison.ablations                   # ADR-019's guard ablations
+python -m eval.completeness                      # is the answer key narrower than the corpus?
+python -m eval.verify_key                        # regenerate the answer-key review pack
+python -m eval.run_eval --checkpoint baseline    # Checkpoint 1 — needs VOYAGE_API_KEY, see below
+python -m src.clients.openrouter --verify        # are the model rotations still live?
+```
 
 ---
 
@@ -176,41 +256,48 @@ Everything is cached. Re-running costs no API quota.
 > defects** across all 9 scoreable questions, corroborating `1b_006`'s fourteen
 > answers by a route independent of the graph. *Precision* review (is each answer
 > right?) is still outstanding, so the harness continues to warn and we are not
-> quoting these numbers as final. Per-entry state lives in each question's
-> `verification.status`, measured 30 Aug: **`single_review` ×6, `draft` ×2,
-> `unresolved` ×1** — and all seven reviewed entries name the same single
-> reviewer, which is the failure mode `docs/failures.md` F-015 records.
+> quoting these numbers as final. Per-entry state, from `python -m
+> eval.verify_key`: **`single_review` ×6, `draft` ×2, `unresolved` ×1**, and
+> **0 of 9 confirmed by two reviewers** — all seven reviewed entries name the
+> same single reviewer, which is the failure mode `docs/failures.md` F-015
+> records.
 
 ### Checkpoint 1 — vector RAG baseline
 
 ```
-1B  2/7      1C  2/2      all scored  4/9      complete evidence  0/9
+1B  2/7      1C  2/2      all scored  4/9      not scored  11
+complete evidence   0/7 on 1B      0/9 across all scored questions
 ```
 
-Reproduce with `python -m eval.run_eval --checkpoint baseline` — cached, under a
-second, no quota.
+> **Reproducing this needs a Voyage key and one index build.** The vector index
+> lives under `.cache/`, which is gitignored, so a fresh clone does not have it —
+> `python -m eval.run_eval --checkpoint baseline` reports the index as missing and
+> stops. Rebuilding embeds 3,392 chunks with `VOYAGE_API_KEY` set (~5 minutes at
+> `VOYAGE_TIER=paid`, ~2 hours without), and the build is not currently exposed as
+> a runnable module — see `docs/TODO.md`. **Nothing else in this README depends on
+> it.** The graph, the query engine and the whole demo are independent of the
+> baseline arm.
 
-### Checkpoint 2 — deterministic graph (in progress)
+### Checkpoint 2 — deterministic graph and query layer
 
 ```
 entities 117  (95 page-backed, 22 edge-only, 0 isolated)
-edges    267  across 15 relations, 0 unmapped field names
+edges    267  across 15 relations, 3 direction overrides
 ```
 
-On the seven dev 1B questions, a bounded traversal reaches the answer entity and
-touches **every required document for 7 of 7**, against the baseline's 0 of 7.
+On the seven dev 1B questions the query layer answers **7 of 7 correctly**
+through four generic templates — entity resolution, routing, bounded traversal,
+type filtering and same-tier conflict detection, none of the seven hard-coded
+(ADR-017). It also touches every required document for 7 of 7, against the
+baseline's 0 of 7.
 
-**Read that number carefully.** It measures *evidence coverage*, not answer
-correctness. There is no query layer yet — nothing selects among candidate paths.
-And endpoint-reachability flatters the graph: constraining each hop to the exact
-relation sequence the answer key specifies gives **5 of 7**, because reaching the
-right node by the wrong relation is not the same as having the evidence for the
-claim. Fighting in a war is not winning it.
-
-Two of those five misses are a **vocabulary mismatch, not a graph gap** — the
-answer key names the relation `victor` where `config/relations.yaml` calls it
-`victor_of`. The edges exist. Reconciling the two vocabularies is open work, and
-we are reporting the unreconciled number rather than the flattering one.
+**Read those numbers with the routing measurement beside them.** On 49
+independently authored questions, frozen before either router ran, the templates
+match no route shape on **35**. The shipped three-tier system answers **17
+correctly with 27 complete evidence**, against templates-alone's **10 / 11** — at
+40% precision where templates hold 91%. 7/7 measures fit; 35/49 measures routing
+capability, and the second is the honest headline. Reproduce with `python -m
+comparison.harness`.
 
 ---
 
@@ -234,7 +321,12 @@ Honesty about limits is part of the design, not an apology for it. See
 - **Entity resolution is exact-match only.** It will abstain on a misspelled
   question where a fuzzy matcher would have guessed right. That trade is
   deliberate: `caedmon_fellgard` and `ederon_fellgard` are 0.839 similar and any
-  threshold loose enough to be useful merges them.
+  threshold loose enough to be useful merges them. A near miss is *reported* at
+  ≥0.90 similarity and resolved by nobody but the user (ADR-021, ADR-025).
+- **The tier-3 planner is unmeasured on the frozen set.** Running it there would
+  spend daily quota and produce a number that moves with the provider's free
+  lineup. We report it as unmeasured rather than quote a figure we cannot
+  reproduce.
 
 ---
 
@@ -243,19 +335,21 @@ Honesty about limits is part of the design, not an apology for it. See
 Three of our assumptions were overturned by five-minute checks, and the record of
 that is a deliverable rather than an embarrassment.
 
-- **`docs/decisions.md`** — ADR-001..016. Where a measurement overturned an earlier
+- **`docs/decisions.md`** — ADR-001..025. Where a measurement overturned an earlier
   decision, the original stays in the record with the correction beside it.
-- **`docs/failures.md`** — F-001..020. Every approach tried and rejected, with the
+- **`docs/failures.md`** — F-001..027. Every approach tried and rejected, with the
   number that killed it. Nothing is removed after being fixed.
 - **`docs/limitations.md`** — what the system does not do, and defects in the source
   material we cannot fix from our side.
+- **`docs/architecture.md`** — the architecture in full, with the diagram.
 
-Two entries worth reading if you want the flavour of the project: **F-015**, where
-one careful reviewer reported "high confidence" on an answer with two valid
-values and the corpus turned out to have fourteen; and **F-019**, where a textbook
+Three entries worth reading if you want the flavour of the project: **F-015**,
+where one careful reviewer reported "high confidence" on an answer with two valid
+values and the corpus turned out to have fourteen; **F-019**, where a textbook
 BFS returned a correct-looking two-hop path sourced from one document instead of
 the two the question needed, decided by nothing more principled than filename
-ordering.
+ordering; and **F-025**, where a schema-valid, name-checked, hop-bounded LLM plan
+answered a question nobody had asked — confidently, and with citations.
 
 ### Working rules
 
@@ -271,14 +365,30 @@ ordering.
 ## Status
 
 Ingestion, OCR, authority ranking, the Checkpoint 1 baseline, the deterministic
-graph and the query layer (`src/query/`) are built and measured — 7/7 dev 1B
-questions answered correctly through generic mechanisms (ADR-017). `src/ui/`
-renders that result over stdlib `http.server`, adding no reasoning of its own
-and no new dependency (ADR-018).
+graph, the query layer and the demo UI are built and measured.
 
-The query engine is **Checkpoint 2, not a finished reasoning system**. Next is
-measuring its weaknesses — routing robustness first — not polish. Answer-key
-precision/semantic review and the frozen held-out set remain the gating work;
-every number here stays provisional until they land.
+Since the query layer landed, the work has been measuring what it cannot do and
+correcting what it got wrong. Every one of these moved a *diagnosis* rather than a
+score, which is the point:
+
+- **ADR-019** — routing robustness measured on 49 frozen questions. The templates
+  match no route shape on 35 of them. A cue-based second tier was adopted from
+  that comparison, not from an assumption about what would help.
+- **ADR-020** — OpenRouter as a second provider, and a third tier that emits a
+  validated plan and never an answer. Off by default (F-025).
+- **ADR-021** — question *shape* is a routing failure of its own; a near-miss
+  spelling is reported, never resolved.
+- **ADR-022** — the architecture diagram, hand-authored and pinned by tests that
+  re-derive every number in it from the live corpus.
+- **ADR-023 / F-027** — when a cell's own verb contradicts the field name, the
+  cell wins. Three of 267 edges pointed backwards; fixing it changed no score.
+- **ADR-024** — a relation's *question* vocabulary is declared in config
+  separately from its corpus field names.
+- **ADR-025 / F-026** — the typo reporter no longer calls a correctly spelled
+  apostrophe-less possessive a misspelling. Suppress, don't widen.
+
+The query engine remains **Checkpoint 2, not a finished reasoning system**. The
+gating work is unchanged and is not code: answer-key precision review by a second
+human. Every number here stays provisional until that lands.
 
 See `docs/TODO.md` for the current sprint.
