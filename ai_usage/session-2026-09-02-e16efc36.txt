@@ -1,0 +1,1133 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : e16efc36-ebaa-41fb-81c5-c46e72ce2b9c
+Source          : e16efc36-ebaa-41fb-81c5-c46e72ce2b9c.jsonl
+First activity  : 2026-09-02T05:19:49.718Z
+Last activity   : 2026-09-02T08:21:27.160Z
+Dialogue turns  : 259   (of 559 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-02T05:19:49.911Z ----------------------------------
+Working on the Ashen Era assistant (Codefest 1B). CLAUDE.md has the project context.
+
+Before proposing anything:
+1. Run `python -m pytest` and `python -m src.ingest.pipeline` to confirm the
+   current state, and tell me if either disagrees with CLAUDE.md.
+2. Check `git log --oneline | head -15` and `docs/decisions.md` for what was
+   decided since you last saw this.
+
+Then tell me, in a few lines: what state the repo is in, what the next piece of
+work is, and anything in CLAUDE.md you think is now wrong.
+
+How I want you to work:
+- Measure before asserting. Three of our assumptions have already been overturned
+  by a five-minute check. If a claim is going into a doc, the report or the video,
+  verify it first and show me the evidence.
+- Deterministic-first. Do not add an LLM call, dependency or framework without
+  saying what it measurably improves over the simpler option.
+- Challenge me. If my reasoning is weak or the approach is overengineered, say so
+  plainly rather than agreeing.
+- Commit atomically as you go, with messages that say why and cite the measurement.
+- Never write an API key anywhere except .env.
+
+Today I want to work on: Prose relation extractor (codex/chronicles/ephemera) + entity resolution + graph build
+
+--- ASSISTANT  2026-09-02T05:19:52.899Z -----------------------------
+I'll start by getting oriented — reading CLAUDE.md and running the two commands you asked for.
+
+--- ASSISTANT  2026-09-02T05:19:53.886Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && ls -la && echo "--- CLAUDE.md ---" && cat CLAUDE.md
+
+--- USER  2026-09-02T05:19:55.139Z ----------------------------------
+[tool result] ERROR: Exit code 1 total 120694 drwxr-xr-x 1 Mithil 197121 0 Aug 28 15:25 . drwxr-xr-x 1 Mithil 197121 0 Aug 31 11:17 .. -rw-r--r-- 1 Mithil 197121 423355 Aug 28 11:44 AI_Competition_Challenge.pdf drwxr-xr-x ...
+
+--- ASSISTANT  2026-09-02T05:19:57.153Z -----------------------------
+CLAUDE.md isn't at the repo root — checking the `ashen-assistant` subdirectory.
+
+--- ASSISTANT  2026-09-02T05:19:58.240Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la && echo "=== CLAUDE.md ===" && cat CLAUDE.md 2>/dev/null || echo "(no CLAUDE.md here)"
+
+--- USER  2026-09-02T05:19:58.545Z ----------------------------------
+[tool result] ok (17448 chars, 272 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:20:03.450Z -----------------------------
+Now let me measure the current state — running the two commands plus checking git history and decisions.
+
+--- ASSISTANT  2026-09-02T05:20:04.852Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest -q 2>&1 | tail -25
+
+--- ASSISTANT  2026-09-02T05:20:05.390Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git log --oneline | head -15 && echo "=== STATUS ===" && git status --short | head -30
+
+--- USER  2026-09-02T05:20:43.935Z ----------------------------------
+[tool result] ok (403 chars, 5 lines, output not included)
+
+--- USER  2026-09-02T05:20:44.240Z ----------------------------------
+[tool result] ok (1229 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:20:47.019Z -----------------------------
+Tests: 298 passing, tree clean. Now the pipeline and the decision record.
+
+--- ASSISTANT  2026-09-02T05:20:48.486Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m src.ingest.pipeline 2>&1 | tail -30
+
+--- ASSISTANT  2026-09-02T05:20:49.596Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^## ADR\|^## F-\|^# " docs/decisions.md | tail -45 && echo "=== docs dir ===" && ls docs/
+
+--- USER  2026-09-02T05:20:55.686Z ----------------------------------
+[tool result] ok (348 chars, 14 lines, output not included)
+
+--- USER  2026-09-02T05:20:55.906Z ----------------------------------
+[tool result] ok (2025 chars, 31 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:21:02.946Z -----------------------------
+Both commands agree with CLAUDE.md exactly (317 docs / 30,553 units / 298 tests). Let me read the newest decisions and the gap register before proposing anything.
+
+--- ASSISTANT  2026-09-02T05:21:04.476Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1739,1860p' docs/decisions.md
+
+--- USER  2026-09-02T05:21:04.650Z ----------------------------------
+[tool result] ok (6617 chars, 117 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:21:04.770Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat docs/TODO.md
+
+--- USER  2026-09-02T05:21:04.948Z ----------------------------------
+[tool result] ok (5015 chars, 88 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:21:17.065Z -----------------------------
+The TODO doesn't mention a prose relation extractor — the graph today is built from wiki infoboxes. Let me verify that empirically rather than assume it.
+
+--- ASSISTANT  2026-09-02T05:21:18.440Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m src.graph.build 2>&1 | tail -30
+
+--- ASSISTANT  2026-09-02T05:21:19.217Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls src/ src/graph/ src/query/ && echo "=== LOC ===" && find src -name "*.py" | xargs wc -l | tail -5
+
+--- USER  2026-09-02T05:21:25.651Z ----------------------------------
+[tool result] ok (565 chars, 20 lines, output not included)
+
+--- USER  2026-09-02T05:21:27.665Z ----------------------------------
+[tool result] ok (416 chars, 37 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:21:33.099Z -----------------------------
+117 entities / 267 edges — matches CLAUDE.md exactly. Now let me confirm what the graph actually reads from.
+
+--- ASSISTANT  2026-09-02T05:21:34.372Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,80p' src/graph/build.py
+
+--- USER  2026-09-02T05:21:34.535Z ----------------------------------
+[tool result] ok (3125 chars, 80 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:21:34.686Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "collection\|wiki" src/graph/build.py | head -20
+
+--- USER  2026-09-02T05:21:34.917Z ----------------------------------
+[tool result] ok (270 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:21:45.852Z -----------------------------
+Confirmed at [build.py:165](ashen-assistant/src/graph/build.py:165) — `if unit.collection == "wiki"`. The graph reads infobox rows from wiki pages only; 167 codex/chronicles/ephemera documents contribute zero edges. Let me measure what prose would actually add before proposing it.
+
+--- ASSISTANT  2026-09-02T05:21:47.351Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,60p' src/ingest/pipeline.py | head -60 && echo "=== EvidenceUnit ===" && grep -rn "class EvidenceUnit ...
+
+--- USER  2026-09-02T05:21:47.611Z ----------------------------------
+[tool result] ok (3852 chars, 92 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:21:53.595Z -----------------------------
+Now the decisive measurement: how many entity pairs does prose assert that the infobox graph doesn't already have? That's the ceiling on what a prose extractor can buy.
+
+--- ASSISTANT  2026-09-02T05:21:54.700Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat src/graph/schema.py | head -80 && echo "=== entities.py ===" && grep -n "def \|ALIAS\|alias" src/graph/enti ...
+
+--- USER  2026-09-02T05:21:54.949Z ----------------------------------
+[tool result] ok (3460 chars, 84 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:22:13.521Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/e16efc36-ebaa-41fb-81c5-c46e72ce2b9c/ ...
+
+--- USER  2026-09-02T05:22:15.516Z ----------------------------------
+[tool result] ok (283 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:22:19.338Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe "C:/Users/LENOVO/AppData/Local ...
+
+--- USER  2026-09-02T05:22:27.890Z ----------------------------------
+[tool result] ok (1729 chars, 45 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:22:36.474Z -----------------------------
+Important signal: the top non-wiki pairs are all faction×faction at 70–85×, which is the noise signature of novels, not relations. Let me split by collection and constrain by relation cue.
+
+--- ASSISTANT  2026-09-02T05:22:50.500Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/e16efc36-ebaa-41fb-81c5-c46e72ce2b9c/ ...
+
+--- USER  2026-09-02T05:23:02.710Z ----------------------------------
+[tool result] ok (462 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:23:15.044Z -----------------------------
+The codex result is the striking one. Before building anything, let me check whether the query layer's remaining failures are actually caused by missing edges.
+
+--- ASSISTANT  2026-09-02T05:23:15.894Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m comparison.harness 2>&1 | tail -40
+
+--- USER  2026-09-02T05:23:28.030Z ----------------------------------
+[tool result] ok (789 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:23:52.489Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json,collections d=json.load(open('comparison/results/router_comparison. ...
+
+--- USER  2026-09-02T05:24:00.310Z ----------------------------------
+[tool result] ok (72 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:24:13.437Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json,collections d=json.load(open('comparison/results/router_comparison. ...
+
+--- USER  2026-09-02T05:24:16.768Z ----------------------------------
+[tool result] ok (554 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:24:25.201Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json,collections d=json.load(open('comparison/results/router_comparison. ...
+
+--- USER  2026-09-02T05:24:27.547Z ----------------------------------
+[tool result] ok (1079 chars, 26 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:24:33.596Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json d=json.load(open('comparison/results/router_comparison.json')) rs=d ...
+
+--- USER  2026-09-02T05:24:37.293Z ----------------------------------
+[tool result] ok (2067 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:24:45.074Z -----------------------------
+Decisive: **9 of the 13 routed-but-incorrect questions already have complete evidence.** Missing edges can't be the cause. Let me check the 4 that are evidence-incomplete.
+
+--- ASSISTANT  2026-09-02T05:24:47.073Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls comparison/ && find comparison -name "*.json" | head && echo "=== question set ===" && ./.venv/Scripts/pytho ...
+
+--- USER  2026-09-02T05:24:50.893Z ----------------------------------
+[tool result] ok (344 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:24:54.709Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "rb_004\|question_set\|QUESTIONS_PATH\|\.yaml\|\.json" comparison/harness.py | head -15 && echo "==="  ...
+
+--- USER  2026-09-02T05:24:54.929Z ----------------------------------
+[tool result] ok (909 chars, 23 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:25:06.396Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json qs=json.load(open('eval/robustness/routing_robustness_v1.json')) qs ...
+
+--- USER  2026-09-02T05:25:15.214Z ----------------------------------
+[tool result] ok (2207 chars, 40 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:25:27.120Z -----------------------------
+Every one of the four names only **wiki** pages as required evidence — no codex/chronicles/ephemera. Let me confirm the graph already holds those edges, so I can say precisely where the failure is.
+
+--- ASSISTANT  2026-09-02T05:25:33.697Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/e16efc36-ebaa-41fb-81c5-c46e72ce2b9c/ ...
+
+--- USER  2026-09-02T05:25:43.779Z ----------------------------------
+[tool result] ok (2768 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:25:57.164Z -----------------------------
+Now that's interesting — `mentor_of` looks inverted. Let me check the raw row against the relation map before calling it a bug.
+
+--- ASSISTANT  2026-09-02T05:25:59.703Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "mentor\|Mentor\|Apprentice\|apprentice" config/relations.yaml && echo "=== raw rows ===" && grep -rn " ...
+
+--- USER  2026-09-02T05:25:59.964Z ----------------------------------
+[tool result] ok (129 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:26:03.858Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && find data -iname "*ignatz_ashgrove*" | head && echo "---" && f=$(find data -iname "*ignatz_ashgrove*.md" | head ...
+
+--- USER  2026-09-02T05:26:11.136Z ----------------------------------
+[tool result] ok (44 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:26:31.190Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat .env.example | grep -i "corpus\|data\|path" && echo "=== settings ===" && grep -n "corpus\|CORPUS\|data" sr ...
+
+--- USER  2026-09-02T05:26:31.443Z ----------------------------------
+[tool result] ok (1013 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:26:35.500Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -i "CORPUS_PATH" .env && ls data/ 2>/dev/null; ls "E:/AI Challenge CodeFest/Ashen_Era_Archive" | head
+
+--- USER  2026-09-02T05:26:35.780Z ----------------------------------
+[tool result] ok (125 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:26:40.780Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && grep -n "Mentor" "Ashen_Era_Archive/wiki/ignatz_ashgrove_the_oathless.md" "Ashen_Era_Archive/wiki/ignatz_marrowgate.md" "Ashen_ ...
+
+--- USER  2026-09-02T05:26:40.950Z ----------------------------------
+[tool result] ok (202 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:26:51.450Z -----------------------------
+Found something. The row is `| Mentor | Mentor of [[Ignatz Marrowgate]] |` — the **field name** says reverse, the **cell text** says forward, and the builder trusts the field name. Let me measure how widespread this is.
+
+--- ASSISTANT  2026-09-02T05:26:52.988Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && echo "=== all Mentor rows in the wiki ===" && grep -rn "^| *Mentor" Ashen_Era_Archive/wiki/*.md && echo && echo "=== count ===" ...
+
+--- USER  2026-09-02T05:26:53.338Z ----------------------------------
+[tool result] ok (1103 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:27:32.779Z -----------------------------
+Definitive. Let me check how the cell parser treats that explicit "Mentor of" prefix.
+
+--- ASSISTANT  2026-09-02T05:27:33.603Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "def \|TEMPLATE\|_RE = \|prefix" src/graph/cells.py | head -40
+
+--- USER  2026-09-02T05:27:33.805Z ----------------------------------
+[tool result] ok (888 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:27:49.194Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '44,90p' src/graph/cells.py && echo "=== _known_verb ===" && sed -n '239,258p' src/graph/cells.py
+
+--- USER  2026-09-02T05:27:49.515Z ----------------------------------
+[tool result] ok (2568 chars, 68 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:27:53.237Z -----------------------------
+The cell parser already recognises `mentor of` as a verb. Let me see whether the builder uses that verb for direction, or only the field name.
+
+--- ASSISTANT  2026-09-02T05:27:54.803Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "verb\|direction\|lookup\|reverse" src/graph/build.py | head -30
+
+--- USER  2026-09-02T05:27:55.012Z ----------------------------------
+[tool result] ok (793 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:27:59.463Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '200,265p' src/graph/build.py
+
+--- USER  2026-09-02T05:27:59.679Z ----------------------------------
+[tool result] ok (2435 chars, 66 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:28:07.056Z -----------------------------
+Let me measure the general form of this — every edge where the cell's own verb contradicts the field-name direction.
+
+--- ASSISTANT  2026-09-02T05:28:18.363Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/e16efc36-ebaa-41fb-81c5-c46e72ce2b9c/ ...
+
+--- USER  2026-09-02T05:28:40.114Z ----------------------------------
+[tool result] ok (1495 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-02T05:29:23.580Z -----------------------------
+Everything reproduces. Here's what I found.
+
+## Repo state — CLAUDE.md is accurate
+
+Every number I checked matches: 340 files → 317 docs → 30,553 evidence units, 298 tests passing, graph 117 entities / 267 edges, `comparison.harness` re-derives templates' **33/49** exactly. Working tree clean, last commit `127847d`. Nothing in CLAUDE.md disagrees with the code.
+
+## I think today's plan is mostly wrong, and here's the measurement
+
+**A prose relation extractor would fix zero measured questions.** Arm C fails 32 of 49. Of the 13 that route but answer wrong, **9 already have complete evidence** — more edges cannot help them. The 4 that are evidence-incomplete (`rb_004`, `rb_021`, `rb_032`, `rb_044`) name **only wiki pages** in `required_evidence`. Not one codex, chronicles or ephemera document. Those are multi-hop traversal failures over edges the graph already holds — I dumped them and confirmed every hop exists.
+
+**And chronicles is a bad place to look.** It's 24,979 of 30,553 evidence units (82% of the corpus) and yields 224 entity co-mention pairs. The top ten are all faction×faction at 70–85× — that's "these are the novels' main characters", not relations. Codex is the opposite: 808 paragraphs recovering **221 of the graph's 247** edge-pairs. If we ever do prose, codex is the corroboration source and chronicles is noise.
+
+## What I did find — a real graph-build bug, on today's topic
+
+```
+| Mentor | Mentor of [[Ignatz Marrowgate]] |
+```
+
+The field name `Mentor` is mapped `reverse` in [relations.yaml:89](ashen-assistant/config/relations.yaml:89); the cell text says `Mentor of`, which is forward. [build.py:213](ashen-assistant/src/graph/build.py:213) takes direction from the field name alone and never consults the verb the cell parser already extracted — `mentor of` is in `RELATION_VERBS`. Result: **3 of 267 edges are backwards**, 3 of 8 `mentor_of` edges:
+
+```
+ignatz_marrowgate --mentor_of--> ignatz_ashgrove_the_oathless   (backwards)
+ignatz_marrowgate --mentor_of--> maelis_harrowick_the_pale      (backwards)
+caedmon_fellgard  --mentor_of--> morwenna_ashgrove              (backwards)
+```
+
+`rb_044` asks "the apprentice of Ignatz Ashgrove the Oathless" and its hand-traced gold path is `Ashgrove --mentor_of--> Marrowgate --serves_at--> Cindermere Hold --ruled_by--> Ashen Vanguard`. Our graph has hop 1 pointing the wrong way.
+
+Scoped tightly: I checked all 26 reverse-built edges. The other 23 are correct — `Victor | [[The Ashen Vanguard]]` on a conflict page genuinely is reverse. Only the 3 cells carrying an explicit contradicting verb are wrong. And **no** corpus row uses `Mentor` in the reverse sense the config assumes, so that mapping fires 3 times and is wrong all 3.
+
+## Recommended next work
+
+1. Fix the direction bug — let an explicit cell verb override the field name, and report the disagreement rather than silently picking (same posture as ADR-011). ~30 lines, a test, an ADR.
+2. Then the 4 evidence-incomplete questions, which are traversal/qualifier-filter problems (`rb_032` needs the year-399 qualifier to pick between two artifacts Maelis wields).
+3. F-026's bare-`s` possessive is still 3 of 49 and already has a measurement behind it.
+
+One thing in CLAUDE.md I'd now soften: `src/graph/` is listed as **Done**. A 3-edge direction inversion says "measured and mostly right", not done.
+
+Two ways to fix #1 — which do you want?
+
+**(a)** Delete `Mentor` from the `reverse` list. One line, but fragile: a future bare `| Mentor | [[X]] |` would then read forward and be wrong.
+**(b)** Cell verb wins over field name when they contradict, and the disagreement is counted and printed like `unmapped_fields`. More code, but it's the rule that generalises and it leaves an audit trail.
+
+I'd take (b) — it's the same "report, never silently guess" principle the rest of the graph is built on. Say the word and I'll implement it with the measurement in the commit message.
+
+--- USER  2026-09-02T06:20:58.371Z ----------------------------------
+<command-message>i-have-adhd:i-have-adhd</command-message>
+<command-name>/i-have-adhd:i-have-adhd</command-name>
+<command-args>always .
+
+Go for b</command-args>
+
+--- USER  2026-09-02T06:20:58.371Z ----------------------------------
+Base directory for this skill: C:\Users\LENOVO\.claude\plugins\cache\i-have-adhd\i-have-adhd\0.2.0\skills\i-have-adhd
+
+# i-have-adhd
+
+The reader has ADHD. Output is not just brief. It is shaped so an ADHD brain can act on it.
+
+## Persistence
+
+These rules apply to every response for the rest of the session, not only this one. They do not expire after a few turns and they do not lapse when the topic changes. If you are unsure whether they still apply, they do.
+
+Turn them off only when the reader says "stop adhd mode" or "normal mode". Confirm in one line, then return to your default style.
+
+## What ADHD changes about reading
+
+Five facts drive every rule below:
+
+1. Working memory is small. Anything not on screen is forgotten. Do not ask the reader to "keep in mind X."
+2. Knowing the answer is not doing the answer. The friction between "got it" and "done it" is where work dies.
+3. Starting is the hardest step. The first action must be obvious, small, and doable now.
+4. Time estimates feel uniform. "A bit of work" and "a few hours" register the same. Vague estimates fail.
+5. Dopamine is scarce. Visible progress matters. Buried wins do not register.
+
+## Rules
+
+### 1. Lead with the next action
+
+The first line is something the reader can do. Not context. Not a plan. The action.
+
+Bad: "Let's think about this. Your auth flow has a few moving pieces..."
+Good: "Run `npm install jsonwebtoken`, then edit `src/auth.ts:42`."
+
+If the answer is a command, path, or snippet, it goes first. Prose comes after, if at all.
+
+### 2. Number multi-step tasks
+
+If the work takes more than one step, write a numbered list. Each step is one bounded action. No step contains "and then" twice.
+
+Use the fewest steps that still work. Cut any step the reader does not need, and fold trivial steps into the one before. A short path finished beats a complete path abandoned.
+
+Bad: "First open the file, find the function, swap it out, then run the tests."
+
+Good:
+```
+1. Open `src/auth.ts`
+2. Replace `verifyToken` (lines 42 to 58) with the snippet below
+3. Run `npm test -- auth.spec.ts`
+```
+
+### 3. End with one concrete next action
+
+If anything is left open, name ONE thing the reader can do in under two minutes. Even "open the file" counts.
+
+Bad: "Hope that helps. Let me know if you want to dig deeper."
+Good: "Next: run `npm test` and paste the first failing line."
+
+### 4. Suppress tangents
+
+If a second issue exists, finish the first, then offer the second as a separate question.
+
+Bad: "Here's the fix. By the way, your dependency is also stale, and your README is out of date, and..."
+Good: "Here's the fix. Separately: there is also a stale dependency. Want me to handle that next?"
+
+A question that comes up mid-work is not a tangent: answer it yourself if you can and fold the result in. If it still needs the reader, surface it once, at the end.
+
+### 5. Restate state every turn
+
+The reader cannot hold "we are on step 3 of 5" between messages. Restate it.
+
+Bad: "Done. Ready for the next part?"
+Good: "Step 3 of 5 done: schema updated. Next: backfill the new column. Run the script?"
+
+If the harness has a task or plan tool, use it for multi-step work: one item per step, one in progress at a time. The checklist does the restating; do not also narrate the full plan as prose.
+
+### 6. Give specific time estimates
+
+Vague estimates fail. Ballpark in concrete units.
+
+Bad: "This will take some work."
+Good: "About 15 minutes if tests already cover this. An afternoon if not."
+
+### 7. Make completed work visible
+
+Show what now works, in concrete terms. Do not bury wins in a recap.
+
+Bad: "I've made some changes to the auth flow. Among other things..."
+Good: "Login now works with magic links. Try: `npm run dev`, open `/login`."
+
+### 8. Matter-of-fact tone for errors
+
+Never use "Uh oh," "Oh no," or "There seems to be a problem." State cause and fix.
+
+Bad: "Uh oh, the test is failing. There seems to be an issue..."
+Good: "Test fails at `auth.spec.ts:42`: expected 200, got 401. Cause: missing auth header. Fix: add `Authorization: Bearer ${token}` to the request."
+
+### 9. Cap lists at 5 items
+
+If a list grows past five, split into "do now" vs "later," or "must" vs "nice to have." Five items ranked beats ten unranked.
+
+### 10. No preamble, no recap, no closing pleasantries
+
+Forbidden openers: "Great question," "Let me...", "I'll...", "Sure!", "Looking at your...", "To answer your question..."
+
+Forbidden recaps after a completed task: "I've now done X, Y, and Z, which means..."
+
+Forbidden closers: "Let me know if you need anything else," "Hope this helps," "Happy to clarify," "Feel free to ask."
+
+Start with the answer. End when the answer is done.
+
+## When to break the rules
+
+Override the defaults when:
+
+1. User asks to "explain" or "walk me through." Explain fully. Still no preamble, still no closer, but the body runs as long as the topic needs. Add headers so the reader can skim back.
+2. Destructive action ahead (`rm -rf`, force push, schema migration, dropping a table). Confirm before acting. Safety wins over brevity.
+3. Debug spiral. If the last three turns have been "still broken," stop iterating on code. Name the assumption that might be wrong. Ask one diagnostic question.
+4. Real ambiguity in the request. One short clarifying question beats guessing and rewriting.
+5. A rule fights the task. When a rule would delete the answer itself, the task wins; the shape stays. Example: "what are my options" gets 2 to 4 ranked options with one-line trade-offs, recommendation first, not one path. The options are the answer.
+6. A rule fights the harness. Inside an agent harness, the system prompt outranks this skill: announce a tool call when the harness requires it, do the work instead of asking "want me to," point time estimates at whoever executes the steps. Same principle as 5: the constraint wins, the shape stays.
+
+## Pre-send check
+
+Before sending, delete:
+
+1. The first sentence if it announces what you are about to do.
+2. The last sentence if it asks "anything else?" or recaps what just happened.
+3. Any "by the way" sidebar.
+4. Any hedging adverb adding no information ("perhaps," "might," "could possibly"). Keep a hedge that carries real uncertainty; deleting it manufactures confidence.
+5. Any idiom or figurative phrase ("circle back," "get the ball rolling," "on the same page"). Replace with the literal action.
+
+Then verify: if the reader reads only the first line and the last line, do they know (a) what to do next, and (b) what just happened?
+
+If yes, send.
+
+
+ARGUMENTS: always .
+
+Go for b
+
+--- ASSISTANT  2026-09-02T06:21:09.575Z -----------------------------
+ADHD mode on, persistent. Implementing (b).
+
+Plan — 5 steps, ~25 min:
+1. Add verb→relation lookup to `RelationMap`
+2. Override direction in `build.py` when cell verb contradicts field name; count it
+3. Print the count in the CLI like `unmapped_fields`
+4. Tests
+5. ADR-022 + commit
+
+Step 1 of 5. Reading the two spots I need to change.
+
+--- ASSISTANT  2026-09-02T06:21:11.913Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '66,110p' src/graph/build.py && echo "=== relations.yaml head ===" && sed -n '1,30p' config/relations.ya ...
+
+--- ASSISTANT  2026-09-02T06:21:12.188Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "unmapped_fields\|class Graph" -A 12 src/graph/schema.py | sed -n '1,45p'
+
+--- USER  2026-09-02T06:21:13.511Z ----------------------------------
+[tool result] ok (1619 chars, 35 lines, output not included)
+
+--- USER  2026-09-02T06:21:13.533Z ----------------------------------
+[tool result] ok (2929 chars, 75 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:21:26.859Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "_known_verb" src/ tests/ && echo "=== forward field names ===" && ./.venv/Scripts/python.exe -c " imp ...
+
+--- USER  2026-09-02T06:21:33.732Z ----------------------------------
+[tool result] ok (620 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:21:38.541Z -----------------------------
+Step 1 of 5: expose the cell verb publicly.
+
+--- ASSISTANT  2026-09-02T06:21:40.509Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import re, pathlib p = pathlib.Path("src/graph/cells.py") s = p.read_text(encoding="utf-8")  ...
+
+--- USER  2026-09-02T06:21:42.725Z ----------------------------------
+[tool result] ok (22 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:21:47.720Z -----------------------------
+Step 2 of 5: direction override in the builder.
+
+--- ASSISTANT  2026-09-02T06:21:56.401Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("src/graph/build.py"); s = p.read_text(encoding="utf-8") s = ...
+
+--- USER  2026-09-02T06:21:59.088Z ----------------------------------
+[tool result] ok (2 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:22:05.126Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("src/graph/build.py"); s = p.read_text(encoding="utf-8") old ...
+
+--- USER  2026-09-02T06:22:07.159Z ----------------------------------
+[tool result] ok (2 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:22:09.621Z -----------------------------
+Step 3 of 5: the counter on `Graph`, printed like `unmapped_fields`.
+
+--- ASSISTANT  2026-09-02T06:22:10.739Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '104,112p' src/graph/schema.py && echo "--- summary tail ---" && sed -n '158,172p' src/graph/schema.py
+
+--- USER  2026-09-02T06:22:10.949Z ----------------------------------
+[tool result] ok (1118 chars, 23 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:22:18.419Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("src/graph/schema.py"); s = p.read_text(encoding="utf-8") s  ...
+
+--- USER  2026-09-02T06:22:29.800Z ----------------------------------
+[tool result] ok (585 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:22:37.291Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m src.graph.build 2>&1 | grep -A 5 "direction\|unmapped" ; echo "--- verify the 3 e ...
+
+--- USER  2026-09-02T06:22:49.936Z ----------------------------------
+[tool result] ok (944 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:22:57.305Z -----------------------------
+All 8 `mentor_of` edges now run subject→apprentice; 3 overrides counted; edge total unchanged at 267. The CLI didn't print the new section — checking `main()`.
+
+--- ASSISTANT  2026-09-02T06:22:58.031Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && tail -30 src/graph/build.py
+
+--- USER  2026-09-02T06:22:58.179Z ----------------------------------
+[tool result] ok (1103 chars, 30 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:23:02.825Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "direction_overrides" src/graph/schema.py
+
+--- USER  2026-09-02T06:23:02.946Z ----------------------------------
+[tool result] ok (73 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:23:09.541Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '163,180p' src/graph/schema.py | cat -A | sed 's/\$$//' | head -20
+
+--- USER  2026-09-02T06:23:09.814Z ----------------------------------
+[tool result] ok (540 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:23:16.405Z -----------------------------
+The replace silently missed. Using a simpler anchor.
+
+--- ASSISTANT  2026-09-02T06:23:20.116Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("src/graph/schema.py"); s = p.read_text(encoding="utf-8") an ...
+
+--- USER  2026-09-02T06:23:28.660Z ----------------------------------
+[tool result] ok (248 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:23:35.737Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib s = pathlib.Path("src/graph/schema.py").read_text(encoding="utf-8") for i, li ...
+
+--- USER  2026-09-02T06:23:37.799Z ----------------------------------
+[tool result] ok (38 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:23:46.521Z -----------------------------
+Line-index insertion instead — backslash escaping is fighting the heredoc.
+
+--- ASSISTANT  2026-09-02T06:23:50.201Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("src/graph/schema.py") lines = p.read_text(encoding="utf-8") ...
+
+--- USER  2026-09-02T06:23:58.587Z ----------------------------------
+[tool result] ok (135 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:24:04.221Z -----------------------------
+Step 4 of 5: tests. Running the suite first to see what the change broke.
+
+--- ASSISTANT  2026-09-02T06:24:04.934Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest -q 2>&1 | tail -20
+
+--- ASSISTANT  2026-09-02T06:24:06.186Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls tests/ && grep -n "def test_.*mentor\|def test_.*direction\|def test_.*reverse\|^def \|^class " tests/test_g ...
+
+--- USER  2026-09-02T06:24:48.935Z ----------------------------------
+[tool result] ok (403 chars, 5 lines, output not included)
+
+--- USER  2026-09-02T06:24:49.155Z ----------------------------------
+[tool result] ok (2160 chars, 47 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:25:01.248Z -----------------------------
+All green — but the count moved 298 → 308 and I didn't add tests. Checking that before going further.
+
+--- ASSISTANT  2026-09-02T06:25:04.108Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git status --short && echo "=== collected now ===" && ./.venv/Scripts/python.exe -m pytest --collect-only -q 2> ...
+
+--- USER  2026-09-02T06:25:10.444Z ----------------------------------
+[tool result] ok (515 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:25:20.226Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | grep -i "tests collected\|error" ; echo "--- HEAD ...
+
+--- USER  2026-09-02T06:25:26.013Z ----------------------------------
+[tool result] ok (206 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:25:31.731Z -----------------------------
+Diff is clean (49 insertions, no line-ending churn). Getting the count properly.
+
+--- ASSISTANT  2026-09-02T06:25:32.546Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | tail -6
+
+--- USER  2026-09-02T06:25:36.616Z ----------------------------------
+[tool result] ok (126 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:25:41.616Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | awk -F': ' '/^tests\/.*: [0-9]+$/ {s+=$2} END {pr ...
+
+--- USER  2026-09-02T06:25:45.486Z ----------------------------------
+[tool result] ok (10 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:25:54.917Z -----------------------------
+308 now vs 298 before my edits — and I didn't touch tests. Verifying against HEAD.
+
+--- ASSISTANT  2026-09-02T06:25:56.136Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git stash -q && ./.venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | awk -F': ' '/^tests\/.*: [0-9]+$/ ...
+
+--- USER  2026-09-02T06:25:59.869Z ----------------------------------
+[tool result] ok (75 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:26:08.195Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat pytest.ini && ./.venv/Scripts/python.exe -m pytest -q 2>&1 | grep -iE "passed|deselected|skipped" | tail -3
+
+--- USER  2026-09-02T06:26:57.504Z ----------------------------------
+[tool result] ok (71 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:27:03.590Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest 2>&1 | tail -3
+
+--- USER  2026-09-02T06:27:57.515Z ----------------------------------
+[tool result] ok (182 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:28:07.754Z -----------------------------
+308 passed — my earlier "298" was a truncated-output misread. **CLAUDE.md's "298 tests" is stale; it's 308.** Noting for the commit.
+
+Step 4 of 5: tests.
+
+--- ASSISTANT  2026-09-02T06:28:09.295Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,30p' tests/test_graph.py && echo "=== conftest fixtures ===" && grep -n "def \|fixture" tests/conftes ...
+
+--- USER  2026-09-02T06:28:09.550Z ----------------------------------
+[tool result] ok (2788 chars, 78 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:28:24.463Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("tests/test_graph.py") s = p.read_text(encoding="utf-8") s = ...
+
+--- USER  2026-09-02T06:28:35.173Z ----------------------------------
+[tool result] ok (94 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:28:39.959Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest 2>&1 | tail -2 && echo "=== does it fix rb_044? ===" && ./.venv/Scripts/py ...
+
+--- USER  2026-09-02T06:29:35.156Z ----------------------------------
+[tool result] ok (920 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:29:42.424Z -----------------------------
+313 passed. Frozen-set scores **unchanged** — 17 correct / 26 complete. The fix corrected a false fact but moved no score. Checking why `rb_044` still fails.
+
+--- ASSISTANT  2026-09-02T06:29:44.289Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json rs=json.load(open('comparison/results/router_comparison.json'))['ar ...
+
+--- USER  2026-09-02T06:29:46.357Z ----------------------------------
+[tool result] ok (984 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:29:56.703Z -----------------------------
+`rb_044` now traverses 3 hops but routes on `member_of/ruled_by/serves_at` — "apprentice" isn't a cue for `mentor_of`. Separate gap, separate commit.
+
+Step 5 of 5: ADR-022, then commit.
+
+--- ASSISTANT  2026-09-02T06:29:57.562Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && tail -5 docs/decisions.md && echo "=== END ===" && wc -l docs/decisions.md
+
+--- USER  2026-09-02T06:29:57.859Z ----------------------------------
+[tool result] ok (281 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:30:06.447Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1850,1941p' docs/decisions.md | grep -n "^#" ; echo "--- headings after 1739 ---" ; awk 'NR>1739 && /^# ...
+
+--- USER  2026-09-02T06:30:08.779Z ----------------------------------
+[tool result] ok (376 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:30:16.109Z -----------------------------
+ADR-022 is already taken (architecture diagram, landed today). Mine is **ADR-023** — fixing the references I already wrote into the code.
+
+--- ASSISTANT  2026-09-02T06:30:17.743Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git log --oneline -3 -- docs/diagrams/ docs/decisions.md && echo "=== fix refs ===" && sed -i 's/ADR-022/ADR-02 ...
+
+--- USER  2026-09-02T06:30:18.121Z ----------------------------------
+[tool result] ok (589 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:30:27.128Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git branch --show-current && git log --oneline -6 && echo "=== is 6e608dc an ancestor of HEAD? ===" && git merg ...
+
+--- USER  2026-09-02T06:30:27.364Z ----------------------------------
+[tool result] ok (544 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:30:35.055Z -----------------------------
+HEAD moved while I worked — `6e608dc` (architecture diagram) landed from another session. My work rebases cleanly on it. Writing ADR-023.
+
+--- ASSISTANT  2026-09-02T06:31:01.604Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> docs/decisions.md <<'ADREOF' ## ADR-023 — When a cell's own verb contradicts the field name, the cell wi ...
+
+--- USER  2026-09-02T06:31:03.613Z ----------------------------------
+[tool result] ok (217 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:31:16.582Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add src/graph/build.py src/graph/cells.py src/graph/schema.py tests/test_graph.py && git commit -q -F - <<' ...
+
+--- USER  2026-09-02T06:31:18.762Z ----------------------------------
+[tool result] ok (75 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:31:25.614Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib, re p = pathlib.Path("CLAUDE.md"); s = p.read_text(encoding="utf-8") before = ...
+
+--- USER  2026-09-02T06:31:27.997Z ----------------------------------
+[tool result] ok (383 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:31:32.226Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "pytest" CLAUDE.md
+
+--- USER  2026-09-02T06:31:32.362Z ----------------------------------
+[tool result] ok (50 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:31:40.054Z -----------------------------
+CLAUDE.md already said 308 — `6e608dc` updated it; my earlier "298 is stale" read was from the pre-HEAD-move copy. Correcting to 313.
+
+--- ASSISTANT  2026-09-02T06:31:41.464Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's/# 308 tests/# 313 tests/' CLAUDE.md && grep -n "pytest" CLAUDE.md && echo "=== failures.md format === ...
+
+--- USER  2026-09-02T06:31:45.841Z ----------------------------------
+[tool result] ok (1784 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:32:08.840Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> docs/failures.md <<'FEOF' ## F-027 — A graph that read direction from the field name and ignored the cel ...
+
+--- USER  2026-09-02T06:32:11.223Z ----------------------------------
+[tool result] ok (257 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:32:15.989Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest 2>&1 | tail -2 && git status --short && echo "clean-check done"
+
+--- USER  2026-09-02T06:32:56.856Z ----------------------------------
+[tool result] ok (119 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:33:07.381Z -----------------------------
+**Done: 313 tests pass, tree clean, 2 commits.**
+
+What now works: `python -m src.graph.build` prints a `direction overrides : 3` line, and all 8 `mentor_of` edges run mentor→apprentice. `ignatz_ashgrove_the_oathless --mentor_of--> ignatz_marrowgate` is now the right way round.
+
+Honest result: **the fix moved no score.** `comparison.harness` is byte-identical at 17 correct / 26 complete evidence. It corrected a false assertion, not a failure. Don't let it into the report as an improvement — ADR-023 and F-027 both say so explicitly.
+
+Two corrections to what I told you earlier:
+1. HEAD moved mid-session — `6e608dc` (architecture diagram) landed from another session. CLAUDE.md's test count was **not** stale; my copy was. It's 313 now.
+2. ADR-022 was taken by that commit; mine is ADR-023.
+
+Still open from today's brief: the prose extractor. My measurement says don't build it — 9 of 13 routed-but-wrong questions already have complete evidence, and the 4 that don't cite only wiki pages.
+
+**Next, under 2 minutes:** `rb_044` now walks 3 hops but the cue router never matches `mentor_of` because "apprentice of" isn't in its cue vocabulary. Run this to see the gap:
+
+```bash
+cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "mentor" src/query/route.py
+```
+
+--- USER  2026-09-02T06:35:56.506Z ----------------------------------
+add an apprentice cue for mentor_of and re-measure
+
+--- ASSISTANT  2026-09-02T06:36:04.359Z -----------------------------
+Step 1 of 4: find the cue vocabulary.
+
+--- ASSISTANT  2026-09-02T06:36:04.999Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "mentor" src/query/*.py config/*.yaml | head -20
+
+--- USER  2026-09-02T06:36:05.313Z ----------------------------------
+[tool result] ok (375 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:36:09.581Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "cue\|CUE" src/query/fallback.py | head -20 && echo "=== cues source ===" && grep -rn "cues:" -A 4 con ...
+
+--- USER  2026-09-02T06:36:09.992Z ----------------------------------
+[tool result] ok (1293 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:36:20.392Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '93,160p' src/query/fallback.py
+
+--- USER  2026-09-02T06:36:20.605Z ----------------------------------
+[tool result] ok (2907 chars, 68 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:36:36.084Z -----------------------------
+Cues are built **entirely** from `relations.yaml` (ADR-019's guarantee: question vocabulary can't drift from the edges). So this belongs in config, not Python. Checking blast radius first.
+
+--- ASSISTANT  2026-09-02T06:36:40.349Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json qs=json.load(open('eval/robustness/routing_robustness_v1.json')) qs ...
+
+--- USER  2026-09-02T06:36:43.946Z ----------------------------------
+[tool result] ok (279 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:37:25.539Z -----------------------------
+Only **1 of 55** frozen questions contains "apprentice", and `Apprentice` is not an infobox field name in the corpus. Two consequences I'll flag now:
+
+- Adding a cue because `rb_044` needs it, then reporting the score move, is fitting to the set — the same trap as quoting 7/7. I'll measure it but report it as a vocabulary fix, not a routing improvement.
+- It can't go in `fields:` — that would claim `Apprentice` is a corpus field name. It needs its own `cues:` key.
+
+Step 2 of 4: config-driven question cues.
+
+--- ASSISTANT  2026-09-02T06:37:25.976Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '80,95p' config/relations.yaml
+
+--- USER  2026-09-02T06:37:26.122Z ----------------------------------
+[tool result] ok (409 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:37:36.948Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("config/relations.yaml"); s = p.read_text(encoding="utf-8")  ...
+
+--- USER  2026-09-02T06:37:44.176Z ----------------------------------
+[tool result] ok (551 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:37:50.978Z -----------------------------
+Now carry `cues` through `RelationMap` into the router.
+
+--- ASSISTANT  2026-09-02T06:38:00.934Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("src/graph/build.py"); s = p.read_text(encoding="utf-8") s = ...
+
+--- USER  2026-09-02T06:38:03.503Z ----------------------------------
+[tool result] ok (37 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:38:10.093Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " from src.graph.build impo ...
+
+--- USER  2026-09-02T06:38:12.454Z ----------------------------------
+[tool result] ok (122 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:38:16.268Z -----------------------------
+Step 3 of 4: re-measure.
+
+--- ASSISTANT  2026-09-02T06:38:16.946Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m comparison.harness 2>&1 | tail -16
+
+--- USER  2026-09-02T06:38:26.888Z ----------------------------------
+[tool result] ok (789 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:38:33.346Z -----------------------------
+`complete_evidence` 26 → 27; `answer_correct` unchanged at 17. Checking `rb_044` directly.
+
+--- ASSISTANT  2026-09-02T06:38:35.095Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json rs=json.load(open('comparison/results/router_comparison.json'))['ar ...
+
+--- USER  2026-09-02T06:38:40.157Z ----------------------------------
+[tool result] ok (940 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:38:53.478Z -----------------------------
+Gold route `['mentor_of','serves_at','ruled_by']` is now found and "The Ashen Vanguard" is in the values — but it returns 14 candidates, so it stays `fallback_ambiguous`. Verifying nothing regressed per-question.
+
+--- ASSISTANT  2026-09-02T06:38:59.963Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cp comparison/results/router_comparison.json "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFes ...
+
+--- USER  2026-09-02T06:39:11.015Z ----------------------------------
+[tool result] ERROR: Exit code 1 warning: in the working copy of 'comparison/results/router_comparison.json', CRLF will be replaced by LF the next time Git touches it warning: in the working copy of 'config/relations.yaml ...
+
+--- ASSISTANT  2026-09-02T06:39:15.453Z -----------------------------
+Stash pop blocked by the tracked results file. Restoring.
+
+--- ASSISTANT  2026-09-02T06:39:16.016Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git checkout -- comparison/results/router_comparison.json && git stash pop && git status --short
+
+--- USER  2026-09-02T06:39:18.358Z ----------------------------------
+[tool result] ok (687 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:39:30.761Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/e16efc36-ebaa-41fb-81c5-c46e72ce2b9c ...
+
+--- USER  2026-09-02T06:39:32.795Z ----------------------------------
+[tool result] ok (531 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:39:44.775Z -----------------------------
+Exactly one question moved: `rb_044`, `complete_evidence` False→True. Nothing regressed; arms A and B byte-identical.
+
+Step 4 of 4: tests, then commit.
+
+--- ASSISTANT  2026-09-02T06:39:45.895Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && head -25 tests/test_fallback.py && echo "=== cue tests present ===" && grep -n "relation_cues\|cued_relations"  ...
+
+--- USER  2026-09-02T06:39:46.114Z ----------------------------------
+[tool result] ok (1305 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:39:59.740Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("tests/test_fallback.py"); s = p.read_text(encoding="utf-8") ...
+
+--- USER  2026-09-02T06:40:43.993Z ----------------------------------
+[tool result] ok (221 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:41:17.249Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m comparison.harness >/dev/null 2>&1 && cat >> docs/decisions.md <<'ADREOF' ## ADR- ...
+
+--- USER  2026-09-02T06:41:49.129Z ----------------------------------
+[tool result] ok (453 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:42:03.338Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's/# 313 tests/# 316 tests/' CLAUDE.md && grep -n "pytest" CLAUDE.md && git add CLAUDE.md && git commit  ...
+
+--- USER  2026-09-02T06:42:06.385Z ----------------------------------
+[tool result] ok (363 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:42:22.500Z -----------------------------
+**Done: 316 tests pass, tree clean, 2 more commits.**
+
+Measured result, diffed per question:
+
+```
+metric                A templates   B cues   C shipped
+answer_correct                 10       12          17   unchanged
+complete_evidence              11       20     26 -> 27
+no_route_shape                 33        4          14   unchanged
+```
+
+Exactly one question changed: `rb_044`, `complete_evidence` False→True. Arms A and B byte-identical. Nothing regressed.
+
+**The cue did not make it correct.** `rb_044` now finds the gold route `mentor_of → serves_at → ruled_by` and "The Ashen Vanguard" is in its values — with 13 others, because the tier also walks `member_of → ruled_by → serves_at`. It returns `fallback_ambiguous`: declining, not guessing, which is right at that tier's 40% precision.
+
+Two things worth pushing back on, both recorded in ADR-024:
+
+1. **This number is fit to the set.** 1 of 55 frozen questions contains "apprentice" — the one that motivated the change. Quoting "26→27" as routing improvement is the 7/7 trap. The justification is linguistic (`apprentice` is the role noun for `mentor_of`'s declared `inverse`), not scored.
+2. **The cue went in `cues:`, not `fields:`.** `Apprentice` is on none of the 95 wiki pages. Listing it as a field name would have been the smaller diff and would have installed ADR-023's bug in advance — a future `| Apprentice | [[X]] |` row mapped in a direction nobody chose. A test pins that it stays invisible to `RelationMap.lookup`.
+
+**What this exposed:** `mentor_of` isn't special. Any relation whose name, inverse and field names share a stem has a one-word vocabulary and the same blind spot — and the frozen set can't detect it, because a question has to use the missing word for the miss to appear. I did not add role nouns for other relations; unmeasurable additions are how a cue list becomes a pile of guesses.
+
+**Next, under 2 minutes:** run the probe that finds the other single-stem relations.
+
+```bash
+cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c "from src.graph.build import load_relation_map; from src.query.fallback import relation_cues; [print(f'{r:18} {sorted(c)}') for r,c in sorted(relation_cues(load_relation_map()).items()) if len(c)<=2]"
+```
+
+--- USER  2026-09-02T06:47:06.277Z ----------------------------------
+run that probe
+
+--- ASSISTANT  2026-09-02T06:47:12.718Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " from src.graph.build import load_relation_map from src.query.fallback import re ...
+
+--- USER  2026-09-02T06:47:20.635Z ----------------------------------
+[tool result] ok (1176 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:47:41.673Z -----------------------------
+Two findings, and the second is more serious than the one I went looking for.
+
+--- ASSISTANT  2026-09-02T06:47:44.063Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import yaml raw=yaml.safe_load(open('config/relations.yaml',encoding='utf-8'))  ...
+
+--- USER  2026-09-02T06:47:58.113Z ----------------------------------
+[tool result] ok (554 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:48:12.895Z -----------------------------
+Confirmed — and this is a precision leak, not a recall gap. The corpus has field names that **contain their own values**: `Serves at Greyfell Citadel`, `Serving at Crookvale`, `Personnel serving at Hollowreach`. The cue builder tokenises those, so four place names became `serves_at` cues. Measuring the damage.
+
+--- ASSISTANT  2026-09-02T06:48:22.118Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/e16efc36-ebaa-41fb-81c5-c46e72ce2b9c/ ...
+
+--- USER  2026-09-02T06:48:40.335Z ----------------------------------
+[tool result] ok (1171 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:48:59.207Z -----------------------------
+My probe over-flagged. Correcting: `hous` for `housed_in` is the legitimate stem of "Housed in" — 5 of those 6 genuinely ask about housing. Let me separate the two mechanisms.
+
+--- ASSISTANT  2026-09-02T06:49:02.134Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " from src.graph.build impo ...
+
+--- USER  2026-09-02T06:49:04.298Z ----------------------------------
+[tool result] ok (432 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:49:14.164Z -----------------------------
+Both mechanisms are real. Checking the one unanswerable question that isn't honestly refused.
+
+--- ASSISTANT  2026-09-02T06:49:17.213Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import json d=json.load(open('comparison/results/router_comparison.json')) rs=d ...
+
+--- USER  2026-09-02T06:49:20.465Z ----------------------------------
+[tool result] ok (681 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-02T06:49:48.053Z -----------------------------
+**Probe result: three findings, and I need to walk back my "precision leak" claim from a minute ago.**
+
+**1. Two relations still have a one-word vocabulary** — the exact gap `mentor_of` had:
+
+```
+lair_in     1  ['lair']
+rival_of    1  ['rival']
+```
+
+"Where does the Gravemaw Wyrm dwell/nest/den?" cues nothing. Neither does "enemy/foe/feud" for `rival_of`.
+
+**2. Proper nouns leaked into `serves_at`** — because the corpus has field names that contain their own values:
+
+```
+'Serves at Greyfell Citadel', 'Serves at Emberdeep',
+'Serving at Crookvale', 'Personnel serving at Hollowreach'
+```
+
+Tokenised, those became cues: `greyfell`, `emberdeep`, `crookval`, `hollowreach`, `citadel`, `fortres`. Synthetic probe:
+
+```
+Who fought in the battle at Crookvale?  ->  ['serves_at']
+```
+
+Only `serves_at` fires. `belligerent_in` and `waged_at` don't. That question would route entirely wrongly.
+
+**3. `housed_in` collides with the faction "House Morvain"** — `House` stems to `hous`:
+
+```
+Who leads House Morvain?  ->  ['housed_in']
+```
+
+Should be `ruled_by`. Cues only the wrong one.
+
+**Correction to what I said before running this:** I called #2 a precision leak. Measured on the frozen 55, it causes **zero** spurious cues — no question exercises it. Findings 2 and 3 are latent defects, demonstrable only synthetically. I checked `rb_054` ("Which conflict did House Morvain win?"), the one unanswerable question not honestly refused: its spurious `housed_in` cue never reaches an executed route, so that failure has a different cause. The set does not currently punish any of this.
+
+**Recommended next, in order:**
+
+1. Strip cue tokens that are known entity-name words when building from field names — kills #2, testable, no config churn. Risk: `hous` would be stripped from `housed_in` too, breaking 5 legitimate questions, so it needs to run on field-name tokens only where the *whole* field name is longer than the relation's base form. Needs measuring before it's safe.
+2. Leave #1 and #3 alone until #1 has a probe that doesn't fit to the set.
+
+**Next, under 2 minutes:** confirm the strip in (1) wouldn't break the five housed_in questions.
+
+```bash
+cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c "from src.graph.build import load_relation_map; from src.query.fallback import relation_cues, cued_relations; c=relation_cues(load_relation_map()); [print(q, sorted(cued_relations(c,q))) for q in ['Where is that relic housed today?','Which power rules the settlement where The Cinder-Wrought Aegis is housed?']]"
+```
+
+--- USER  2026-09-02T08:20:10.490Z ----------------------------------
+run that check
+
+--- ASSISTANT  2026-09-02T08:20:17.103Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " from src.graph.build import load_relation_map from src.query.fallback import re ...
+
+--- USER  2026-09-02T08:20:29.185Z ----------------------------------
+[tool result] ok (173 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-02T08:20:45.575Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " import json from src.grap ...
+
+--- USER  2026-09-02T08:20:59.740Z ----------------------------------
+[tool result] ok (860 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-02T08:21:27.160Z -----------------------------
+**My proposed fix is wrong. The check killed it.**
+
+`hous` is an entity-name word (the faction **House** Morvain), so the naive strip deletes it from `housed_in` — leaving that relation with the single cue `plac`. Five real questions lose their correct relation, and `rb_034` is left cueing **nothing at all**:
+
+```
+rb_002: ['housed_in','wields']            -> ['wields']
+rb_030: ['housed_in','ruled_by']          -> ['ruled_by']
+rb_033: ['housed_in','ruled_by','wields'] -> ['ruled_by','wields']
+rb_034: ['housed_in']                     -> []          <- no route at all
+rb_036: ['housed_in','ruled_by']          -> ['ruled_by']
+rb_054: drops the spurious housed_in                     <- the only intended effect
+```
+
+Six questions change; **one** is the fix I wanted, **five** are regressions. I made nothing worse than a proposal, and I'm not implementing it.
+
+Why it fails: I conflated "this cue token appears in an entity name" with "this cue token came from a proper noun in a field name". Those are different. `hous` reaches `housed_in` from the legitimate field name `Housed in` and merely *collides* with House Morvain. `greyfell` reaches `serves_at` only because the field name `Serves at Greyfell Citadel` embeds its own value. The filter has to key on **provenance of the token**, not on whether the string happens to match an entity.
+
+The version that would actually work: when a field name is a *superstring* of a shorter field name mapped to the same relation (`Serves at Greyfell Citadel` vs `Serves at`), contribute only the shorter one's tokens. That deletes `greyfell/emberdeep/crookval/hollowreach` and touches `housed_in` not at all — `Housed in` has no shorter sibling.
+
+I have not measured that. It's a hypothesis, and the last one looked equally obvious.
+
+Standing state, unchanged since the last commit: 316 tests pass, tree clean, `17 correct / 27 complete evidence` on the frozen 49. Nothing in findings 1–3 is causing measured harm today.
+
+**Next, under 2 minutes:** test the superstring rule before writing any of it.
+
+```bash
+cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c "import yaml; r=yaml.safe_load(open('config/relations.yaml',encoding='utf-8'))['relations']; [print(f'{k:16} {sorted((f.get(\"fields\") or {}).get(\"forward\") or [], key=len)}') for k,f in [(k,v) for k,v in r.items()]]"
+```

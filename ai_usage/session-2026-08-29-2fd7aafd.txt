@@ -1,0 +1,3754 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : 2fd7aafd-c1b1-47da-ad2e-731880409407
+Source          : 2fd7aafd-c1b1-47da-ad2e-731880409407.jsonl
+First activity  : 2026-08-29T17:20:37.865Z
+Last activity   : 2026-08-30T06:55:12.863Z
+Dialogue turns  : 616   (of 1459 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\Ashen_Era_Archive, E:\AI Challenge CodeFest\ashen-assistant
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-08-29T17:20:38.103Z ----------------------------------
+```
+Working on the Ashen Era assistant (Codefest 1B). CLAUDE.md has the project context.
+
+Before proposing anything:
+1. Run `python -m pytest` and `python -m src.ingest.pipeline` to confirm the
+   current state, and tell me if either disagrees with CLAUDE.md.
+2. Check `git log --oneline | head -15` and `docs/decisions.md` for what was
+   decided since you last saw this.
+
+Then tell me, in a few lines: what state the repo is in, what the next piece of
+work is, and anything in CLAUDE.md you think is now wrong.
+
+How I want you to work:
+- Measure before asserting. Three of our assumptions have already been overturned
+  by a five-minute check. If a claim is going into a doc, the report or the video,
+  verify it first and show me the evidence.
+- Deterministic-first. Do not add an LLM call, dependency or framework without
+  saying what it measurably improves over the simpler option.
+- Challenge me. If my reasoning is weak or the approach is overengineered, say so
+  plainly rather than agreeing.
+- Commit atomically as you go, with messages that say why and cite the measurement.
+- Never write an API key anywhere except .env.
+
+Today I want to work on:
+# AGENTS.md — Ashen Era Intelligence Assistant
+
+## 1. Mission
+
+You are working on the SLIIT Codefest 2026 AI Competition, Sub-track 1B:
+
+**Connecting Facts Across the Ashen Era Archive**
+
+The competition is powered by IFS.
+
+The system must answer questions whose answers may require connecting facts across multiple documents while remaining resistant to:
+
+- incomplete retrieval;
+- ambiguous entities;
+- misleading similarity matches;
+- multi-valued relationships;
+- reverse lookups;
+- conflicting assertions;
+- explicit source abstentions;
+- unsupported questions;
+- confident but incorrect LLM synthesis.
+
+The primary engineering objective is:
+
+> Build the smallest, most defensible system that demonstrably solves the specific failure modes of naïve vector retrieval on this corpus.
+
+This is not an exercise in maximizing:
+
+- LLM usage;
+- agent count;
+- architectural complexity;
+- framework count;
+- cloud infrastructure;
+- code volume.
+
+The objective is:
+
+**Correctness + Evidence + Reproducibility + Defensibility**
+
+with minimum unnecessary complexity.
+
+---
+
+# 2. Non-Negotiable Engineering Principle
+
+## Measure before asserting.
+
+Whenever a claim can be experimentally tested, test it.
+
+Do not write:
+
+> "The graph solves this problem."
+
+unless an experiment demonstrates it.
+
+Do not write:
+
+> "Authority ranking resolves conflicts."
+
+unless measured evidence demonstrates it.
+
+Do not write:
+
+> "Vector retrieval fails because it cannot perform multi-hop reasoning."
+
+unless the retrieval results demonstrate the relevant failure mode.
+
+Distinguish clearly between:
+
+1. measured fact;
+2. observed behaviour;
+3. architectural hypothesis;
+4. design decision;
+5. future safeguard.
+
+Never present an architectural hypothesis as a measured result.
+
+---
+
+# 3. Source-of-Truth Hierarchy
+
+The corpus is the source of truth.
+
+The graph is a deterministic index/navigation structure over explicit corpus evidence.
+
+The vector index is a retrieval structure.
+
+The LLM is an interpreter/disambiguator/synthesizer.
+
+None of these may silently overwrite or replace the underlying evidence.
+
+Every graph edge must be traceable to corpus evidence.
+
+A graph edge is not equivalent to an unquestionable fact.
+
+For example, if one document asserts:
+
+`A -> victor_of -> B`
+
+and another document disputes that assertion, the graph/evidence layer must preserve both claims.
+
+Never collapse contradictory source claims into one fact merely because one appears more convenient.
+
+---
+
+# 4. Current Measured Corpus Facts
+
+The currently measured repository state includes:
+
+- 317 canonical documents;
+- 30,553 evidence units;
+- 17/17 scans transcribed;
+- 125 graph entities;
+- 107 observed source field names;
+- approximately 12 canonical relations;
+- 3,392 cached embedding chunks;
+- 105+ tests passing;
+- 7 1B development questions;
+- 2/7 provisional 1B baseline answer correctness;
+- 0/7 complete 1B evidence retrieval;
+- 2/2 provisional 1C baseline correctness;
+- 0/9 independently fully verified scoreable answer-key entries at the current verification stage;
+- 11 1A questions currently not scored by the 1B evaluation.
+
+These numbers are historical measurements, not immutable constants.
+
+If repository state changes, remeasure.
+
+If documentation disagrees with the repository:
+
+1. measure the repository;
+2. identify the discrepancy;
+3. correct the documentation;
+4. preserve the correction in the appropriate ADR/failure log.
+
+Never silently rewrite historical claims.
+
+---
+
+# 5. Silent Wrong Answers Are the Primary Failure Class
+
+A crash is visible.
+
+A plausible wrong answer is dangerous.
+
+The system must therefore test both:
+
+### Obvious failures
+
+Examples:
+
+- unknown entity;
+- malformed input;
+- no path;
+- missing attribute.
+
+### Plausible-but-wrong success
+
+Examples:
+
+- wrong entity selected because of fuzzy similarity;
+- wrong relation extracted from a sentence;
+- wrong member selected from a multi-valued relation;
+- confident low-authority source selected over stronger evidence;
+- correct answer phrase appearing inside a negated statement;
+- contradictory answer containing the expected answer string;
+- incomplete evidence presented as a complete answer;
+- LLM inventing a conclusion not supported by supplied evidence.
+
+The second category is more important.
+
+Every critical component must contain regression tests for plausible-but-wrong success.
+
+---
+
+# 6. Architecture
+
+The intended architecture is:
+
+```text
+Corpus
+  ↓
+Ingestion
+  ↓
+Collection-aware Deduplication
+  ↓
+Metadata / Authority
+  ↓
+Deterministic Structured Graph
+  +
+Vector Index
+  ↓
+Question
+  ↓
+Entity Resolution
+  ↓
+Question Routing
+  ↓
+Deterministic Graph Traversal
+  ↓
+Evidence Sufficiency
+  ↓
+Conflict Analysis
+  ↓
+Vector Fallback if explicitly justified
+  ↓
+Grounded Synthesis
+  ↓
+Response Contract
+  ↓
+UI
+```
+
+The architecture is graph-first, vector-fallback.
+However:
+Graph-first is a hypothesis supported by measured retrieval failures, not a reason to force every question through the graph.
+7. LLM Boundaries
+LLMs are not the default implementation mechanism.
+Use deterministic logic for:
+
+* ingestion;
+* document ordering;
+* deduplication;
+* metadata;
+* punctuation normalisation;
+* authority assignment;
+* structured relation extraction;
+* alias normalisation;
+* graph construction;
+* graph traversal;
+* bounded search;
+* conflict extraction;
+* source aggregation;
+* deterministic scoring;
+* evaluation.
+
+LLMs may be used for:
+
+1. ambiguous entity disambiguation;
+2. question structures that do not match deterministic routing;
+3. final prose synthesis from supplied evidence;
+4. OCR/vision preprocessing where necessary.
+
+Do not use an LLM to perform work that the corpus explicitly and reliably represents structurally.
+Every runtime LLM escalation must have:
+
+* a documented reason;
+* a measurable trigger;
+* logging;
+* a fallback/failure behaviour.
+
+8. No Unnecessary Frameworks
+Do not introduce the following unless a measured requirement proves the need:
+
+* Neo4j;
+* Chroma;
+* FAISS;
+* Pinecone;
+* LangChain;
+* LangGraph;
+* CrewAI;
+* unnecessary microservices;
+* authentication;
+* mobile application;
+* unnecessary cloud infrastructure.
+
+The current corpus is small enough for:
+
+* Python dictionaries/objects for graph structures;
+* NumPy for vector search;
+* local cached indexes.
+
+Every proposed dependency must answer:
+
+1. What concrete problem does it solve?
+2. Why can't the current architecture solve it?
+3. What measurable improvement does it provide?
+4. What complexity does it introduce?
+5. Can every team member explain and modify it?
+
+If those questions cannot be answered, do not add it.
+9. Evaluation Is a Protected System
+The evaluation harness is part of the product.
+Agents must never weaken the evaluator merely to improve reported performance.
+Do not:
+
+* loosen answer matching to increase accuracy;
+* remove difficult questions;
+* alter expected answers without corpus verification;
+* change scoring rules after seeing results without recording the change;
+* encode architectural assumptions as ground truth;
+* use an LLM judge where deterministic evaluation is possible.
+
+Any change to:
+
+* answer-key schema;
+* scoring logic;
+* held-out questions;
+* evaluation metrics;
+
+is a high-impact change and requires human approval.
+10. Ground Truth Must Represent the Corpus
+The answer key must support:
+
+* single valid answers;
+* multiple valid answers;
+* aliases;
+* alternative evidence paths;
+* conflicts;
+* unanswerable questions;
+* verification status.
+
+Do not model every question as:
+
+```
+expected_answer = "one string"
+```
+
+if the corpus contains multiple valid answers.
+For example, `1b_006` was initially reviewed as having two valid answers but corpus inspection found fourteen documented members of the relevant faction.
+This demonstrates why the evaluator must represent the corpus rather than forcing the corpus into the evaluator's assumptions.
+Never use a probe's output as ground truth.
+Expected answers must be verified against actual corpus text.
+11. Conflict-Aware Evaluation
+Conflict handling is a separate evaluation dimension from answer correctness.
+For a conflict question:
+
+1. Determine whether the factual answer is correct.
+2. Determine whether relevant contradictory evidence exists.
+3. Determine whether the response appropriately surfaces the contradiction.
+4. Do not reward a response merely because it contains the expected phrase.
+5. Do not penalise a response for mentioning a legitimate alternative claim if it clearly identifies the conflict.
+
+For example, `1b_009` contains a genuine same-tier wiki-vs-wiki contradiction:
+
+* `the_purge_of_blackport.md` asserts The Iron-Ring Cartel as victor.
+* `the_iron_ring_cartel.md` explicitly denies that the Cartel was victor and describes participation without victor status.
+* the ballad and sermon are silent on the Cartel relationship.
+
+The two wiki sources are both Tier 2.
+Therefore:
+Authority tier alone cannot resolve this conflict.
+Do not encode the assumption that lower numerical tier automatically produces truth when sources at the same tier disagree.
+The safest answer behaviour for this question is expected to preserve the uncontested membership fact while surfacing the disputed victor designation.
+12. Silence Is Not Contradiction
+This distinction is mandatory.
+If a document does not mention a claim, it is:
+
+```
+silent
+```
+
+It is not:
+
+```
+denial
+```
+
+and it is not:
+
+```
+contradiction
+```
+
+Do not infer negative evidence from absence.
+The Halvard Crowhurst ballad and sermon are silent about the Iron-Ring Cartel connection.
+They must not be treated as evidence against the connection.
+An explicit statement such as:
+participation without assigning the Cartel the status of victor
+is different because it is an affirmative denial.
+13. Graph Data Model
+The graph must support:
+
+* canonical entities;
+* entities with dedicated pages;
+* edge-only entities;
+* aliases;
+* entity types;
+* multi-valued relations;
+* directional/asymmetric relations;
+* reverse traversal;
+* type-aware filtering;
+* explicit abstentions;
+* competing assertions;
+* evidence provenance.
+
+Current measured structure:
+
+* 125 entities;
+* 107 observed field names;
+* approximately 12 canonical relations.
+
+Do not assume the page title determines entity type.
+Measured evidence showed that only a subset of wiki titles explicitly state categories.
+Where entity type is required for relation interpretation, use the appropriate corpus taxonomy.
+14. Edge Provenance
+Every graph edge must retain enough provenance to answer:
+Why does the system believe this edge exists?
+At minimum:
+
+```
+source_entity
+relation
+target_entity
+canonical_document
+source_locator
+extraction_method
+source_tier
+assertion_type
+```
+
+Where practical, preserve the raw source passage.
+The graph must be auditable.
+An edge should be traceable back to its source.
+15. Competing Assertions
+Do not represent the graph as a simple set of unquestionable facts.
+Conceptually:
+
+```
+Claim A
+A → relation → B
+Evidence A
+Source A
+
+Claim B
+A → different_relation/status → B
+Evidence B
+Source B
+```
+
+must remain representable.
+The final answer resolver may select or summarise a claim, but it must not destroy the underlying evidence.
+This is especially important for same-tier conflicts.
+16. Deterministic Cell Parsing
+The corpus contains approximately 12 observed cell-language templates covering the measured structured relationship surface.
+Implement these as explicit deterministic handlers.
+Do not use an LLM for normal structured cell parsing.
+The parser must handle:
+
+* both observed word orders;
+* multi-valued cells;
+* ternary/sentence-like structures;
+* entity-type-based argument assignment;
+* aliases;
+* curly apostrophes;
+* infoboxes without an expected heading;
+* repeated field names;
+* contextual meaning of adjacent rows.
+
+Important example:
+Some pages contain multiple rows with the same field name `Belligerent`.
+An `Outcome` row can depend semantically on the preceding `Belligerent` row.
+A parser that stores:
+
+```
+fields["Belligerent"] = value
+```
+
+may silently discard information.
+The parser must preserve row structure and context.
+17. Infobox Detection
+Do not assume:
+
+```
+## Infobox
+```
+
+exists.
+Measured corpus inspection found pages where the table exists without that heading.
+The parser must detect the actual structured table/infobox representation rather than relying on the heading alone.
+A page containing a valid infobox must not silently produce zero graph edges because a heading is missing.
+18. Entity Resolution
+Entity resolution is a high-risk component.
+The corpus contains:
+
+* repeated surnames;
+* repeated given names;
+* high-similarity distinct entities.
+
+Example:
+`Caedmon Fellgard` and `Ederon Fellgard` have approximately 0.839 similarity.
+Therefore:
+Fuzzy matching generates candidates. It does not automatically establish identity.
+Preferred ladder:
+
+```
+Exact canonical
+↓
+Normalised exact
+↓
+Alias
+↓
+Fuzzy candidate generation
+↓
+Contextual disambiguation
+↓
+LLM only if required
+```
+
+If multiple candidates remain plausible:
+
+* use contextual evidence;
+* use LLM disambiguation if justified;
+* or report ambiguity.
+
+Never silently choose a high-similarity candidate when the evidence does not distinguish it.
+Measure entity-resolution accuracy separately.
+19. Multi-Valued Relationships
+The graph must preserve multiple values.
+Example:
+
+```
+Victor of:
+- The Winter Reckoning
+- The Leaden Accord
+- ...
+```
+
+A query may require a type filter.
+For `1b_007`:
+
+```
+Ederon Fellgard
+→ member of
+→ The Iron-Ring Cartel
+→ victor of
+→ multiple conflicts
+```
+
+The answer is:
+
+```
+The Leaden Accord
+```
+
+because the question specifically asks for an "accord."
+Do not hard-code this question.
+The graph must support:
+
+* multiple candidates;
+* relation filtering;
+* target type filtering;
+* semantic question constraints.
+
+20. Bidirectional Traversal
+Relationships may be represented asymmetrically in source documents.
+The system must support traversal in both conceptual directions where required.
+Do not assume that if:
+
+```
+A → victor_of → B
+```
+
+exists, a query beginning at B can only be answered by finding another explicit B→A relation.
+Reverse lookup must be supported through the graph structure.
+21. Explicit Abstentions
+The corpus contains explicit abstention statements such as:
+
+```
+Contested; consult the Annals and Codex.
+```
+
+An explicit abstention is not equivalent to:
+
+```
+no data found
+```
+
+Represent it explicitly.
+The system must distinguish:
+
+* source does not contain the fact;
+* source contains an explicit refusal/abstention;
+* structured graph lacks coverage;
+* evidence exists but conflicts;
+* answer is genuinely unavailable.
+
+22. Evidence Sufficiency
+Never use:
+"The answer seems incomplete."
+as a sufficiency rule.
+Sufficiency must be deterministic and testable.
+At minimum distinguish:
+
+```
+entity unresolved
+entity outside structured coverage
+relation unavailable
+no path
+path found but answer slot missing
+path found with answer
+answer found with conflicting evidence
+explicit source abstention
+```
+
+Do not confuse:
+a path exists
+with:
+enough trustworthy evidence exists to answer.
+Every sufficiency state must define:
+
+* whether fallback occurs;
+* whether synthesis occurs;
+* whether the system abstains;
+* what is logged.
+
+23. Vector Fallback
+Vector fallback exists to recover evidence that deterministic graph reasoning cannot establish.
+Fallback must have explicit triggers.
+It must never silently replace graph evidence.
+The response contract must be able to distinguish:
+
+```
+strategy = graph
+strategy = vector_fallback
+strategy = hybrid
+```
+
+and record:
+
+```
+fallback_reason
+```
+
+If graph and vector evidence disagree:
+
+* preserve both;
+* route through conflict handling;
+* do not silently prefer whichever was retrieved last.
+
+24. Baseline
+Checkpoint 1 is a naïve but competent Voyage-based vector-RAG baseline.
+Use:
+
+```
+Deduplicated corpus
+↓
+Reasonable chunking
+↓
+Voyage embeddings
+↓
+Top-k vector retrieval
+↓
+Grounded LLM synthesis
+```
+
+Do not introduce graph reasoning into the baseline.
+Do not intentionally cripple the baseline.
+Do not use advanced graph logic to improve it.
+The purpose is to establish:
+What does strong conventional semantic retrieval achieve before graph reasoning?
+Current measured result:
+
+```
+1B: 2/7 provisional answer correctness
+Complete 1B evidence: 0/7
+```
+
+The important result is the latter.
+The two correct 1B answers did not retrieve complete evidence paths.
+25. Baseline Failure Classification
+For every baseline failure, classify:
+A — Retrieval failure
+Correct evidence was not retrieved.
+B — Synthesis/reasoning failure
+Correct evidence was retrieved but the model failed to use it.
+C — Evidence-selection failure
+Correct and incorrect evidence were retrieved, but the wrong claim was selected.
+D — Multi-document join failure
+Required facts were distributed across documents and retrieval did not establish the required relationship.
+E — Ambiguous/unsupported
+The corpus does not provide an unambiguous answer.
+F — Conflict handling failure
+The system retrieved competing claims but represented them incorrectly.
+This classification must drive later architectural decisions.
+Do not call something a graph problem simply because a graph could theoretically solve it.
+26. Held-Out Set
+The held-out set must be frozen before graph tuning.
+Prefer independent authorship by a teammate who was not deeply involved in designing the existing probes.
+If independent authorship is impossible:
+
+* use seeded structural sampling;
+* record the seed;
+* document the methodology;
+* disclose residual bias.
+
+The held-out set should contain diverse structural categories:
+
+* direct lookup;
+* 2-hop;
+* 3-hop;
+* reverse lookup;
+* multi-valued;
+* temporal;
+* conflicting evidence;
+* ambiguous entity;
+* alias divergence;
+* sparse entity;
+* unanswerable.
+
+Do not encode expected system strategy as ground truth.
+Do not require:
+
+```
+expected_strategy = graph
+```
+
+or:
+
+```
+expected_strategy = vector
+```
+
+for correctness.
+Evaluate:
+
+* answer;
+* evidence;
+* correctness.
+
+Analyse strategy separately.
+Once frozen:
+Do not tune against it.
+Do not modify questions because the system performs poorly.
+27. Answer-Key Verification
+Expected answers must be verified against actual corpus text.
+Never verify an answer by checking whether another parser/probe produced the same answer.
+The verification process must involve humans.
+Each verified entry should identify:
+
+* answer;
+* supporting evidence;
+* source document;
+* path;
+* reviewer;
+* verification status.
+
+Two independent reviewers are preferred.
+If reviewers disagree:
+
+* mark unresolved;
+* inspect corpus evidence;
+* document the disagreement;
+* do not silently choose whichever answer benefits the system.
+
+Current reviewed findings demonstrate why this matters.
+`1b_006` was initially thought to have two valid answers but corpus inspection found fourteen documented members.
+Therefore, the evaluator must not artificially narrow the acceptable answer set.
+28. Scoring
+Scoring must be deterministic wherever possible.
+Do not use an LLM judge for basic correctness.
+The scorer must defend against:
+
+* substring over-crediting;
+* negation;
+* contradictory answers;
+* unrelated mentions;
+* aliases;
+* punctuation differences;
+* multi-answer questions.
+
+For conflict questions, score:
+
+```
+answer_correctness
++
+conflict_handling
+```
+
+Do not allow conflict handling to turn an incorrect factual answer into a correct one.
+Do not penalise an otherwise correct answer merely because it mentions a legitimate conflicting claim if the conflict is clearly identified.
+29. Caching and API Reliability
+All external model calls must be bounded and cacheable where appropriate.
+Gemini request calls must have explicit timeouts.
+Retries must not multiply unnecessarily across model rotation.
+Do not implement:
+
+```
+5 retries × 6 models
+```
+
+when separate models can be rotated efficiently.
+Cache repeated requests.
+The cache must never be mistaken for ground truth.
+If response caches are committed for reproducibility:
+
+* ensure no secrets;
+* document their purpose;
+* make clear they are recorded model outputs;
+* keep evaluation truth independent of them.
+
+30. Response Contract
+All engine/UI communication must use a stable response contract.
+It should support at least:
+
+```
+answer
+citations
+path
+evidence
+conflicts
+strategy
+route
+fallback_reason
+sufficient_evidence
+```
+
+The UI must not directly inspect internal graph/query implementation objects.
+The UI renders the contract.
+This allows engine, evaluation and UI work to proceed independently.
+31. UI
+The UI should demonstrate reasoning, not visual complexity.
+The important surfaces are:
+
+```
+Question
+↓
+Answer
+↓
+Evidence path
+↓
+Supporting sources
+↓
+Conflicts if present
+↓
+Strategy/fallback where useful
+```
+
+The demo should demonstrate both:
+
+1. cross-document reasoning;
+2. evidence/conflict handling.
+
+Do not build UI polish before the underlying engine is reliable.
+Do not hard-code demo answers.
+32. Adversarial Review
+Before feature freeze, assign an agent whose purpose is to break the system.
+It should specifically search for:
+
+* ambiguous entities;
+* high-similarity names;
+* alias collisions;
+* reverse traversal failures;
+* multi-valued relation errors;
+* repeated field-name loss;
+* explicit abstention mishandling;
+* same-tier conflicts;
+* lower-tier decoys;
+* incomplete evidence;
+* unsupported questions;
+* LLM hallucinations;
+* contradictory synthesis.
+
+Every real bug becomes:
+
+```
+reproduction
+→ test
+→ fix
+→ regression test
+```
+
+Do not delete the failure from the failure log.
+33. Agent Roles
+Agents should be specialised.
+Recommended roles:
+Principal Orchestrator
+Owns:
+
+* overall architecture;
+* task decomposition;
+* dependencies;
+* integration;
+* release gates.
+
+Evaluation Engineer
+Owns:
+
+* evaluation harness;
+* answer-key schema;
+* scoring;
+* held-out evaluation;
+* result reports.
+
+The evaluator is protected from unauthorised optimisation.
+Corpus Engineer
+Owns:
+
+* ingestion;
+* deduplication;
+* OCR;
+* metadata;
+* authority;
+* evidence units.
+
+Graph Engineer
+Owns:
+
+* graph schema;
+* relation configuration;
+* cell parsing;
+* graph construction;
+* provenance;
+* coverage.
+
+Entity Resolution Engineer
+Owns:
+
+* canonicalisation;
+* aliases;
+* fuzzy candidate generation;
+* ambiguity handling;
+* contextual resolution.
+
+Query Engineer
+Owns:
+
+* routing;
+* templates;
+* traversal;
+* sufficiency;
+* fallback.
+
+LLM Engineer
+Owns:
+
+* prompts;
+* structured outputs;
+* synthesis;
+* LLM escalation;
+* model configuration.
+
+QA / Red-Team Engineer
+Owns:
+
+* adversarial tests;
+* regression tests;
+* failure discovery;
+* cross-module validation.
+
+UI Engineer
+Owns:
+
+* Streamlit;
+* evidence rendering;
+* conflict rendering;
+* demo experience.
+
+Documentation Engineer
+Owns:
+
+* architecture documentation;
+* ADRs;
+* failure log;
+* report;
+* AI usage disclosure.
+
+One person may perform multiple roles.
+The roles are logical ownership boundaries, not a requirement to create one software agent per role.
+34. Agent Delegation Protocol
+Every delegated task must specify:
+
+```
+Objective
+Allowed files
+Dependencies
+Expected output
+Tests required
+Acceptance criteria
+```
+
+Agents must not expand scope without approval.
+If an agent discovers a contradiction with the architecture:
+
+1. stop;
+2. measure;
+3. report;
+4. propose options;
+5. wait for approval if the change is architectural.
+
+Do not silently redesign another agent's component.
+35. Parallel Work
+Safe parallel work includes:
+
+* documentation;
+* failure log;
+* answer-key review;
+* held-out question authoring;
+* independent schema review;
+* test writing;
+* corpus inspection.
+
+Unsafe parallel work includes multiple agents simultaneously modifying:
+
+* the same parser;
+* the answer-key schema;
+* `contract.py`;
+* core graph structures;
+* evaluation scoring;
+* shared configuration.
+
+Critical shared files require single-agent ownership or explicit coordination.
+36. Git Rules
+Use atomic commits.
+One logical change per commit.
+Commit daily.
+Commit messages should describe why.
+Good:
+
+```
+Reject ambiguous fuzzy entity matches to prevent Fellgard collision
+```
+
+Poor:
+
+```
+fix graph
+```
+
+Never commit:
+
+* API keys;
+* `.env`;
+* credentials;
+* the 123 MB corpus archive.
+
+Preserve meaningful engineering history.
+Do not squash away evidence of iterative engineering merely to make the history look cleaner.
+37. ADR Rules
+Architectural decisions belong in:
+
+```
+docs/decisions.md
+```
+
+Use:
+
+```
+Decision
+Problem
+Options
+Why
+Trade-offs
+Validation
+```
+
+If a measured result overturns an assumption:
+
+* amend the relevant ADR;
+* preserve the original finding;
+* record the new evidence;
+* do not erase the history.
+
+Example:
+The earlier conclusion that authority tiers resolved all conflicts was too broad because the initial measurement only covered dated attributes.
+The corrected conclusion must remain visible.
+38. Failure Log
+Maintain:
+
+```
+docs/failures.md
+```
+
+For every meaningful failure record:
+
+* original approach;
+* hypothesis;
+* experiment;
+* observed result;
+* why it failed;
+* correction;
+* regression test.
+
+Do not remove failures after fixing them.
+Failures are evidence of iterative engineering.
+39. AI Usage Disclosure
+Every AI coding/research session must be exported according to competition requirements.
+Do not fabricate logs.
+Do not clean logs to remove mistakes.
+Preserve:
+
+* initial approach;
+* incorrect assumptions;
+* corrections;
+* failed attempts;
+* human interventions;
+* iterative refinement.
+
+The project should demonstrate responsible AI-assisted engineering, not pretend the system was generated perfectly on the first attempt.
+40. Definition of Done
+A component is not done because its code executes.
+It is done only when:
+
+* implementation exists;
+* tests exist;
+* tests pass;
+* failure cases are covered;
+* provenance is preserved;
+* documentation is updated;
+* ADR is updated where necessary;
+* failure log is updated where necessary;
+* another agent reviews it;
+* integration does not violate existing contracts;
+* evaluation impact is understood.
+
+For high-risk components, adversarial tests are mandatory.
+41. Human Approval Required
+Stop and request human approval if:
+
+* a major dependency is proposed;
+* architecture changes;
+* evaluation methodology changes;
+* answer-key ground truth is disputed;
+* held-out questions need modification;
+* source authority assumptions are challenged;
+* an LLM is proposed for deterministic work;
+* graph/vector evidence fundamentally disagrees;
+* a shared contract changes;
+* API/security issues appear;
+* an agent wants to modify another team's owned component;
+* reported evaluation results may become incomparable with previous checkpoints.
+
+42. Checkpoints
+Checkpoint 1
+Naïve Voyage vector RAG.
+Measure:
+
+* answer correctness;
+* complete evidence retrieval;
+* evidence precision;
+* evidence recall where possible;
+* latency;
+* LLM calls;
+* token usage;
+* caching;
+* failure categories.
+
+Current measured baseline:
+
+```
+1B answer correctness: 2/7 provisional
+1B complete evidence: 0/7
+```
+
+Do not optimise against this checkpoint after the fact.
+Checkpoint 2
+Deterministic graph-first retrieval.
+Measure:
+
+* graph coverage;
+* entity resolution;
+* path correctness;
+* complete evidence retrieval;
+* answer correctness;
+* evidence precision/recall.
+
+The primary question is:
+Does explicit graph structure recover evidence that vector retrieval failed to assemble?
+Checkpoint 3
+Graph + conflict handling + sufficiency + vector fallback + synthesis.
+Measure whether each addition improves the observed failure modes.
+If a feature adds complexity without measurable value:
+consider removing it.
+Negative results are valid engineering results.
+43. Graph Coverage Metrics
+The graph coverage report must distinguish:
+
+* total entities;
+* page-backed entities;
+* edge-only entities;
+* total edges;
+* edges by relation;
+* isolated entities;
+* incoming/outgoing connectivity;
+* question entity coverage;
+* question path coverage;
+* answer-slot coverage.
+
+Most importantly:
+
+```
+graph path exists
+```
+
+must be distinguished from:
+
+```
+graph contains enough evidence to answer
+```
+
+The final system should measure how many questions are answerable graph-only.
+44. IFS / Enterprise Standard
+The final architecture should be defensible to an enterprise AI engineering team.
+Do not impress IFS through buzzwords.
+Impress them through engineering judgement.
+Be able to explain:
+
+* Why this component exists.
+* Why it is deterministic or probabilistic.
+* What evidence justified it.
+* What happens when it fails.
+* How correctness is measured.
+* How evidence is traced.
+* How uncertainty is represented.
+* How the system avoids hallucinating unsupported conclusions.
+* How the architecture can be maintained.
+
+The strongest architectural message is:
+We did not use AI where deterministic evidence was available. We used AI where semantic uncertainty actually required it.
+45. Final Release Requirements
+Before submission:
+
+* clean clone works;
+* README works from scratch;
+* tests pass;
+* evaluation is reproducible;
+* held-out set is frozen;
+* answer-key verification status is explicit;
+* no secrets committed;
+* corpus archive excluded;
+* required caches included where appropriate;
+* AI usage disclosure complete;
+* failure log complete;
+* ADRs complete;
+* report ≤ 5 pages;
+* video ≤ 10 minutes;
+* live demo contains the required unedited segment;
+* limitations documented;
+* Git history intact.
+
+Run a clean-clone test.
+A team member who did not build the setup should be able to follow the README without assistance.
+46. Cross-Team Knowledge Requirement
+The competition requires every team member to be able to explain, justify and modify any part of the submission.
+Therefore:
+Every major workstream must have:
+
+* an owner;
+* a reviewer;
+* documentation;
+* tests.
+
+Before submission:
+Each team member must explain another member's module.
+Each member should make a small modification to another workstream.
+Any member who cannot understand or modify a critical component is a release risk.
+47. Agent Final Reporting Format
+Every agent must report:
+Objective
+What was requested.
+Work performed
+What was actually done.
+Files changed
+Exact files.
+Measurements
+Numbers observed.
+Tests
+Tests added and executed.
+Failures discovered
+Unexpected behaviour.
+Architectural implications
+What the evidence means.
+Risks
+What remains uncertain.
+Recommendation
+What should happen next.
+Never report only:
+Done.
+48. Master Decision Rule
+Whenever an agent proposes a solution, evaluate it in this order:
+
+```
+Is the problem real?
+        ↓
+Can we measure it?
+        ↓
+Can deterministic logic solve it?
+        ↓
+If not, does an LLM genuinely help?
+        ↓
+What is the simplest implementation?
+        ↓
+How will we evaluate it?
+        ↓
+How does it fail?
+        ↓
+Can we explain it to an IFS engineer?
+```
+
+If the answer to these questions is unclear:
+investigate before implementing.
+49. Current Immediate Priority
+The next work sequence is:
+
+```
+1. Finish answer-key verification
+        ↓
+2. Freeze independently authored held-out set
+        ↓
+3. Finalise evaluation foundation
+        ↓
+4. Finalise graph schema
+        ↓
+5. Implement deterministic cell parsers
+        ↓
+6. Build graph + provenance
+        ↓
+7. Generate coverage report
+        ↓
+8. Implement safe entity resolution
+        ↓
+9. Implement traversal
+        ↓
+10. Implement evidence sufficiency
+        ↓
+11. Implement conflict representation/resolution
+        ↓
+12. Implement vector fallback
+        ↓
+13. Implement grounded synthesis
+        ↓
+14. Integrate response contract
+        ↓
+15. Build UI
+        ↓
+16. Red-team
+        ↓
+17. Held-out evaluation
+        ↓
+18. Documentation/report/video
+        ↓
+19. Feature freeze
+        ↓
+20. Submission
+```
+
+Do not skip evaluation gates merely because implementation is progressing quickly.
+50. Final Principle
+The system is successful if it can demonstrate:
+
+```
+Naïve Vector RAG
+        ↓
+misses / incompletely retrieves evidence
+        ↓
+Graph-first deterministic retrieval
+        ↓
+recovers explicit relationships
+        ↓
+Evidence layer
+        ↓
+preserves provenance and disagreement
+        ↓
+Controlled AI
+        ↓
+handles genuine semantic uncertainty
+        ↓
+Grounded answer
+```
+
+--- ASSISTANT  2026-08-29T17:20:40.389Z -----------------------------
+I'll start by getting oriented — but first, one thing about the environment needs flagging.
+
+--- ASSISTANT  2026-08-29T17:20:41.512Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && ls -la && echo "---GIT---" && git rev-parse --is-inside-work-tree 2>&1 | head -3
+
+--- USER  2026-08-29T17:20:43.014Z ----------------------------------
+[tool result] ok (688 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:20:45.768Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la && echo "---GIT---" && git rev-parse --is-inside-work-tree 2>&1 | head -3
+
+--- USER  2026-08-29T17:20:48.668Z ----------------------------------
+[tool result] ok (1227 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:20:53.122Z -----------------------------
+Found the actual repo at `ashen-assistant/`. Running the checks now.
+
+--- ASSISTANT  2026-08-29T17:20:53.829Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && (.venv/Scripts/python.exe -m pytest -q 2>&1 | tail -40)
+
+--- ASSISTANT  2026-08-29T17:20:54.703Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git log --oneline | head -15 && echo "===STATUS===" && git status --short | head -30
+
+--- USER  2026-08-29T17:21:00.314Z ----------------------------------
+[tool result] ok (160 chars, 2 lines, output not included)
+
+--- USER  2026-08-29T17:21:00.714Z ----------------------------------
+[tool result] ok (1150 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:21:05.138Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | grep -E "passed|failed|error" | tail -5
+
+--- ASSISTANT  2026-08-29T17:21:06.203Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.ingest.pipeline 2>&1 | tail -40
+
+--- USER  2026-08-29T17:21:10.730Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- USER  2026-08-29T17:21:18.478Z ----------------------------------
+[tool result] ok (348 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:21:23.711Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat pytest.ini && echo "===" && .venv/Scripts/python.exe -m pytest 2>&1 | tail -5 && echo "===COLLECT===" && .v ...
+
+--- ASSISTANT  2026-08-29T17:21:24.693Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "317\|318\|canonical documents\|30,553\|30553" CLAUDE.md | head -20
+
+--- USER  2026-08-29T17:21:30.457Z ----------------------------------
+[tool result] ok (321 chars, 11 lines, output not included)
+
+--- USER  2026-08-29T17:21:30.638Z ----------------------------------
+[tool result] ok (168 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:21:36.874Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat CLAUDE.md
+
+--- USER  2026-08-29T17:21:37.041Z ----------------------------------
+[tool result] ok (11243 chars, 197 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:21:37.139Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls docs/ && echo "===DECISIONS===" && wc -l docs/*.md
+
+--- USER  2026-08-29T17:21:37.365Z ----------------------------------
+[tool result] ok (196 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:21:44.090Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,80p' src/ingest/pipeline.py
+
+--- USER  2026-08-29T17:21:44.282Z ----------------------------------
+[tool result] ok (2879 chars, 80 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:21:45.454Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls data/ && echo "===" && find data -type f | wc -l && echo "===recent===" && find data -type f -newermt "2026- ...
+
+--- USER  2026-08-29T17:21:45.791Z ----------------------------------
+[tool result] ok (54 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:21:55.692Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat src/settings.py | head -60 && echo "===ENVEX===" && cat .env.example && echo "===ENVKEYSONLY===" && sed 's/ ...
+
+--- USER  2026-08-29T17:21:57.913Z ----------------------------------
+[tool result] ok (2953 chars, 86 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:22:00.914Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep "^CORPUS_PATH" .env
+
+--- USER  2026-08-29T17:22:01.117Z ----------------------------------
+[tool result] ok (54 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:22:05.128Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && find . -type f | wc -l && echo "===BY EXT===" && find . -type f | sed 's/.*\.//' | sort | uniq -c | sort -rn  ...
+
+--- USER  2026-08-29T17:22:05.709Z ----------------------------------
+[tool result] ok (509 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:22:15.904Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.ingest.pipeline import ingest r = ingest() from collections import Count ...
+
+--- USER  2026-08-29T17:22:24.733Z ----------------------------------
+[tool result] ok (186 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:22:30.046Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.ingest.pipeline import ingest from dataclasses import fields from collec ...
+
+--- USER  2026-08-29T17:22:38.873Z ----------------------------------
+[tool result] ok (3940 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:22:44.996Z -----------------------------
+Found something. Let me dig in.
+
+--- ASSISTANT  2026-08-29T17:22:47.377Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && ls -la wiki/ | grep -i "iron" && echo "===CONTENT of The Iron-Ring Cartel.md===" && cat "wiki/The Iron-Ring C ...
+
+--- USER  2026-08-29T17:22:47.701Z ----------------------------------
+[tool result] ok (429 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:22:58.843Z -----------------------------
+A zero-byte `The Iron-Ring Cartel.md` appeared in the corpus yesterday at 21:31, and three wiki files have last-night mtimes. The corpus is supposed to be read-only. We have the pristine zip — let me verify against it.
+
+--- ASSISTANT  2026-08-29T17:23:01.216Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && for f in "wiki/The Iron-Ring Cartel.md" wiki/the_iron_ring_cartel.md wiki/brannoc_ironmere_the_red_handed.md  ...
+
+--- USER  2026-08-29T17:23:03.832Z ----------------------------------
+[tool result] ok (612 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:23:10.621Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import zipfile, hashlib, os, pathlib zp = r"E:/AI Challenge CodeFest/Ashen_Er ...
+
+--- USER  2026-08-29T17:23:12.542Z ----------------------------------
+[tool result] ok (54 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:23:24.463Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import zipfile, hashlib, pathlib zp = r"E:/AI Challenge CodeFest/Ashen_Era_Ar ...
+
+--- USER  2026-08-29T17:23:27.085Z ----------------------------------
+[tool result] ERROR: Exit code 1 File "<stdin>", line 11 disk[str(p.relative_to(root)).replace('\','/')] = p ^ SyntaxError: unterminated string literal (detected at line 11)
+
+--- ASSISTANT  2026-08-29T17:23:36.973Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\E--AI-Challenge-CodeFest\2fd7aafd-c1b1-47da-ad2e-731880409407\scratchpad\verify_corpus.py
+
+--- USER  2026-08-29T17:23:37.002Z ----------------------------------
+[tool result] ok (227 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:23:40.052Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/2fd7aafd-c1b1-47da ...
+
+--- USER  2026-08-29T17:23:44.116Z ----------------------------------
+[tool result] ok (2555 chars, 52 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:23:50.665Z -----------------------------
+36 corpus files differ from the pristine zip. Let me find out exactly what changed before calling it damage.
+
+--- ASSISTANT  2026-08-29T17:24:01.181Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\E--AI-Challenge-CodeFest\2fd7aafd-c1b1-47da-ad2e-731880409407\scratchpad\diff_one.py
+
+--- USER  2026-08-29T17:24:01.207Z ----------------------------------
+[tool result] ok (222 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:24:04.910Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/2fd7aafd-c1b1-47da ...
+
+--- USER  2026-08-29T17:24:06.888Z ----------------------------------
+[tool result] ok (325 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:24:11.371Z -----------------------------
+Line endings only, on that one. Let me confirm for all 36.
+
+--- ASSISTANT  2026-08-29T17:24:17.438Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\E--AI-Challenge-CodeFest\2fd7aafd-c1b1-47da-ad2e-731880409407\scratchpad\classify_diffs.py
+
+--- USER  2026-08-29T17:24:17.481Z ----------------------------------
+[tool result] ok (228 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:24:20.703Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/2fd7aafd-c1b1-47da ...
+
+--- USER  2026-08-29T17:24:23.728Z ----------------------------------
+[tool result] ok (99 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:24:49.871Z -----------------------------
+Content is intact — no evidence lost. Now let me confirm the phantom file is what inflated the counts, and read the recent decisions.
+
+--- ASSISTANT  2026-08-29T17:24:53.355Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && mkdir -p "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/2fd7aafd-c1b1-47da-ad2e-731880409407/scratchpad/qu ...
+
+--- ASSISTANT  2026-08-29T17:24:54.626Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^## ADR\|^## \|^# " docs/decisions.md | tail -25 && echo "===FAILURES===" && grep -n "^## \|^# " docs/ ...
+
+--- USER  2026-08-29T17:25:17.599Z ----------------------------------
+[tool result] ERROR: Permission for this action was denied by the Claude Code auto mode classifier. Reason: Blocked by classifier. If you have other tasks that don't depend on this action, continue working on those. IMPOR ...
+
+--- USER  2026-08-29T17:25:17.849Z ----------------------------------
+[tool result] ok (2170 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:25:36.196Z -----------------------------
+The move was blocked, so I'll measure in place instead — no corpus mutation needed.
+
+--- ASSISTANT  2026-08-29T17:25:43.879Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\E--AI-Challenge-CodeFest\2fd7aafd-c1b1-47da-ad2e-731880409407\scratchpad\discover_vs_zip.py
+
+--- USER  2026-08-29T17:25:43.909Z ----------------------------------
+[tool result] ok (229 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:25:47.644Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/2fd7aafd-c1b1-47da ...
+
+--- USER  2026-08-29T17:26:12.410Z ----------------------------------
+[tool result] ERROR: Permission for this action was denied by the Claude Code auto mode classifier. Reason: Blocked by classifier. If you have other tasks that don't depend on this action, continue working on those. IMPOR ...
+
+--- ASSISTANT  2026-08-29T17:26:20.482Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import pathlib, zipfile from dataclasses import fields from src.ingest.metadata i ...
+
+--- USER  2026-08-29T17:26:22.611Z ----------------------------------
+[tool result] ok (143 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:26:28.365Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import pathlib, zipfile from src.ingest.metadata import discover from src.setting ...
+
+--- USER  2026-08-29T17:26:31.352Z ----------------------------------
+[tool result] ok (166 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:26:38.903Z -----------------------------
+Confirmed: the pristine corpus is 340 → 317 → 30,553, exactly as CLAUDE.md says. The 318 is entirely the phantom file. Now let me verify the eval numbers and the answer-key state.
+
+--- ASSISTANT  2026-08-29T17:26:40.306Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.run_eval --checkpoint baseline 2>&1 | tail -30
+
+--- ASSISTANT  2026-08-29T17:26:43.270Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls eval/ eval/verification/ 2>/dev/null && echo "===KEY STATUS===" && .venv/Scripts/python.exe -c " import json ...
+
+--- USER  2026-08-29T17:26:43.887Z ----------------------------------
+[tool result] ok (982 chars, 30 lines, output not included)
+
+--- USER  2026-08-29T17:26:45.921Z ----------------------------------
+[tool result] ok (376 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:26:50.377Z -----------------------------
+Everything reproduces exactly. Let me read what was decided most recently.
+
+--- ASSISTANT  2026-08-29T17:26:51.750Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '982,1061p' docs/decisions.md
+
+--- USER  2026-08-29T17:26:51.919Z ----------------------------------
+[tool result] ok (4198 chars, 80 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:26:52.050Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '433,468p' docs/failures.md
+
+--- USER  2026-08-29T17:26:52.208Z ----------------------------------
+[tool result] ok (1649 chars, 36 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:26:57.120Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | grep -E "^tests/"
+
+--- USER  2026-08-29T17:27:01.145Z ----------------------------------
+[tool result] ok (97 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:27:12.968Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git branch --show-current && git status --short && grep -n "40 tests" CLAUDE.md
+
+--- USER  2026-08-29T17:27:13.281Z ----------------------------------
+[tool result] ok (187 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:27:16.186Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's|python -m pytest # 40 tests|python -m pytest # 83 tests|' CLAUDE.md && sed -n '160,170p' CLAUDE.md && ...
+
+--- USER  2026-08-29T17:27:18.158Z ----------------------------------
+[tool result] ok (747 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:27:23.568Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add CLAUDE.md && git commit -q -m "$(cat <<'EOF' docs: correct the test count in CLAUDE.md, 40 -> 83 `pytho ...
+
+--- USER  2026-08-29T17:27:25.964Z ----------------------------------
+[tool result] ok (134 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:27:46.562Z -----------------------------
+Both commands ran. Here's where things stand.
+
+## The corpus on disk is not the competition corpus
+
+`python -m src.ingest.pipeline` reports **341 files → 318 canonical docs**, not the 340 → 317 in CLAUDE.md. I chased the discrepancy against the pristine `Ashen_Era_Archive.zip`:
+
+```
+ON DISK BUT NOT IN ZIP: 8   (7 × wiki/.obsidian/*, + wiki/The Iron-Ring Cartel.md, 0 bytes)
+IN ZIP BUT MISSING:     0
+CONTENT DIFFERS:       36   → all 36 are CRLF→LF only, 0 real text changes
+```
+
+Someone opened `wiki/` in Obsidian last night (21:31–22:37) and it created an empty note. **No evidence was lost** — all 36 modified files are byte-identical after newline normalisation. CLAUDE.md's 340/317/30,553 is correct; the disk is dirty, the doc is not.
+
+But the phantom is not harmless. It enters as canonical doc #318 with **zero evidence units**, and it is titled *The Iron-Ring Cartel* — the exact entity at the centre of `1b_009`'s same-tier conflict. A graph builder or entity resolver that keys off page titles gets a second, empty Cartel node competing with `the_iron_ring_cartel.md`. That is a textbook §5 plausible-but-wrong-success, and it would have appeared during graph work looking like a parser bug.
+
+My `mv` to quarantine it was blocked by the permission classifier, so it's still there. **Your call** — I'd delete it and re-extract the 36 CRLF files from the zip, then add an integrity probe so this is caught by a command rather than by luck.
+
+## Repo state
+
+Everything else reproduces exactly. `pytest`: **83 passed** in 1.59s. `run_eval --checkpoint baseline`: **1B 2/7, 1C 2/2, 4/9 scored, 11 not scored, 0/9 complete evidence** — cache-only, no quota burned. Working tree was clean at `d7b0625`.
+
+Since I last saw this: ADR-013 was **corrected** (a same-tier wiki-vs-wiki conflict exists in `1b_009`; tier cannot resolve it), ADR-015 landed answer-key schema v2, and F-015 records the single-reviewer failure — one careful reviewer found 2 of 14 valid answers for `1b_006`.
+
+## Next piece of work
+
+Answer-key verification (§49 step 1). All 9 entries are `verified_by: null`; the harness prints *"PROVISIONAL: 9/9 key entries are unverified. Do not quote these numbers."* Six are `single_review`, one `unresolved`, two `draft`. F-015 already proved why the second reviewer is the mechanism, not the first — this needs a human who isn't you, and it blocks freezing the held-out set and every Checkpoint 2 number.
+
+## Wrong in CLAUDE.md
+
+Only one thing, now fixed and committed as `7251073`: the Commands block said `# 40 tests`; it's 83. Your AGENTS.md is wrong in the other direction — §4 claims "105+ tests passing" and "0/7 complete 1B evidence" where the harness measures **0/9**. Its 317 documents and 30,553 evidence units are correct.
+
+One challenge on your brief: AGENTS.md §4 presents "3,392 cached embedding chunks" and "125 graph entities" alongside numbers I just reproduced, but `src/graph/` doesn't exist yet. The 125 is a probe measurement of what the graph *will* contain, not of a built graph — worth labelling before it reaches the report as a measured result.
+
+--- USER  2026-08-29T17:28:53.905Z ----------------------------------
+Delete the phantom and restore the 36 CRLF files from the zip
+
+--- ASSISTANT  2026-08-29T17:29:06.202Z -----------------------------
+Authorized. I'll re-verify each file is newline-only different immediately before overwriting it, so nothing with real edits can be destroyed by this.
+
+--- ASSISTANT  2026-08-29T17:29:11.435Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import hashlib, pathlib, zipfile Z='E:/AI Challenge CodeFest/Ashen_Era_Archive.zi ...
+
+--- USER  2026-08-29T17:29:14.598Z ----------------------------------
+[tool result] ok (70 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:29:18.543Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import pathlib p=pathlib.Path('E:/AI Challenge CodeFest/Ashen_Era_Archive/wiki/Th ...
+
+--- USER  2026-08-29T17:29:20.515Z ----------------------------------
+[tool result] ok (76 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:29:23.348Z -----------------------------
+Now the full re-verification against the zip, and a fresh pipeline run.
+
+--- ASSISTANT  2026-08-29T17:29:27.714Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import hashlib, pathlib, zipfile Z='E:/AI Challenge CodeFest/Ashen_Era_Archive.zi ...
+
+--- USER  2026-08-29T17:29:32.417Z ----------------------------------
+[tool result] ok (404 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:29:40.023Z -----------------------------
+Every competition file is now byte-identical to the zip. Rebuilding from a cleared cache and re-measuring.
+
+--- ASSISTANT  2026-08-29T17:29:41.211Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && rm -f .cache/corpus.json && .venv/Scripts/python.exe -m src.ingest.pipeline 2>&1 | tail -15
+
+--- USER  2026-08-29T17:29:49.216Z ----------------------------------
+[tool result] ok (348 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:29:52.535Z -----------------------------
+**340 → 317 → 30,553** — exactly what CLAUDE.md claims. Confirming nothing regressed.
+
+--- ASSISTANT  2026-08-29T17:29:53.929Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest 2>&1 | tail -3
+
+--- ASSISTANT  2026-08-29T17:29:54.609Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.run_eval --checkpoint baseline 2>&1 | tail -10
+
+--- USER  2026-08-29T17:29:58.944Z ----------------------------------
+[tool result] ok (180 chars, 3 lines, output not included)
+
+--- USER  2026-08-29T17:30:02.329Z ----------------------------------
+[tool result] ok (382 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:30:23.944Z -----------------------------
+83 passed, eval unchanged, no quota burned. Recording this in the failure log — it's exactly the kind of finding the project rules say must not be lost.
+
+--- ASSISTANT  2026-08-29T17:30:24.702Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && tail -5 docs/failures.md
+
+--- USER  2026-08-29T17:30:24.948Z ----------------------------------
+[tool result] ok (388 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:30:45.281Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> docs/failures.md <<'EOF' ## F-016 — Trusting that a read-only corpus stayed read-only **Approach.** The  ...
+
+--- USER  2026-08-29T17:30:47.459Z ----------------------------------
+[tool result] ok (173 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:30:56.783Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add docs/failures.md && git commit -q -m "$(cat <<'EOF' docs: record F-016, the corpus drifted from the com ...
+
+--- USER  2026-08-29T17:30:58.998Z ----------------------------------
+[tool result] ok (208 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:31:04.713Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git status --short && echo "===TRACKED IN eval/results===" && git ls-files eval/results/ && echo "===DIFF lates ...
+
+--- USER  2026-08-29T17:31:05.045Z ----------------------------------
+[tool result] ok (617 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:31:07.694Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git diff eval/results/baseline_latest.md | head -20
+
+--- USER  2026-08-29T17:31:07.912Z ----------------------------------
+[tool result] ok (565 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:31:19.598Z -----------------------------
+The only delta is the timestamp and commit hash — scores identical. I'll keep the post-restore run as the artifact and drop the intermediate one.
+
+--- ASSISTANT  2026-08-29T17:31:25.449Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && rm -f eval/results/baseline_2026-08-29T22-56-42.json eval/results/baseline_2026-08-29T22-56-42.md && git add ev ...
+
+--- USER  2026-08-29T17:31:27.797Z ----------------------------------
+[tool result] ok (681 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:31:40.579Z -----------------------------
+Done. Working tree is clean.
+
+**Restored.** All 36 files rewritten from the pristine zip, each re-checked as newline-only-different in the same pass immediately before overwrite — 0 refused, so nothing with real edits could have been destroyed. The 0-byte phantom is deleted (guarded by a size assert, so a non-empty file at that path would have aborted rather than vanished).
+
+**Verified after:**
+
+```
+zip files: 341 | disk files: 348
+content differs from zip : 0
+missing from disk        : 0
+extra on disk            : 7    (wiki/.obsidian/*, already skipped by discover())
+```
+
+**Re-measured:** ingestion back to **340 → 317 → 30,553** (wiki 151 → 150), **83 tests pass**, baseline **1B 2/7, 1C 2/2, 0/9 complete evidence** — identical to the pre-incident run, 0 LLM calls, 20 cache hits. No quota burned.
+
+Three commits: the F-016 failure-log entry, the post-restore eval artifact, and the earlier test-count fix.
+
+Two things I left for you rather than deciding myself:
+
+- **`.obsidian/` is still there.** It's inert — `discover()` skips it, and it's the only remaining deviation from the zip. But it's the *cause*, not the symptom: as long as that vault config exists, anyone who opens the folder in Obsidian re-runs this incident. Deleting it is a one-liner if you want the corpus back to shipped state.
+- **Nothing prevents a recurrence.** I recorded this as an open gap at the end of F-016 rather than quietly building a fix. A committed manifest of the 341 SHA-256 hashes is ~35 KB and turns "is this the real corpus?" into a command — which also covers the teammate or judge doing a clean extract from the README, who currently has no way to confirm they got the bytes we measured against. Small, deterministic, no dependency. Say the word and I'll add it with a test; I didn't want to widen tonight's scope on my own judgement.
+
+One correction to what I told you earlier: I said CLAUDE.md's corpus numbers might be stale. They were right all along — the disk was wrong. The only genuinely stale figure in that file was the test count.
+
+--- USER  2026-08-29T17:34:55.677Z ----------------------------------
+Add the manifest and delete .obsidian
+Also was the agents.md implemented?
+
+--- ASSISTANT  2026-08-29T17:35:20.060Z -----------------------------
+Two things. Let me check AGENTS.md first, and look at the code conventions before writing the manifest.
+
+--- ASSISTANT  2026-08-29T17:35:22.086Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la | grep -i agents; echo "--- repo-wide search ---"; find . -iname "AGENTS.md" -not -path "./.venv/*" 2>/d ...
+
+--- ASSISTANT  2026-08-29T17:35:22.982Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls src/ src/ingest/ config/ tests/ && echo "===README?===" && ls | grep -i readme
+
+--- USER  2026-08-29T17:35:56.385Z ----------------------------------
+[tool result] ok (64 chars, 3 lines, output not included)
+
+--- USER  2026-08-29T17:35:56.603Z ----------------------------------
+[tool result] ok (312 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:36:03.889Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && for d in src/graph src/query src/ui src/baseline src/clients; do echo "$d: $(ls -A $d 2>/dev/null | tr '\n' ' ' ...
+
+--- ASSISTANT  2026-08-29T17:36:04.635Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,45p' src/ingest/metadata.py && echo "=== HEAD OF TEST ===" && sed -n '1,30p' tests/test_ingest.py
+
+--- USER  2026-08-29T17:36:06.080Z ----------------------------------
+[tool result] ok (168 chars, 5 lines, output not included)
+
+--- USER  2026-08-29T17:36:06.308Z ----------------------------------
+[tool result] ok (2903 chars, 75 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:36:31.179Z -----------------------------
+**AGENTS.md was never implemented — it doesn't exist in the repo.** I'll come back to that. First, the two tasks.
+
+--- ASSISTANT  2026-08-29T17:36:33.752Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && echo "--- to be removed ---" && find wiki/.obsidian -type f | sed 's/^/ /' && rm -rf wiki/.obsidian && echo " ...
+
+--- USER  2026-08-29T17:36:51.499Z ----------------------------------
+[tool result] ok (380 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:36:53.889Z -----------------------------
+Now the manifest module.
+
+--- ASSISTANT  2026-08-29T17:37:35.352Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\ingest\integrity.py
+
+--- USER  2026-08-29T17:37:35.374Z ----------------------------------
+[tool result] ok (160 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:37:37.611Z -----------------------------
+Now generate the manifest from the zip and verify.
+
+--- ASSISTANT  2026-08-29T17:37:39.264Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.ingest.integrity --generate "E:/AI Challenge CodeFest/Ashen_Era_Archive.zip" && ...
+
+--- USER  2026-08-29T17:37:42.013Z ----------------------------------
+[tool result] ok (852 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:37:45.983Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.ingest.integrity; echo "exit code: $?"
+
+--- USER  2026-08-29T17:37:48.566Z ----------------------------------
+[tool result] ok (181 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:37:59.927Z -----------------------------
+Clean. Now tests that reconstruct the actual F-016 scenario rather than just the happy path.
+
+--- ASSISTANT  2026-08-29T17:38:03.066Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import pathlib, tempfile from src.ingest.metadata import discover d = pathlib.Pat ...
+
+--- USER  2026-08-29T17:38:05.078Z ----------------------------------
+[tool result] ok (92 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:38:09.078Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "skip\|fixture\|^def \|^@" tests/test_ingest.py | head -30 && echo "===TAIL===" && tail -12 tests/test_ ...
+
+--- USER  2026-08-29T17:38:09.308Z ----------------------------------
+[tool result] ok (2117 chars, 38 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:38:31.607Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> tests/test_ingest.py <<'PYEOF' # --- corpus integrity (F-016) ------------------------------------------ ...
+
+--- USER  2026-08-29T17:38:34.058Z ----------------------------------
+[tool result] ok (8 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:38:39.058Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import re, pathlib p = pathlib.Path("tests/test_ingest.py") s = p.read_text(e ...
+
+--- USER  2026-08-29T17:38:41.132Z ----------------------------------
+[tool result] ok (572 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:38:46.272Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("tests/test_ingest.py") s = p.read_text(encod ...
+
+--- USER  2026-08-29T17:38:48.366Z ----------------------------------
+[tool result] ok (419 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:38:51.105Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_ingest.py -q 2>&1 | tail -15
+
+--- USER  2026-08-29T17:38:56.654Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:39:03.378Z -----------------------------
+27 pass. But a test that can't fail proves nothing — let me confirm they're load-bearing with a quick mutation.
+
+--- ASSISTANT  2026-08-29T17:39:08.122Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cp src/ingest/integrity.py /tmp/integrity.bak 2>/dev/null || cp src/ingest/integrity.py "C:/Users/LENOVO/AppDat ...
+
+--- USER  2026-08-29T17:39:13.664Z ----------------------------------
+[tool result] ok (753 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:39:18.763Z -----------------------------
+The mutation broke the test exactly as intended — the guard is load-bearing. Reverting my mutation now.
+
+--- ASSISTANT  2026-08-29T17:39:22.302Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cp "C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/2fd7aafd-c1b1-47da-ad2e-731880409407/scr ...
+
+--- USER  2026-08-29T17:39:24.205Z ----------------------------------
+[tool result] ERROR: Exit code 1 cp: cannot stat 'C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/2fd7aafd-c1b1-47da-ad2e-731880409407/scratchpad/integrity.bak': No such file or directory
+
+--- ASSISTANT  2026-08-29T17:39:28.651Z -----------------------------
+[tool] Bash: command=ls -la /tmp/integrity.bak 2>&1 | head -3
+
+--- USER  2026-08-29T17:39:30.571Z ----------------------------------
+[tool result] ok (64 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:39:34.599Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cp /tmp/integrity.bak src/ingest/integrity.py && sed -n '80,98p' src/ingest/integrity.py && echo "===TESTS==="  ...
+
+--- USER  2026-08-29T17:39:39.507Z ----------------------------------
+[tool result] ok (796 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:39:44.242Z -----------------------------
+One correction to my own docstring — I wrote 340 hashes / 31 KB from memory; it's actually 341 / 39 KB.
+
+--- ASSISTANT  2026-08-29T17:39:47.153Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("src/ingest/integrity.py") s = p.read_text(en ...
+
+--- USER  2026-08-29T17:39:49.189Z ----------------------------------
+[tool result] ok (529 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:39:53.859Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("src/ingest/integrity.py") s = p.read_text(en ...
+
+--- USER  2026-08-29T17:39:56.289Z ----------------------------------
+[tool result] ok (1819 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:39:58.746Z -----------------------------
+Now the full suite, the integrity check, and the CLI flags.
+
+--- ASSISTANT  2026-08-29T17:40:01.274Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest 2>&1 | tail -3 && echo "===INTEGRITY===" && .venv/Scripts/python.exe -m src. ...
+
+--- USER  2026-08-29T17:40:14.119Z ----------------------------------
+[tool result] ok (498 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:40:24.099Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("CLAUDE.md") s = p.read_text(encoding="utf-8" ...
+
+--- USER  2026-08-29T17:40:26.017Z ----------------------------------
+[tool result] ok (115 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:40:36.271Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("docs/failures.md") s = p.read_text(encoding= ...
+
+--- USER  2026-08-29T17:40:38.271Z ----------------------------------
+[tool result] ok (1330 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:40:49.438Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("docs/failures.md") s = p.read_text(encoding= ...
+
+--- USER  2026-08-29T17:40:51.895Z ----------------------------------
+[tool result] ok (1548 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:40:55.964Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -3 && .venv/Scripts/python.exe -m src.ingest.integrity >/dev/ ...
+
+--- USER  2026-08-29T17:41:02.571Z ----------------------------------
+[tool result] ok (858 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:41:16.993Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git commit -q -m "$(cat <<'EOF' feat(ingest): verify the corpus against a committed hash manifest F-016 left a  ...
+
+--- USER  2026-08-29T17:41:19.112Z ----------------------------------
+[tool result] ok (280 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:41:37.119Z -----------------------------
+Both done. Working tree clean.
+
+```
+files verified       : 341
+missing / modified / extra (ingested) / extra (ignored) : 0 / 0 / 0 / 0
+corpus matches the shipped archive.          exit 0
+```
+
+`.obsidian/` is gone, the manifest is committed (341 hashes, 39 KB, generated from the zip — not from the extracted copy, so it can't inherit damage that copy already took). **92 tests pass**, ingestion still 340 → 317 → 30,553.
+
+The nine new tests reconstruct the actual incident rather than the happy path: a CRLF-only rewrite caught as `modified` (content-identical — no evidence count could ever have caught it), an empty note in `wiki/` flagged `extra_ingested` and unsafe, an editor's config flagged as drift but safe to ingest. I confirmed they're load-bearing by mutation — deleting the `extra_ingested` guard fails `test_stray_ingested_file_is_flagged_as_unsafe` rather than passing quietly. I also corrected my own docstring, which claimed 340 hashes / 31 KB from memory; it's 341 / 39 KB.
+
+## AGENTS.md was never implemented
+
+To be precise about what "implemented" can mean here, because two different answers are true:
+
+**As a file: it does not exist.** No `AGENTS.md` in the repo, the parent directory, or any commit. It's referenced in zero docs, zero code, zero commit messages. It exists only as the text in your message. `CLAUDE.md` is the only agent-facing context file, and nothing points at a second one.
+
+**As content: mostly, and independently.** Its engineering substance is already live — measure-before-asserting, deterministic-first, the no-frameworks list, ADRs in `docs/decisions.md`, the failure log, atomic commits, the protected evaluator, silence-vs-denial in the answer key's `Claim.stance`. That didn't come from AGENTS.md; CLAUDE.md, the ADRs and F-001..F-016 got there on their own.
+
+What is *not* implemented is the part unique to AGENTS.md: §33's nine agent roles, §34's delegation protocol, §35's parallel-work rules, §47's reporting format. That's org structure for a multi-agent team, and there's no trace of it in the repo.
+
+**My read: don't add it as a second file.** You have four part-time people and one constraint that dominates everything — every member must defend any part of the submission. Two overlapping agent-context files is a way to have them disagree, and CLAUDE.md is already the one being maintained (it caught its own stale test count today). AGENTS.md's §4 is the evidence: it carries "105+ tests passing" and "0/7 complete 1B evidence" where the harness measures 83 and 0/9 — a file that drifted because nothing was checking it. The handful of things in it that CLAUDE.md genuinely lacks — the §25 baseline failure taxonomy A–F, the §22 sufficiency states, the §43 coverage metrics — are worth folding into CLAUDE.md or an ADR when you build the graph, at the point they become real.
+
+If you want it as a file anyway, say so and I'll write one that defers to CLAUDE.md for all measured numbers rather than restating them.
+
+--- USER  2026-08-29T17:47:38.913Z ----------------------------------
+Go through the agents.md file and see if it is good to be executed.
+
+--- ASSISTANT  2026-08-29T17:48:21.445Z -----------------------------
+I'll audit AGENTS.md's claims against the repo rather than assess it on plausibility. Launching exploration while I read the key files myself.
+
+--- ASSISTANT  2026-08-29T17:48:34.956Z -----------------------------
+[tool] Agent: prompt=You are auditing a spec document against the repository at `E:\AI Challenge CodeFest\ashen-assistant` (a Python project; venv at `.venv/Scripts/python.exe`). ST ...
+
+--- USER  2026-08-29T17:48:35.010Z ----------------------------------
+[tool result] ok (1075 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:48:51.200Z -----------------------------
+[tool] Agent: prompt=You are auditing a spec document against the repository at `E:\AI Challenge CodeFest\ashen-assistant`. STRICTLY READ-ONLY. Do not edit files. Do not run command ...
+
+--- USER  2026-08-29T17:48:51.246Z ----------------------------------
+[tool result] ok (1075 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:48:51.948Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat docs/session-prompt.md
+
+--- USER  2026-08-29T17:48:52.168Z ----------------------------------
+[tool result] ok (3633 chars, 94 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:49:03.737Z -----------------------------
+`docs/session-prompt.md` contains the exact kickoff you used — and it references `docs/roadmap`, which I don't think exists. Checking.
+
+--- ASSISTANT  2026-08-29T17:49:05.265Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== docs/ tree ===" && find docs -type f | sed 's/^/ /' && echo "=== roadmap references anywhere ===" &&  ...
+
+--- USER  2026-08-29T17:49:07.270Z ----------------------------------
+[tool result] ok (246 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:49:38.949Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat docs/limitations.md
+
+--- USER  2026-08-29T17:49:39.177Z ----------------------------------
+[tool result] ok (3018 chars, 67 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:49:46.601Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== ai_usage/ ===" && find ai_usage -type f 2>/dev/null | head -20 && echo "(count: $(find ai_usage -type ...
+
+--- USER  2026-08-29T17:49:48.970Z ----------------------------------
+[tool result] ok (159 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:49:59.367Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== commits per day ===" && git log --date=short --format="%ad" | sort | uniq -c && echo "=== total commi ...
+
+--- USER  2026-08-29T17:50:00.073Z ----------------------------------
+[tool result] ok (86 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:50:12.881Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== contract.py anywhere? ===" && find . -name "contract*.py" -not -path "./.venv/*" 2>/dev/null || true; ...
+
+--- USER  2026-08-29T17:50:15.489Z ----------------------------------
+[tool result] ok (1472 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:50:32.576Z -----------------------------
+Strong picture forming. Two scoping questions while the deeper audit finishes.
+
+--- ASSISTANT  2026-08-29T17:50:41.506Z -----------------------------
+[tool] AskUserQuestion
+
+--- USER  2026-08-29T17:52:45.405Z ----------------------------------
+[tool result] ok (517 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:52:55.198Z -----------------------------
+The audit corrected me on something important. Verifying it myself.
+
+--- ASSISTANT  2026-08-29T17:52:57.163Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la AGENTS.md 2>&1 && echo "=== git tracking ===" && git ls-files AGENTS.md | sed 's/^/ tracked: /' ; git st ...
+
+--- USER  2026-08-29T17:52:59.649Z ----------------------------------
+[tool result] ok (290 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:53:09.998Z -----------------------------
+Confirmed — AGENTS.md was created on disk at 23:17 tonight, after my earlier check; it's untracked. Verifying the two failed claims and the incidental evaluator finding myself.
+
+--- ASSISTANT  2026-08-29T17:53:12.703Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== complete-evidence metric ===" && grep -n "complete_evidence\|Complete evidence" eval/harness.py eval/ ...
+
+--- USER  2026-08-29T17:53:15.075Z ----------------------------------
+[tool result] ok (2146 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:53:23.348Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '81,105p' eval/results/baseline_latest.md && echo "=== how harness builds the required set ===" && sed - ...
+
+--- USER  2026-08-29T17:53:23.624Z ----------------------------------
+[tool result] ok (2548 chars, 62 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:53:37.396Z -----------------------------
+The union is real. Verifying whether it makes complete-evidence structurally unreachable.
+
+--- ASSISTANT  2026-08-29T17:53:38.434Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "required_evidence\|acceptable_paths\|required_docs" eval/*.py | head -20
+
+--- USER  2026-08-29T17:53:38.658Z ----------------------------------
+[tool result] ok (595 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:53:42.631Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '200,235p' eval/answer_key.py
+
+--- USER  2026-08-29T17:53:42.843Z ----------------------------------
+[tool result] ok (845 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:53:53.977Z -----------------------------
+This is a real evaluator defect. Quantifying its blast radius.
+
+--- ASSISTANT  2026-08-29T17:53:58.477Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from eval.answer_key import load, required_documents entries = load() ...
+
+--- USER  2026-08-29T17:54:00.791Z ----------------------------------
+[tool result] ERROR: Exit code 1 Traceback (most recent call last): File "<string>", line 3, in <module> ImportError: cannot import name 'load' from 'eval.answer_key' (E:\AI Challenge CodeFest\ashen-assistant\eval\answer_ ...
+
+--- ASSISTANT  2026-08-29T17:54:04.146Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^def \|^class " eval/answer_key.py | head -20
+
+--- USER  2026-08-29T17:54:04.424Z ----------------------------------
+[tool result] ok (360 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:54:10.490Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from eval.answer_key import load_key, required_documents print(f'{\"qid\":9}{\"re ...
+
+--- USER  2026-08-29T17:54:12.435Z ----------------------------------
+[tool result] ok (616 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:54:26.161Z -----------------------------
+Correcting my own estimate: I called it systemic before measuring. It's **1 of 9** — `1b_006` only. Let me check the most important alignment question directly.
+
+--- ASSISTANT  2026-08-29T17:54:26.618Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '568,632p' docs/decisions.md
+
+--- USER  2026-08-29T17:54:26.812Z ----------------------------------
+[tool result] ok (2606 chars, 64 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:54:59.147Z -----------------------------
+ADR-011 is decisive. Writing the plan.
+
+--- ASSISTANT  2026-08-29T17:55:45.562Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md
+
+--- USER  2026-08-29T17:55:45.592Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:55:54.360Z -----------------------------
+Plan written. One note before I hand it over: the second audit agent (directive-to-ADR mapping) is still running — I built this from my own reads of ADR-011, ADR-013's correction and ADR-015, so its findings may add detail but the decisive conflicts are already covered.
+
+--- ASSISTANT  2026-08-29T17:55:54.389Z -----------------------------
+[tool] ToolSearch: query=select:ExitPlanMode
+
+--- USER  2026-08-29T17:55:54.399Z ----------------------------------
+[tool result] ok (0 chars, 0 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:55:56.566Z -----------------------------
+[tool] ExitPlanMode: plan=# Auditing AGENTS.md, and extracting what is executable ## Context `AGENTS.md` (33,702 bytes, 50 sections) now exists at the repo root, untracked, created 2026- ...
+
+--- USER  2026-08-29T17:56:44.009Z ----------------------------------
+[tool result] ok (9478 chars, 190 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:56:55.942Z -----------------------------
+The second audit came back and it overturns one of my plan's conclusions. Verifying before I accept it.
+
+--- ASSISTANT  2026-08-29T17:56:56.645Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '252,282p' docs/failures.md
+
+--- USER  2026-08-29T17:56:56.853Z ----------------------------------
+[tool result] ok (1250 chars, 31 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:56:59.299Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && echo "=== the_ashen_vanguard.md infobox rows ===" && grep -n "^|" wiki/the_ashen_vanguard.md | head -20 && ec ...
+
+--- USER  2026-08-29T17:57:14.823Z ----------------------------------
+[tool result] ok (964 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:57:31.270Z -----------------------------
+Both verified — and the first one means **my plan was wrong**. Two more checks.
+
+--- ASSISTANT  2026-08-29T17:57:33.802Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && echo "=== every Outcome row in the wiki ===" && grep -n "^| Outcome" wiki/*.md | sed 's|wiki/||' && echo && e ...
+
+--- ASSISTANT  2026-08-29T17:57:35.181Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== requirements.txt ===" && cat requirements.txt && echo "=== third-party imports actually used in src/  ...
+
+--- USER  2026-08-29T17:57:36.605Z ----------------------------------
+[tool result] ok (710 chars, 12 lines, output not included)
+
+--- USER  2026-08-29T17:57:38.939Z ----------------------------------
+[tool result] ok (1220 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:57:56.171Z -----------------------------
+Verified. I need to correct the plan I just had approved — one of its conclusions was wrong.
+
+--- ASSISTANT  2026-08-29T17:58:06.106Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:58:06.135Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:58:20.796Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:58:20.819Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:58:26.453Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:58:26.474Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:58:40.492Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:58:40.528Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:58:46.159Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:58:46.189Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:58:55.893Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:58:55.929Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:59:02.000Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:59:02.041Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:59:12.516Z -----------------------------
+[tool] Edit: file_path=C:\Users\LENOVO\.claude\plans\go-through-the-agents-md-giggly-gray.md  (in-place edit)
+
+--- USER  2026-08-29T17:59:12.540Z ----------------------------------
+[tool result] ok (175 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:59:34.312Z -----------------------------
+Plan file corrected. Let me fix the one unambiguous blocker while I report.
+
+--- ASSISTANT  2026-08-29T17:59:35.791Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c "import numpy; print('installed numpy:', numpy.__version__)" && grep -rn "import nu ...
+
+--- USER  2026-08-29T17:59:38.127Z ----------------------------------
+[tool result] ok (67 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:59:43.782Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("requirements.txt") s = p.read_text(encoding= ...
+
+--- USER  2026-08-29T17:59:45.967Z ----------------------------------
+[tool result] ok (169 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-08-29T17:59:52.905Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add requirements.txt && git commit -q -m "$(cat <<'EOF' fix(deps): pin numpy, which the vector index import ...
+
+--- USER  2026-08-29T17:59:55.357Z ----------------------------------
+[tool result] ok (264 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:00:25.875Z -----------------------------
+Done — plan corrected and the numpy blocker committed.
+
+## I got the headline wrong
+
+My plan's central claim was that §18 contradicts ADR-011 by reinstating fuzzy matching. **It doesn't.** F-010's "What changed" says:
+
+> Fuzzy matching may *generate candidates*; it may never *select a winner*.
+
+That is §18's rule verbatim. I read ADR-011's title and its rejected Option 1 — "fuzzy match on the closest name", i.e. fuzzy *selection* — as a blanket ban on fuzzy anything. The plan is fixed.
+
+Two real risks survive: ADR-011 also rejected **embedding**-similarity matching, which §18 never mentions and an agent could reach for as "contextual disambiguation"; and §18's **alias table** rung cuts against ADR-011's deliberately closed normalisation, so it would need the same collision measurement the leading-`the_` rule got.
+
+## Verdict: safe to execute, not worth keeping as a file
+
+It contradicts **nothing** in F-001..F-016. §17 restates F-004, §18 restates F-010, §29 restates F-013 almost by its title, §27 restates F-015. It reads as though written *from* your ADRs — which is the good news and the limit: a spec derived from the record mostly can't tell you what the record doesn't already know.
+
+**It found one thing you missed, and I verified it in the corpus.** Five pages carry duplicate infobox field names. `wiki/the_ashen_vanguard.md`:
+
+```
+| Belligerent | The War of Drowned Light |
+| Belligerent | The Accord of Mournthrone |
+| Outcome     | Victor of The Accord of Mournthrone |
+| Belligerent | The Leaden Accord |
+```
+
+`fields["Belligerent"] = value` keeps *The Leaden Accord* and drops two edges. Worse — **the page has no `Victor of` row at all** (verified, count 0). Its only victor claim is that `Outcome` row, so an extractor keyed on `Victor of` finds the Vanguard silent on victories. That's the F-014 mislabel exactly, and the ADR-013 CORRECTION called "Accord of Mournthrone" *"Agree both ways"* on the strength of that row being read. Nothing in ADR-009, ADR-010 or the corpus facts covers row multiplicity — the 651-cell census counted these cells without noticing they collide on key.
+
+One part of §16 is **not** supported: it claims `Outcome` can depend on the preceding `Belligerent` row. I checked all 7 `Outcome` rows — the Vanguard's names its own referent, the other six are conflict-page descriptions. Build for the data loss, not the positional dependency.
+
+## Wrong in AGENTS.md
+
+"105+ tests passing" → **92**. "0/7 complete 1B evidence" → the repo's metric is **0/9** across both tracks; it never produces 0/7. The underlying fact holds but the figure is unbackable, and §4's own rule ("if documentation disagrees with the repository, measure the repository") applies to itself.
+
+## Three deliverable gaps the audit walked into
+
+**No `README.md`** — yet `settings.py`'s `MissingCorpusError` tells users to see it and §45 requires a clean-clone test. **`ai_usage/` is empty** — a graded mandatory deliverable, 11 days out. **`numpy` was unpinned** despite `src/baseline/index.py:25` importing it — fixed and committed as `7247225`.
+
+## Needs your call before anyone touches it
+
+`eval/answer_key.py:216` unions the hop sources of *every* `acceptable_path` into `required_documents()`. Since acceptable paths are alternative routes, requiring all of them makes recall 1.0 unreachable. I said "real evaluator defect" before measuring the blast radius — it's **1 of 9**: `1b_006` only (union 3, best single path 2). Its zero inside "0/9 complete evidence" is structural, not measured; the other eight are genuine. Evaluator changes are §9 human-approval, so I've flagged it rather than fixed it. Adding `unanswerable` to the key (§10's one real gap) is the same category.
+
+Next I'd write the repeated-field-name finding up — corpus fact in CLAUDE.md, ADR-009 amendment requiring ordered rows rather than a mapping, and a committed probe, since the victor-edge measurement behind ADR-013's correction currently exists only as a table in `decisions.md`. `src/graph/` is still empty, so it costs nothing now and rewrites the parser later. Say the word, or redirect.
+
+--- USER  2026-08-29T18:05:34.433Z ----------------------------------
+go ahead with the repeated-field-name writeup
+
+--- ASSISTANT  2026-08-29T18:05:40.623Z -----------------------------
+Let me match the existing probe conventions and read ADR-009 in full.
+
+--- ASSISTANT  2026-08-29T18:05:42.070Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls eval/probes/ && echo "=== head of corpus_shape.py ===" && sed -n '1,60p' eval/probes/corpus_shape.py
+
+--- USER  2026-08-29T18:05:42.340Z ----------------------------------
+[tool result] ok (2065 chars, 64 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:05:42.788Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '460,505p' docs/decisions.md
+
+--- USER  2026-08-29T18:05:43.009Z ----------------------------------
+[tool result] ok (1905 chars, 45 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:05:50.390Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '60,90p' eval/probes/corpus_shape.py && echo "=== section funcs + main ===" && grep -n "^def \|^ print(\ ...
+
+--- USER  2026-08-29T18:05:50.638Z ----------------------------------
+[tool result] ok (2502 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:05:54.736Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '124,168p' eval/probes/corpus_shape.py && echo "=== main ===" && sed -n '369,400p' eval/probes/corpus_sh ...
+
+--- USER  2026-08-29T18:05:54.954Z ----------------------------------
+[tool result] ok (2152 chars, 55 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:06:16.753Z -----------------------------
+Adding the probe section, following the existing PT-N convention.
+
+--- ASSISTANT  2026-08-29T18:06:27.239Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\probes\corpus_shape.py  (in-place edit)
+
+--- USER  2026-08-29T18:06:27.267Z ----------------------------------
+[tool result] ok (174 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:06:30.846Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from eval.probes.corpus_shape import report_repeated_fields from src.settings imp ...
+
+--- USER  2026-08-29T18:06:33.574Z ----------------------------------
+[tool result] ok (1951 chars, 40 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:06:46.329Z -----------------------------
+Two of those three are false positives — "The victors poisoned the wells" is prose, not a victor designation. Tightening the probe so it doesn't overstate.
+
+--- ASSISTANT  2026-08-29T18:06:56.007Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\probes\corpus_shape.py  (in-place edit)
+
+--- USER  2026-08-29T18:06:56.026Z ----------------------------------
+[tool result] ok (174 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:07:02.213Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from eval.probes.corpus_shape import report_repeated_fields from src.settings imp ...
+
+--- USER  2026-08-29T18:07:04.863Z ----------------------------------
+[tool result] ok (922 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:07:11.851Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.probes.corpus_shape 2>&1 | grep -E "wiki pages|infobox cells|distinct infobox| ...
+
+--- USER  2026-08-29T18:07:15.303Z ----------------------------------
+[tool result] ok (434 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:07:32.888Z -----------------------------
+The probe reports **109** distinct field names — ADR-009 and CLAUDE.md both say 107. I didn't touch that code path. Investigating.
+
+--- ASSISTANT  2026-08-29T18:07:36.435Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== has report_structure changed since ADR-009? ===" && git log --oneline -- eval/probes/corpus_shape.py  ...
+
+--- USER  2026-08-29T18:07:38.662Z ----------------------------------
+[tool result] ERROR: Exit code 1 === has report_structure changed since ADR-009? === 234db4b eval(probe): pressure-test the corpus before building the graph === what does the committed version report? === Traceback (most  ...
+
+--- ASSISTANT  2026-08-29T18:07:48.339Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import collections, re, unicodedata from eval.probes.corpus_shape import wiki_pag ...
+
+--- USER  2026-08-29T18:07:50.649Z ----------------------------------
+[tool result] ok (180 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:08:21.489Z -----------------------------
+The probe outputs 109 but ADR-009's table says 107 and cites that exact command. `read_text()` normalises newlines, so my CRLF restore can't explain it. Let me pin down the real number.
+
+--- ASSISTANT  2026-08-29T18:08:25.833Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import collections from eval.probes.corpus_shape import wiki_pages, infobox_rows  ...
+
+--- USER  2026-08-29T18:08:27.914Z ----------------------------------
+[tool result] ok (251 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:08:44.452Z -----------------------------
+That explains it exactly — and it's a sharper finding than the one I set out to write up.
+
+**109** field names exist; **107** appear inside a `## Infobox` section. The two missing are `Place of forging` and `Place of housing` — ADR-009's headline count was computed with the very heading-keyed bug the ADR exists to fix. And `Place of housing` is the row that supplies hop 2 of `1b_003`.
+
+--- ASSISTANT  2026-08-29T18:08:49.399Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\probes\corpus_shape.py  (in-place edit)
+
+--- USER  2026-08-29T18:08:51.038Z ----------------------------------
+[tool result] ok (174 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:08:54.664Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.probes.corpus_shape 2>&1 | sed -n '1,16p'
+
+--- USER  2026-08-29T18:08:57.739Z ----------------------------------
+[tool result] ok (673 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:09:01.011Z -----------------------------
+Now the docs. Amending ADR-009 while keeping the original claim visible, per the project's own rule.
+
+--- ASSISTANT  2026-08-29T18:09:02.803Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\decisions.md  (in-place edit)
+
+--- USER  2026-08-29T18:09:02.824Z ----------------------------------
+[tool result] ok (164 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:09:27.444Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\decisions.md  (in-place edit)
+
+--- USER  2026-08-29T18:09:27.473Z ----------------------------------
+[tool result] ok (164 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:09:31.723Z -----------------------------
+Now CLAUDE.md — the new corpus fact, and correcting the 107.
+
+--- ASSISTANT  2026-08-29T18:09:36.062Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\CLAUDE.md  (in-place edit)
+
+--- USER  2026-08-29T18:09:36.079Z ----------------------------------
+[tool result] ok (156 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:09:43.952Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\CLAUDE.md  (in-place edit)
+
+--- USER  2026-08-29T18:09:43.968Z ----------------------------------
+[tool result] ok (156 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:09:48.847Z -----------------------------
+Numbering slipped — I placed item 12 between 9 and 10. Fixing.
+
+--- ASSISTANT  2026-08-29T18:09:49.725Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/^9\. \*\*The infobox is the first/,/^## Free-tier/p' CLAUDE.md
+
+--- USER  2026-08-29T18:09:51.692Z ----------------------------------
+[tool result] ok (1275 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:09:58.722Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("CLAUDE.md") s = p.read_text(encoding="utf-8" ...
+
+--- USER  2026-08-29T18:10:00.714Z ----------------------------------
+[tool result] ok (1112 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:10:04.414Z -----------------------------
+Now the failure-log entry, then a regression test so the parser rule is enforced rather than merely documented.
+
+--- ASSISTANT  2026-08-29T18:10:27.620Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> docs/failures.md <<'EOF' ## F-017 — Counting a corpus with the bug the ADR was written to forbid **Appro ...
+
+--- USER  2026-08-29T18:10:29.745Z ----------------------------------
+[tool result] ok (8 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:10:39.868Z -----------------------------
+Now regression tests, so the rule fails a test rather than a demo.
+
+--- ASSISTANT  2026-08-29T18:10:56.107Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> tests/test_ingest.py <<'PYEOF' # --- infobox row structure (F-017, F-018) ------------------------------ ...
+
+--- USER  2026-08-29T18:10:58.193Z ----------------------------------
+[tool result] ok (12 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:11:02.294Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_ingest.py -q 2>&1 | tail -20
+
+--- USER  2026-08-29T18:11:07.930Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:11:16.035Z -----------------------------
+31 pass. But that collision count uses an `and` trick that a teammate would have to puzzle over — rewriting it plainly.
+
+--- ASSISTANT  2026-08-29T18:11:20.338Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\tests\test_ingest.py  (in-place edit)
+
+--- USER  2026-08-29T18:11:20.363Z ----------------------------------
+[tool result] ok (167 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:11:25.777Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("tests/test_ingest.py") s = p.read_text(encod ...
+
+--- USER  2026-08-29T18:11:30.537Z ----------------------------------
+[tool result] ok (97 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:11:39.266Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -3 && echo "=== integrity ===" && .venv/Scripts/python.exe -m ...
+
+--- USER  2026-08-29T18:11:46.675Z ----------------------------------
+[tool result] ok (311 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:11:50.525Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | grep -E "passed|failed" && git status --short
+
+--- USER  2026-08-29T18:11:56.296Z ----------------------------------
+[tool result] ERROR: Exit code 1
+
+--- ASSISTANT  2026-08-29T18:12:00.202Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | tail -6; git status --short
+
+--- USER  2026-08-29T18:12:03.441Z ----------------------------------
+[tool result] ok (358 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:12:09.207Z -----------------------------
+96 tests now. Updating the count and discarding the verification-run artifacts.
+
+--- ASSISTANT  2026-08-29T18:12:10.916Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's|python -m pytest # 92 tests|python -m pytest # 96 tests|' CLAUDE.md && grep -n "96 tests" CLAUDE.md & ...
+
+--- USER  2026-08-29T18:12:13.362Z ----------------------------------
+[tool result] ok (171 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:12:27.872Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add CLAUDE.md docs/decisions.md docs/failures.md eval/probes/corpus_shape.py tests/test_ingest.py && git co ...
+
+--- USER  2026-08-29T18:12:30.180Z ----------------------------------
+[tool result] ok (703 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:12:49.389Z -----------------------------
+Committed as `bc9ac13`. The writeup turned up a second finding sharper than the one I set out to record.
+
+## What went in
+
+**PT-10 in the probe** — measures both findings, so neither can drift again:
+
+```
+pages with a repeated field name  : 5/95
+distinct (page, field) collisions : 6
+cells a dict-keyed parser drops   : 7
+
+field names that DESIGNATE a victor:
+     6  Victor
+     2  Victor of
+     1  Outcome
+victor designations NOT on a 'Victor*' field : 1
+    wiki/the_ashen_vanguard.md | Outcome | <-- page has NO Victor* row at all
+```
+
+**F-018** — the repeated-field finding. The lost edges aren't the point; the stance error is. `the_ashen_vanguard.md` has no `Victor of` row, so a field-keyed extractor reads it as *silent* on victories, and under F-014 silence is not denial. ADR-013's CORRECTION called the Accord of Mournthrone "Agree both ways" — a verdict that held only because a human read that `Outcome` row. There was no runnable check behind it until now. ADR-009 amended: rows are an ordered sequence, never a mapping.
+
+**F-017 — the one I didn't go looking for.** The probe reports **109** distinct field names; ADR-009's table says 107 and cites that exact command. 107 is the count *inside* `## Infobox` sections — produced by the heading-keyed parsing ADR-009 exists to forbid. The two it dropped are `Place of forging` and `Place of housing`, and the second is the row on `the_cinder_wrought_aegis.md` that supplies hop 2 of `1b_003`. The census lost precisely the evidence the ADR was written to protect, and the document contradicted itself in plain sight — its own trade-offs paragraph names both fields.
+
+Original 107 left in the table rather than overwritten, per your rule on keeping overturned assumptions visible. CLAUDE.md fact 2 corrected with the history intact. Test count 92 → 96.
+
+## What I did not conclude
+
+AGENTS.md §16 also claimed an `Outcome` row can depend semantically on the `Belligerent` row above it. I checked all seven `Outcome` rows: the Vanguard's names its own referent, the other six describe how a war ended. **Row multiplicity is load-bearing; row order is not**, on current evidence — so the parser rule covers only the first. Two victor *mentions* ("The victors poisoned the wells of their own allies") were excluded as prose rather than designations; the probe prints its exclusions rather than quietly counting 3 where 1 is real.
+
+**96 tests pass. Integrity exit 0. Baseline unchanged at 1B 2/7, 1C 2/2**, cached, no quota.
+
+## Where that leaves the plan
+
+Step 5 is done. `AGENTS.md` is still untracked on disk — I haven't deleted it, since only its §16 content has been extracted. Remaining: `docs/roadmap.md` from §49, the §14/§22/§30/§43 ADRs when those components get built, and §25's A–E taxonomy onto the Checkpoint 1 analysis.
+
+Two things still need your call before anyone touches them: the `required_documents()` union that makes `1b_006`'s complete-evidence zero structural, and adding `unanswerable` to the key. Both are answer-key/evaluator changes, so both are §9.
+
+--- USER  2026-08-29T18:15:59.805Z ----------------------------------
+How far into completion are we now.
+
+--- ASSISTANT  2026-08-29T18:16:10.974Z -----------------------------
+Let me measure rather than estimate.
+
+--- ASSISTANT  2026-08-29T18:16:13.823Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== source lines by area ===" && for d in src/ingest src/clients src/baseline src/graph src/query src/ui  ...
+
+--- USER  2026-08-29T18:16:17.589Z ----------------------------------
+[tool result] ok (483 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:16:18.013Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== deliverables ===" && for f in README.md report.pdf; do [ -e "$f" ] && echo " $f: present" || echo " $ ...
+
+--- USER  2026-08-29T18:16:20.336Z ----------------------------------
+[tool result] ok (264 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:17:04.332Z -----------------------------
+## Measured, not estimated
+
+| Area | Lines | State |
+|---|---|---|
+| `src/ingest/` | 1,655 | done, measured |
+| `src/clients/` | 717 | done |
+| `src/baseline/` | 338 | done — Checkpoint 1 |
+| **`src/graph/`** | **0** | **not started** |
+| **`src/query/`** | **0** | **not started** |
+| **`src/ui/`** | **0** | **not started** |
+| `eval/` | 2,067 | harness done, key unverified |
+| `tests/` | 1,365 | 96 passing |
+| `docs/` + CLAUDE.md | 2,148 | ADR-001..015, F-001..018 |
+
+Against §49's 20 steps: steps 1–3 are partially done, **4 through 17 are essentially untouched**, 18 is half (ADRs strong, report/video at zero).
+
+## The honest read
+
+**Foundation: close to done. Product: not begun. Deliverables: three at zero.**
+
+Roughly half the *modules* exist, but that number flatters it. Everything built so far is plumbing plus a baseline whose purpose was to establish what conventional retrieval fails at. The graph-first thesis — the entire argument of the submission, the reason 1B is the track — is **0 lines**. Checkpoints 2 and 3 have not started.
+
+At zero and hard-deadlined: **README.md** (missing, though `settings.py` points users at it), **`ai_usage/`** (0 files, mandatory and graded), **the ≤5-page report**, **the ≤10-min video**. 11 days, ~4 part-time people.
+
+## The thing I'd challenge
+
+`eval/` + `tests/` + `docs/` = **5,580 lines**. All of `src/` = **2,710**, and none of it is the graph.
+
+That ratio is not automatically wrong — process is 30% of the rubric, and the ADR/failure log is genuinely your strongest asset; F-016 through F-018 are the kind of thing judges remember. But you have built a very good instrument for measuring a system that does not exist yet. Tonight alone produced four commits of docs, probes and integrity checking and zero lines of graph. Another two days of that and the graph gets built under time pressure, which is exactly how the silent-wrong-answer failures this project is organised around get in.
+
+## Critical path
+
+**`eval/answer_key.json` is 0/9 confirmed** — 6 `single_review`, 1 `unresolved`, 2 `draft`. Every number downstream is provisional until two humans clear it, and F-015 proved one reviewer isn't enough. That is a *human* task I can't do for you, it gates Checkpoint 2's comparability, and it needs a name and a date now.
+
+In parallel, the held-out set must be frozen **before** graph tuning (§26) and doesn't exist yet. If it gets authored after the graph works, it's worthless as evidence.
+
+My recommendation for the next working session: start `src/graph/` — the cell parsers and provenance from ADR-009/010, which are fully specified and now have PT-10's row rule pinned by tests. README and `ai_usage/` are each under an hour and clear two blockers. The remaining §14/§22/§30 ADRs should be written *as* those components land, not before.
+
+Want me to start on the graph, or knock out README + `ai_usage/` first so the blockers are gone?
+
+--- USER  2026-08-29T18:23:40.089Z ----------------------------------
+Start src/graph/ now. Do not spend another session on documentation-first planning. Build the smallest vertical slice beginning with deterministic cell parsing + provenance + graph construction, then prove it end-to-end on 1b_013 before expanding to all seven 1B paths. 
+In parallel, have two teammates independently verify the 9 scoreable answer-key questions against the actual corpus, with special scrutiny on 1b_006, and freeze the held-out set before graph tuning. 
+Have another teammate clear the cheap README and ai_usage/ blockers. Write the remaining architectural ADRs as the corresponding components are actually implemented. The priority now is converting the measured architecture into a working graph and producing Checkpoint 2 evidence, not adding more planning overhead.
+
+--- ASSISTANT  2026-08-29T18:23:51.052Z -----------------------------
+Building. First, the target and the cell-template spec.
+
+--- ASSISTANT  2026-08-29T18:23:53.159Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json k=json.load(open('eval/answer_key.json')) q=[x for x in k['questions' ...
+
+--- ASSISTANT  2026-08-29T18:23:54.011Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/^## ADR-010/,/^## ADR-011/p' docs/decisions.md
+
+--- USER  2026-08-29T18:23:55.960Z ----------------------------------
+[tool result] ok (1237 chars, 51 lines, output not included)
+
+--- USER  2026-08-29T18:23:58.356Z ----------------------------------
+[tool result] ok (2827 chars, 65 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:24:15.296Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && echo "=== gravemaw_wyrm.md ===" && grep -n "^|" wiki/gravemaw_wyrm.md && echo && echo "=== marrowwell_abbey.m ...
+
+--- USER  2026-08-29T18:24:15.815Z ----------------------------------
+[tool result] ok (578 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:24:16.987Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import collections from eval.probes.corpus_shape import wiki_pages, infobox_rows  ...
+
+--- USER  2026-08-29T18:24:20.065Z ----------------------------------
+[tool result] ok (1125 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:24:25.998Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import collections from eval.probes.corpus_shape import wiki_pages, infobox_rows  ...
+
+--- USER  2026-08-29T18:24:28.916Z ----------------------------------
+[tool result] ok (1126 chars, 55 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:24:51.723Z -----------------------------
+Field space is clear. Let me get the exact template histogram so my handlers match the measured set.
+
+--- ASSISTANT  2026-08-29T18:24:53.017Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.probes.corpus_shape 2>&1 | sed -n '/infobox cell templates/,/templates cover/p ...
+
+--- USER  2026-08-29T18:24:58.076Z ----------------------------------
+[tool result] ok (578 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:25:05.449Z -----------------------------
+All 12 confirmed. Building.
+
+--- ASSISTANT  2026-08-29T18:25:07.391Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\__init__.py
+
+--- USER  2026-08-29T18:25:07.447Z ----------------------------------
+[tool result] ok (158 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:25:25.652Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\entities.py
+
+--- USER  2026-08-29T18:25:25.698Z ----------------------------------
+[tool result] ok (158 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:25:30.378Z -----------------------------
+Now the cell parser — twelve named handlers, matching the measured histogram.
+
+--- ASSISTANT  2026-08-29T18:26:14.070Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\cells.py
+
+--- USER  2026-08-29T18:26:14.119Z ----------------------------------
+[tool result] ok (155 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:26:20.725Z -----------------------------
+Now the critical check — does it reproduce the measured histogram?
+
+--- ASSISTANT  2026-08-29T18:26:25.588Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import collections from eval.probes.corpus_shape import wiki_pages, infobox_rows  ...
+
+--- USER  2026-08-29T18:26:28.683Z ----------------------------------
+[tool result] ok (780 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:26:40.506Z -----------------------------
+8 of 12 exact. Let me look at the actual disagreements rather than guess.
+
+--- ASSISTANT  2026-08-29T18:26:43.306Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from eval.probes.corpus_shape import wiki_pages, infobox_rows, cell_shape from sr ...
+
+--- USER  2026-08-29T18:26:46.172Z ----------------------------------
+[tool result] ok (3248 chars, 36 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:27:24.296Z -----------------------------
+Several of these are the probe being wrong, not me. Let me quantify one specifically.
+
+--- ASSISTANT  2026-08-29T18:27:24.300Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from eval.probes.corpus_shape import wiki_pages, infobox_rows, cell_shape, LINK_R ...
+
+--- USER  2026-08-29T18:27:28.083Z ----------------------------------
+[tool result] ok (614 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:27:45.591Z -----------------------------
+Confirmed: **7 of ADR-010's 23 "incidental link" cells contain no link at all** — the probe has a fallthrough bug. Two are the Vanguard's `Belligerent` rows, which are *unlinked* entity references. Let me build the verb set from the corpus rather than guessing.
+
+--- ASSISTANT  2026-08-29T18:27:48.113Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import re from eval.probes.corpus_shape import wiki_pages, infobox_rows, LINK_RE  ...
+
+--- USER  2026-08-29T18:27:50.835Z ----------------------------------
+[tool result] ok (1008 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:28:16.730Z -----------------------------
+Now the verb set is closed and measured — 9 relation verbs, 3 secret forms. Replacing my word-count heuristic with it.
+
+--- ASSISTANT  2026-08-29T18:28:26.635Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\cells.py  (in-place edit)
+
+--- USER  2026-08-29T18:28:26.678Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:28:35.443Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\cells.py  (in-place edit)
+
+--- USER  2026-08-29T18:28:35.490Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:28:44.632Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\cells.py  (in-place edit)
+
+--- USER  2026-08-29T18:28:44.700Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:28:52.853Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's/ verb=_leading_verb(raw),\n//' src/graph/cells.py; .venv/Scripts/python.exe -c " import collections f ...
+
+--- USER  2026-08-29T18:28:55.725Z ----------------------------------
+[tool result] ERROR: Exit code 1 Traceback (most recent call last): File "<string>", line 9, in <module> File "E:\AI Challenge CodeFest\ashen-assistant\src\graph\cells.py", line 234, in parse_cell return _two_argument(raw ...
+
+--- ASSISTANT  2026-08-29T18:29:00.724Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\cells.py  (in-place edit)
+
+--- USER  2026-08-29T18:29:00.772Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:29:07.405Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import collections from eval.probes.corpus_shape import wiki_pages, infobox_rows, ...
+
+--- USER  2026-08-29T18:29:10.053Z ----------------------------------
+[tool result] ok (2069 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:29:33.111Z -----------------------------
+12 disagreements left: 7 are the probe's link-free bug, 2 are ternaries I get right, 2 are an unlinked reverse relation neither handles, 1 is `Unleashed in` which is a verb not a concealment. My histogram totals 651 across 12 templates. Moving on to relations config.
+
+--- ASSISTANT  2026-08-29T18:29:49.390Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\config\relations.yaml
+
+--- USER  2026-08-29T18:29:49.430Z ----------------------------------
+[tool result] ok (158 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:29:52.472Z -----------------------------
+Now the graph schema with full edge provenance, and the builder.
+
+--- ASSISTANT  2026-08-29T18:30:20.124Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\schema.py
+
+--- USER  2026-08-29T18:30:20.160Z ----------------------------------
+[tool result] ok (156 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T18:30:21.859Z -----------------------------
+You've hit your session limit · resets 1:50am (Asia/Colombo)
+
+--- USER  2026-08-29T20:21:43.777Z ----------------------------------
+Continue from where you left off.
+
+--- ASSISTANT  2026-08-29T20:21:43.778Z -----------------------------
+No response requested.
+
+--- USER  2026-08-29T20:21:44.929Z ----------------------------------
+I hit my usage limit while you were working, but it has reset now. Please continue from where you left off.
+
+--- ASSISTANT  2026-08-29T20:21:54.379Z -----------------------------
+Picking up where I left off — `build.py` is the remaining piece before the 1b_013 proof.
+
+--- ASSISTANT  2026-08-29T20:21:55.959Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la src/graph/ config/relations.yaml && echo "=== git status ===" && git status --short
+
+--- USER  2026-08-29T20:22:03.587Z ----------------------------------
+[tool result] ok (528 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:22:16.620Z -----------------------------
+All four files there. Let me check what the ingestion layer already gives me — the pipeline docstring says the graph builder consumes `EvidenceUnit`.
+
+--- ASSISTANT  2026-08-29T20:22:19.716Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.ingest.pipeline import ingest r = ingest() ev = [e for e in r.evidence i ...
+
+--- USER  2026-08-29T20:22:47.789Z ----------------------------------
+[tool result] ok (1194 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:23:06.409Z -----------------------------
+The infobox arrives as one paragraph block, not `table_row` units — good to know. Writing the builder.
+
+--- ASSISTANT  2026-08-29T20:23:36.872Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\build.py
+
+--- USER  2026-08-29T20:23:36.953Z ----------------------------------
+[tool result] ok (155 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:23:41.774Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.graph.build 2>&1 | tail -40
+
+--- USER  2026-08-29T20:24:00.990Z ----------------------------------
+[tool result] ok (565 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:24:11.662Z -----------------------------
+117 entities, 241 edges, 15 relations, zero unmapped fields. Now the traversal and the actual proof.
+
+--- ASSISTANT  2026-08-29T20:24:30.430Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\traverse.py
+
+--- USER  2026-08-29T20:24:30.487Z ----------------------------------
+[tool result] ok (158 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:24:35.549Z -----------------------------
+The moment of truth — 1b_013 end-to-end against the answer key.
+
+--- ASSISTANT  2026-08-29T20:24:39.350Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from src.graph.build import build_graph from src.graph.traverse impor ...
+
+--- USER  2026-08-29T20:24:59.040Z ----------------------------------
+[tool result] ok (544 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:25:12.424Z -----------------------------
+**1b_013 solved.** One path, two hops, exactly the two required documents, provenance on every hop — and the relations/fields match the answer key's `acceptable_paths` precisely. The baseline scored `partial_retrieval` at 0.50 recall here; the graph gets **1.00**.
+
+Let me measure how far the slice already reaches across all seven.
+
+--- ASSISTANT  2026-08-29T20:25:17.870Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from src.graph.build import build_graph from src.graph.traverse impor ...
+
+--- USER  2026-08-29T20:25:37.447Z ----------------------------------
+[tool result] ok (624 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:25:48.658Z -----------------------------
+**6/7 with complete evidence against the baseline's 0/7.** Let me see why `1b_009` misses.
+
+--- ASSISTANT  2026-08-29T20:25:53.044Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from src.graph.build import build_graph from src.graph.traverse impor ...
+
+--- USER  2026-08-29T20:26:12.330Z ----------------------------------
+[tool result] ok (2489 chars, 29 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:26:25.005Z -----------------------------
+Both hops exist — my coverage harness failed because `1b_009`'s accepted answer is a prose sentence, not an entity. Re-measuring correctly, and checking whether the conflict itself is captured.
+
+--- ASSISTANT  2026-08-29T20:26:28.425Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.graph.build import build_graph from src.graph.traverse import find_paths ...
+
+--- USER  2026-08-29T20:26:47.519Z ----------------------------------
+[tool result] ok (4638 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:27:04.277Z -----------------------------
+Two real findings. The traversal returned a 2-hop path via `belligerent_in` and stopped — my `seen` set prunes alternative equal-length paths, so it lost the `victor_of` route and half the evidence with it. Fixing.
+
+--- ASSISTANT  2026-08-29T20:27:12.199Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\traverse.py  (in-place edit)
+
+--- USER  2026-08-29T20:27:12.263Z ----------------------------------
+[tool result] ok (168 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:27:18.664Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.graph.build import build_graph from src.graph.traverse import find_paths ...
+
+--- USER  2026-08-29T20:27:37.566Z ----------------------------------
+[tool result] ok (808 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:27:49.060Z -----------------------------
+Both routes now found, and the `victor_of` one carries both required documents. Note the purge page writes `[[Iron-Ring Cartel]]` without the article — ADR-011's normalisation joined it. Re-measuring all seven.
+
+--- ASSISTANT  2026-08-29T20:27:53.372Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from src.graph.build import build_graph from src.graph.traverse impor ...
+
+--- USER  2026-08-29T20:28:12.771Z ----------------------------------
+[tool result] ok (536 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:28:26.045Z -----------------------------
+**7/7 complete evidence against the baseline's 0/7.** Writing the tests that pin this.
+
+--- ASSISTANT  2026-08-29T20:29:02.097Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\tests\test_graph.py
+
+--- USER  2026-08-29T20:29:02.164Z ----------------------------------
+[tool result] ok (156 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:29:06.610Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_graph.py -q 2>&1 | tail -30
+
+--- USER  2026-08-29T20:29:30.996Z ----------------------------------
+[tool result] ok (1119 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:29:53.473Z -----------------------------
+The test caught a real gap: the Vanguard's `Belligerent` rows are **unlinked plain text**, so a link-driven parser gets nothing from them. Fixing with exact name resolution — ADR-011-compliant, never fuzzy.
+
+--- ASSISTANT  2026-08-29T20:29:57.702Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\schema.py  (in-place edit)
+
+--- USER  2026-08-29T20:29:57.762Z ----------------------------------
+[tool result] ok (166 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:30:06.086Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\build.py  (in-place edit)
+
+--- USER  2026-08-29T20:30:06.148Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:30:11.583Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\build.py  (in-place edit)
+
+--- USER  2026-08-29T20:30:11.634Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:30:17.330Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\build.py  (in-place edit)
+
+--- USER  2026-08-29T20:30:17.373Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:30:25.848Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\graph\build.py  (in-place edit)
+
+--- USER  2026-08-29T20:30:25.938Z ----------------------------------
+[tool result] ok (165 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:30:31.303Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's/^from src.graph.cells import parse_cell$/from src.graph.cells import Reference, parse_cell/' src/grap ...
+
+--- USER  2026-08-29T20:30:50.596Z ----------------------------------
+[tool result] ok (565 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:30:56.452Z -----------------------------
+Edges 241 → 267, and **isolated entities 10 → 0**. Running the tests.
+
+--- ASSISTANT  2026-08-29T20:30:58.098Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_graph.py -q 2>&1 | tail -25
+
+--- USER  2026-08-29T20:31:20.687Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:31:28.630Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from src.graph.build import build_graph from src.graph.traverse impor ...
+
+--- USER  2026-08-29T20:31:47.161Z ----------------------------------
+[tool result] ok (792 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:31:57.720Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -4 && .venv/Scripts/python.exe -m pytest --collect-only -q 2> ...
+
+--- USER  2026-08-29T20:32:31.343Z ----------------------------------
+[tool result] ok (307 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:32:34.822Z -----------------------------
+117 tests pass. Writing the ADR and failure entries, then committing.
+
+--- ASSISTANT  2026-08-29T20:32:55.220Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> docs/decisions.md <<'EOF' ## ADR-016 — The graph is infobox rows with provenance, in plain Python **Prob ...
+
+--- USER  2026-08-29T20:32:57.356Z ----------------------------------
+[tool result] ok (2 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:33:27.968Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> docs/failures.md <<'EOF' ## F-019 — A `seen` set that discarded the evidence, not just the route **Appro ...
+
+--- USER  2026-08-29T20:33:30.207Z ----------------------------------
+[tool result] ok (2 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:33:37.758Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("CLAUDE.md") s = p.read_text(encoding="utf-8" ...
+
+--- USER  2026-08-29T20:33:40.394Z ----------------------------------
+[tool result] ok (262 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:33:48.978Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("CLAUDE.md") s = p.read_text(encoding="utf-8" ...
+
+--- USER  2026-08-29T20:33:51.930Z ----------------------------------
+[tool result] ok (568 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:33:58.662Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git status --short AGENTS.md; ls -la AGENTS.md 2>&1 | head -2; git check-ignore -v AGENTS.md 2>&1 | head -2
+
+--- USER  2026-08-29T20:34:01.398Z ----------------------------------
+[tool result] ok (56 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:34:05.563Z -----------------------------
+`AGENTS.md` is gone from disk — removed outside this session. Committing the graph.
+
+--- ASSISTANT  2026-08-29T20:34:20.761Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git commit -q -m "$(cat <<'EOF' feat(graph): deterministic graph with provenance - 7/7 complete evidence Checkp ...
+
+--- USER  2026-08-29T20:34:24.521Z ----------------------------------
+[tool result] ok (245 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-08-29T20:34:44.938Z -----------------------------
+`src/graph/` is built and committed as `a6e9fbf`. Working tree clean.
+
+## The headline
+
+```
+                        vector baseline    graph
+complete evidence, 1B        0/7            7/7
+```
+
+`1b_013` proved out exactly as specified — one path, two hops, both required documents, provenance on every hop:
+
+```
+gravemaw_wyrm ->[lair_in]-> marrowwell_abbey
+    wiki/gravemaw_wyrm.md | Lair (row 3): '[[Marrowwell Abbey]]' [bare link, tier 2]
+marrowwell_abbey ->[ruled_by]-> bleeding_crown
+    wiki/marrowwell_abbey.md | Ruled by (row 3): '[[The Bleeding Crown]]' [bare link, tier 2]
+```
+
+Then I expanded to all seven. `117 entities (95 page-backed, 22 edge-only, 0 isolated), 267 edges, 15 relations, 0 unmapped fields.` 21 new tests, **117 passing**.
+
+**This is evidence coverage, not answer correctness** — I want to be exact about that, because it's the distinction the whole Checkpoint 2 argument rests on. There's no query layer yet, so nothing *selects* among candidates. `1b_007` returns five paths and needs a type filter to pick the accord; `1b_009` returns nine and needs conflict handling.
+
+## Two failures the build surfaced
+
+**F-019.** Textbook BFS with a `seen` set returned one 2-hop path for `1b_009` — via `belligerent_in`, both hops from a single document. The route the question actually needs goes via `victor_of` and carries two documents. Same length, **half the evidence**, on the one question where the second document makes the contested claim. Which route won was decided by filename ordering during the build. Nothing crashed; the path printed with real citations. Now prunes cycles only, and a test pins both routes.
+
+**F-020.** The Ashen Vanguard writes its three `Belligerent` rows as *plain text, no brackets* — so link-driven extraction gave it zero conflict edges. Corpus-wide: 26 edges missing, 10 entities fully isolated. Plain-text cells on mapped relation fields now resolve by exact canonical-key match — ADR-011's ladder with no fuzzy rung; a name matching nothing yields no edge rather than a guess. That's the same page as F-018, so three independent extraction assumptions have now failed on it.
+
+The closed verb set was worth the detour: I first used "a short leading phrase is a verb", which manufactures an edge from `The Purge of [[Blackport]]` — an entity name with one word linked. I enumerated every phrase preceding a link in the corpus instead; nine relation verbs, three secret forms.
+
+## Recorded limitation
+
+`1b_009`'s conflict is **not representable from infoboxes**. The Cartel's `Victor of` row simply omits the Purge, and under F-014 that omission is *silence, not denial*. The actual denial — "participation without assigning the Cartel the status of victor" — is prose, needing ADR-012's claim extractor. The graph holds one assertion and one silence, and I've written that into ADR-016 so nobody reads the 7/7 as having solved the contradiction.
+
+## Notes for the team
+
+`AGENTS.md` is gone from disk — deleted outside this session, so the extract-then-delete step is moot. Its remaining unextracted content (§49 roadmap, §22 sufficiency states, §30 response contract) now lives only in the plan file.
+
+The parallel tracks you assigned — two-reviewer answer-key verification, freezing the held-out set, README + `ai_usage/` — are unchanged and still blocking. The answer key is still 0/9 confirmed, and **every number above is provisional until that clears**, including the 7/7.
+
+Next piece is `src/query/`: routing, type filtering for `1b_007`, and the sufficiency states that tell "no path" from "path but not enough evidence" — with ADR-017 written as it lands, not before.
+
+--- USER  2026-08-30T05:23:15.810Z ----------------------------------
+Create a comprehensive readme file and push it to github
+
+--- ASSISTANT  2026-08-30T05:23:31.763Z -----------------------------
+Before writing numbers into a README, let me re-measure — files have changed on disk since I last read them.
+
+--- ASSISTANT  2026-08-30T05:23:33.884Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== remote ===" && git remote -v || echo " (none)"; echo "=== branch/status ===" && git branch --show-cur ...
+
+--- ASSISTANT  2026-08-30T05:23:34.735Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -3; .venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 ...
+
+--- USER  2026-08-30T05:23:38.611Z ----------------------------------
+[tool result] ok (670 chars, 12 lines, output not included)
+
+--- USER  2026-08-30T05:23:52.241Z ----------------------------------
+[tool result] ok (287 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:23:58.053Z -----------------------------
+Remote already exists. Let me check what's unpushed and re-measure the live numbers.
+
+--- ASSISTANT  2026-08-30T05:24:00.205Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git fetch origin 2>&1 | tail -3; echo "=== ahead/behind ===" && git rev-list --left-right --count origin/main.. ...
+
+--- ASSISTANT  2026-08-30T05:24:01.796Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.graph.build 2>&1 | head -8 && echo "=== eval ===" && .venv/Scripts/python.exe - ...
+
+--- USER  2026-08-30T05:24:04.419Z ----------------------------------
+[tool result] ok (41 chars, 3 lines, output not included)
+
+--- USER  2026-08-30T05:24:13.927Z ----------------------------------
+[tool result] ok (429 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:24:22.823Z -----------------------------
+Already in sync with origin. Let me re-verify the coverage claim with the current code before it goes in a README.
+
+--- ASSISTANT  2026-08-30T05:24:27.065Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from src.graph.build import build_graph from src.graph.traverse impor ...
+
+--- ASSISTANT  2026-08-30T05:24:29.679Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== gitignore ===" && cat .gitignore && echo "=== is .env tracked? ===" && git ls-files .env .env.local 2 ...
+
+--- USER  2026-08-30T05:24:34.623Z ----------------------------------
+[tool result] ok (509 chars, 10 lines, output not included)
+
+--- USER  2026-08-30T05:24:36.700Z ----------------------------------
+[tool result] ok (540 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:24:49.760Z -----------------------------
+The relation-constrained walk gives **5/7**, not the 7/7 I measured earlier. Let me find out why before anything goes in a README.
+
+--- ASSISTANT  2026-08-30T05:24:54.401Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json from src.graph.build import load_relation_map key=json.load(open('eva ...
+
+--- USER  2026-08-30T05:24:56.910Z ----------------------------------
+[tool result] ok (839 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:25:22.988Z -----------------------------
+It's a **vocabulary mismatch, not a graph gap** — the answer key says `victor`, my config says `victor_of`. Same edge, different name. I'll flag that rather than quietly patch config to improve a number. Gathering the last facts for the README.
+
+--- ASSISTANT  2026-08-30T05:25:25.372Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe --version && echo "=== corpus link ===" && cat "../Document Corpus link.txt" 2>/dev/nu ...
+
+--- USER  2026-08-30T05:25:27.914Z ----------------------------------
+[tool result] ok (900 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:25:31.336Z -----------------------------
+Now writing the README.
+
+--- ASSISTANT  2026-08-30T05:26:21.742Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\README.md
+
+--- USER  2026-08-30T05:26:21.794Z ----------------------------------
+[tool result] ok (146 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:26:30.985Z -----------------------------
+Verifying every claim in it before committing.
+
+--- ASSISTANT  2026-08-30T05:26:34.233Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== ADR range ===" && grep -c "^## ADR-" docs/decisions.md && grep -o "^## ADR-[0-9]*" docs/decisions.md  ...
+
+--- USER  2026-08-30T05:26:36.585Z ----------------------------------
+[tool result] ok (355 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:26:45.201Z -----------------------------
+All cross-references check out. One last clean-clone check — that `requirements.txt` actually covers every third-party import.
+
+--- ASSISTANT  2026-08-30T05:26:49.502Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import ast, pathlib, sys std = set(sys.stdlib_module_names) local = {'src','eval' ...
+
+--- USER  2026-08-30T05:26:51.746Z ----------------------------------
+[tool result] ok (141 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:26:56.781Z -----------------------------
+`voyageai` is imported but unpinned — the same clean-clone blocker as numpy. The README claims that quickstart works, so let me fix it.
+
+--- ASSISTANT  2026-08-30T05:26:58.235Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "voyageai" src/ eval/ tests/ --include=*.py | head -3 && .venv/Scripts/python.exe -c "import voyageai, ...
+
+--- USER  2026-08-30T05:27:01.986Z ----------------------------------
+[tool result] ok (254 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:27:07.702Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("requirements.txt") s = p.read_text(encoding= ...
+
+--- USER  2026-08-30T05:27:09.622Z ----------------------------------
+[tool result] ok (325 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:27:14.207Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -3 && .venv/Scripts/python.exe -m src.ingest.integrity >/dev/ ...
+
+--- USER  2026-08-30T05:27:25.871Z ----------------------------------
+[tool result] ok (453 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:27:38.713Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && rm -f eval/results/baseline_2026-08-30T10-54-12.json eval/results/baseline_2026-08-30T10-54-12.md && git checko ...
+
+--- USER  2026-08-30T05:27:41.388Z ----------------------------------
+[tool result] ok (204 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:27:47.046Z -----------------------------
+Committed. Verifying what's about to leave the machine, then pushing.
+
+--- ASSISTANT  2026-08-30T05:27:50.119Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== commits to push ===" && git log --oneline origin/main..main && echo "=== files in those commits ==="  ...
+
+--- USER  2026-08-30T05:27:52.429Z ----------------------------------
+[tool result] ok (294 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:27:56.576Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git push origin main 2>&1 | tail -8
+
+--- USER  2026-08-30T05:28:02.249Z ----------------------------------
+[tool result] ok (92 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:28:06.823Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git fetch origin -q && git rev-list --left-right --count origin/main...main && echo "(left=origin ahead, right= ...
+
+--- USER  2026-08-30T05:28:10.822Z ----------------------------------
+[tool result] ok (63 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-08-30T05:28:26.975Z -----------------------------
+Pushed — [mithilyr/CODEFEST---AI-Challenge](https://github.com/mithilyr/CODEFEST---AI-Challenge) is in sync at `e7c3d79`. The remote already existed, so nothing new was created or made public by me.
+
+## The README
+
+Covers the problem and why vector RAG fails on it, quickstart with the corpus download URL, the `.env` table (noting everything runs from cache with *no* key), architecture, repo layout, commands, measured results, limitations, and the ADR/failure-log discipline. Every cross-reference verified against the repo: ADR-001..016, F-001..020, 341 manifest hashes, 133 tests, all nine referenced paths exist.
+
+## Two things worth your attention
+
+**I found a second missing dependency.** `src/clients/embeddings.py` imports `voyageai`; `requirements.txt` never listed it. So `pip install -r requirements.txt` then running the baseline would `ImportError` — the same class of break as the numpy gap two days ago. I only caught it because writing the setup section made me check *every* third-party import in `src/`, `eval/` and `tests/` against the file rather than reading it and assuming. Pinned at 0.5.0. That's now two clean-clone blockers found by mechanical checking and zero found by reading.
+
+**The 7/7 does not survive contact with the new `walk_relations`.** Since I last measured, someone added relation-constrained traversal. Re-running with it:
+
+```
+                                        complete evidence
+endpoint reachability (my earlier run)        7/7
+constrained to the key's relation sequence    5/7
+```
+
+The 5/7 is the more honest number, and the reason is the one that commit message already gives: reaching the right node via `belligerent_in` when the claim needs `victor_of` is not evidence for the claim. Fighting in a war is not winning it. My earlier 7/7 measured endpoints and flattered the graph.
+
+Two of the three misses are a **vocabulary mismatch, not a graph gap** — the answer key names the relation `victor`, `config/relations.yaml` calls it `victor_of`. Same edge, different word. `walk_relations` returns zero paths for `1b_006` and `1b_009` purely on the name.
+
+I did **not** patch `relations.yaml` to accept `victor`. It's a three-line config change that would take the number straight back toward 7/7, and changing config after seeing a bad number — without being asked — is precisely the pattern §9 and F-011 exist to distrust. The README reports the unreconciled 5/7 next to the 7/7 with the reason. Reconciling the vocabularies is real work and it's your call which artifact moves: the answer key is a protected artifact, so my inclination is to add relation aliases to the config and record it as an ADR, but I'd rather you decide than discover I'd decided for you.
+
+--- USER  2026-08-30T06:40:41.230Z ----------------------------------
+Can we proceed further without human verification. I dont think manual human verification was ever intended to tackle this problem?
+
+--- ASSISTANT  2026-08-30T06:41:20.070Z -----------------------------
+Good challenge. Let me check something decisive before answering — the corpus ships a `sample_questions.json` that ingestion skips.
+
+--- ASSISTANT  2026-08-30T06:41:22.681Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json, zipfile z=zipfile.ZipFile('E:/AI Challenge CodeFest/Ashen_Era_Archiv ...
+
+--- USER  2026-08-30T06:41:26.935Z ----------------------------------
+[tool result] ok (579 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:41:35.336Z -----------------------------
+Decisive: the competition ships **questions only, no answers**. So there's no authority to check against but the corpus itself. Let me look at what actually caught our one real key error.
+
+--- ASSISTANT  2026-08-30T06:41:36.767Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/^## F-015/,/^---/p' docs/failures.md | head -40
+
+--- ASSISTANT  2026-08-30T06:41:37.472Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && wc -l eval/verification/answer_key_review.md && head -45 eval/verification/answer_key_review.md
+
+--- USER  2026-08-30T06:41:38.869Z ----------------------------------
+[tool result] ok (1787 chars, 40 lines, output not included)
+
+--- USER  2026-08-30T06:41:39.091Z ----------------------------------
+[tool result] ok (2916 chars, 46 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:42:13.435Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "schema_version\|key_hash\|answer_key" eval/harness.py eval/run_eval.py | head -12 && echo "=== does a  ...
+
+--- USER  2026-08-30T06:42:15.592Z ----------------------------------
+[tool result] ok (616 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:42:44.066Z -----------------------------
+Yes — proceed. But not because verification doesn't matter; because we picked the wrong instrument, and our own failure log contains the evidence.
+
+## Our conclusion doesn't follow from our evidence
+
+F-015 is the entire justification for the two-reviewer gate. Read what it actually says caught the error:
+
+> Corpus enumeration finds **fourteen**: `wiki/the_silent_choir.md` Members row: 6 names; character pages with a membership row: 8 names; overlap: 0.
+
+Then read its conclusion:
+
+> One reviewer, working carefully and reporting high confidence, is not a safety mechanism — the second reviewer is the mechanism.
+
+A second reviewer never ran. **Enumeration** found the fourteen. And the entry explains *why* a human missed them — membership is recorded in two disjoint places, so a reviewer reading from the character-page direction sees only half. That's a systematic blind spot; a second human reading the same direction inherits it. F-015 diagnosed a mechanical problem and prescribed a human remedy.
+
+So your instinct is right, though I'd put it differently: manual verification *was* deliberately intended (ADR-014, §27). The intent was just wrong for the failure class that actually bit us.
+
+## Where I won't fully agree
+
+Two different failure classes are being collapsed:
+
+**Recall** — the key omits valid answers (1b_006: 2 vs 14). Machines beat humans decisively here. Automate it.
+
+**Precision** — the key asserts something the text doesn't support. Enumeration *cannot* catch this, because the enumerator derives from the same parse as the thing being checked. §27's "never verify a parser with a parser" is a real constraint, and it's sharper now that we have a graph: if `src/graph/` generates the key, the graph scores 100% by construction and every Checkpoint 2 number becomes meaningless.
+
+Also worth knowing — I checked: the competition ships `sample_questions.json` with **20 questions and no answers**. There's no authority to appeal to. Ground truth is genuinely ours to construct, which raises the cost of getting it wrong.
+
+## What I'd do
+
+**Proceed now.** Comparability is already protected — every eval result records `git_commit`, and the key is committed, so any two runs are attributable to an exact key. Nothing needs freezing.
+
+**Build a completeness checker** that reads *raw document text*, not the graph, and for each key entry enumerates every corpus-supported answer, flagging where the key is narrower. That's the F-015 class, automated and reproducible. It must not import `src/graph/`.
+
+**Keep one human on precision only** — reading raw text for 9 entries. The pack is already written; that's an hour, not a sprint. Escalate to a second reader only where the enumerator and the key disagree.
+
+**Correct F-015**, keeping the original conclusion visible with the correction beside it, per your own ADR rule.
+
+And the argument that should actually go in the report: *"our ground truth was verified by a reproducible enumeration you can run yourself"* is stronger in front of a judge than *"two of us read it and agreed."* Deterministic-first applies to the evaluator too — we just hadn't applied our own principle to it.
+
+The one thing I'd hold: the checker must be independent of the graph, or Checkpoint 2 measures nothing. Want me to build it that way, or push straight on to `src/query/` and treat the key as provisional-but-frozen?
+
+--- USER  2026-08-30T06:46:44.847Z ----------------------------------
+<command-message>i-have-adhd:i-have-adhd</command-message>
+<command-name>/i-have-adhd:i-have-adhd</command-name>
+<command-args>Proceed with the independent completeness checker before treating the answer key as evaluation ground truth.
+The checker must be completely independent of `src/graph/` and must operate from the raw corpus/evidence text. Its purpose is specifically to detect the F-015 class of failure: the answer key being narrower than the set of answers actually supported by the corpus.
+Do not make the checker reproduce the graph's logic. Do not import graph modules, graph outputs, graph-derived entities, or graph-derived relations. If necessary, use only ingestion-level/raw evidence representations that existed independently of the graph.
+For each of the 9 scoreable questions:
+
+1. enumerate corpus-supported candidate answers;
+2. identify the raw passages supporting each candidate;
+3. compare the discovered candidate set with `answer_key.json`;
+4. flag missing valid answers;
+5. flag key answers for which supporting corpus evidence cannot be located;
+6. distinguish recall problems from precision problems;
+7. produce a human-reviewable report.
+
+Pay particular attention to questions whose answers can be documented from multiple directions, such as `1b_006`, where the faction's `Members` row and individual character pages produced disjoint evidence sets.
+Do not attempt to automatically resolve genuinely semantic disputes. The checker should surface them for human adjudication rather than pretending that enumeration proves truth.
+Keep the answer key provisional until this independent completeness check and the remaining precision review are complete. Do not use the graph to generate or validate its own ground truth.
+Correct `F-015` so that its original finding remains in the historical record, but its conclusion is amended: the demonstrated problem was systematic recall failure in manual verification, and the appropriate mitigation is independent corpus enumeration, with human review reserved for precision/semantic disputes.
+While this runs, the graph engineer should continue with `src/graph/`. Do not block graph implementation on this checker.
+Once the checker has produced its report, proceed directly into `src/query/` rather than doing another planning/documentation cycle.
+Priority order now:
+`independent key completeness → graph → query → conflict/sufficiency → fallback → UI → red-team → final evaluation`
+Preserve all measurements and make the checker itself part of the reproducible evaluation infrastructure.</command-args>
+
+--- USER  2026-08-30T06:46:44.847Z ----------------------------------
+Base directory for this skill: C:\Users\LENOVO\.claude\plugins\cache\i-have-adhd\i-have-adhd\0.2.0\skills\i-have-adhd
+
+# i-have-adhd
+
+The reader has ADHD. Output is not just brief. It is shaped so an ADHD brain can act on it.
+
+## Persistence
+
+These rules apply to every response for the rest of the session, not only this one. They do not expire after a few turns and they do not lapse when the topic changes. If you are unsure whether they still apply, they do.
+
+Turn them off only when the reader says "stop adhd mode" or "normal mode". Confirm in one line, then return to your default style.
+
+## What ADHD changes about reading
+
+Five facts drive every rule below:
+
+1. Working memory is small. Anything not on screen is forgotten. Do not ask the reader to "keep in mind X."
+2. Knowing the answer is not doing the answer. The friction between "got it" and "done it" is where work dies.
+3. Starting is the hardest step. The first action must be obvious, small, and doable now.
+4. Time estimates feel uniform. "A bit of work" and "a few hours" register the same. Vague estimates fail.
+5. Dopamine is scarce. Visible progress matters. Buried wins do not register.
+
+## Rules
+
+### 1. Lead with the next action
+
+The first line is something the reader can do. Not context. Not a plan. The action.
+
+Bad: "Let's think about this. Your auth flow has a few moving pieces..."
+Good: "Run `npm install jsonwebtoken`, then edit `src/auth.ts:42`."
+
+If the answer is a command, path, or snippet, it goes first. Prose comes after, if at all.
+
+### 2. Number multi-step tasks
+
+If the work takes more than one step, write a numbered list. Each step is one bounded action. No step contains "and then" twice.
+
+Use the fewest steps that still work. Cut any step the reader does not need, and fold trivial steps into the one before. A short path finished beats a complete path abandoned.
+
+Bad: "First open the file, find the function, swap it out, then run the tests."
+
+Good:
+```
+1. Open `src/auth.ts`
+2. Replace `verifyToken` (lines 42 to 58) with the snippet below
+3. Run `npm test -- auth.spec.ts`
+```
+
+### 3. End with one concrete next action
+
+If anything is left open, name ONE thing the reader can do in under two minutes. Even "open the file" counts.
+
+Bad: "Hope that helps. Let me know if you want to dig deeper."
+Good: "Next: run `npm test` and paste the first failing line."
+
+### 4. Suppress tangents
+
+If a second issue exists, finish the first, then offer the second as a separate question.
+
+Bad: "Here's the fix. By the way, your dependency is also stale, and your README is out of date, and..."
+Good: "Here's the fix. Separately: there is also a stale dependency. Want me to handle that next?"
+
+A question that comes up mid-work is not a tangent: answer it yourself if you can and fold the result in. If it still needs the reader, surface it once, at the end.
+
+### 5. Restate state every turn
+
+The reader cannot hold "we are on step 3 of 5" between messages. Restate it.
+
+Bad: "Done. Ready for the next part?"
+Good: "Step 3 of 5 done: schema updated. Next: backfill the new column. Run the script?"
+
+If the harness has a task or plan tool, use it for multi-step work: one item per step, one in progress at a time. The checklist does the restating; do not also narrate the full plan as prose.
+
+### 6. Give specific time estimates
+
+Vague estimates fail. Ballpark in concrete units.
+
+Bad: "This will take some work."
+Good: "About 15 minutes if tests already cover this. An afternoon if not."
+
+### 7. Make completed work visible
+
+Show what now works, in concrete terms. Do not bury wins in a recap.
+
+Bad: "I've made some changes to the auth flow. Among other things..."
+Good: "Login now works with magic links. Try: `npm run dev`, open `/login`."
+
+### 8. Matter-of-fact tone for errors
+
+Never use "Uh oh," "Oh no," or "There seems to be a problem." State cause and fix.
+
+Bad: "Uh oh, the test is failing. There seems to be an issue..."
+Good: "Test fails at `auth.spec.ts:42`: expected 200, got 401. Cause: missing auth header. Fix: add `Authorization: Bearer ${token}` to the request."
+
+### 9. Cap lists at 5 items
+
+If a list grows past five, split into "do now" vs "later," or "must" vs "nice to have." Five items ranked beats ten unranked.
+
+### 10. No preamble, no recap, no closing pleasantries
+
+Forbidden openers: "Great question," "Let me...", "I'll...", "Sure!", "Looking at your...", "To answer your question..."
+
+Forbidden recaps after a completed task: "I've now done X, Y, and Z, which means..."
+
+Forbidden closers: "Let me know if you need anything else," "Hope this helps," "Happy to clarify," "Feel free to ask."
+
+Start with the answer. End when the answer is done.
+
+## When to break the rules
+
+Override the defaults when:
+
+1. User asks to "explain" or "walk me through." Explain fully. Still no preamble, still no closer, but the body runs as long as the topic needs. Add headers so the reader can skim back.
+2. Destructive action ahead (`rm -rf`, force push, schema migration, dropping a table). Confirm before acting. Safety wins over brevity.
+3. Debug spiral. If the last three turns have been "still broken," stop iterating on code. Name the assumption that might be wrong. Ask one diagnostic question.
+4. Real ambiguity in the request. One short clarifying question beats guessing and rewriting.
+5. A rule fights the task. When a rule would delete the answer itself, the task wins; the shape stays. Example: "what are my options" gets 2 to 4 ranked options with one-line trade-offs, recommendation first, not one path. The options are the answer.
+6. A rule fights the harness. Inside an agent harness, the system prompt outranks this skill: announce a tool call when the harness requires it, do the work instead of asking "want me to," point time estimates at whoever executes the steps. Same principle as 5: the constraint wins, the shape stays.
+
+## Pre-send check
+
+Before sending, delete:
+
+1. The first sentence if it announces what you are about to do.
+2. The last sentence if it asks "anything else?" or recaps what just happened.
+3. Any "by the way" sidebar.
+4. Any hedging adverb adding no information ("perhaps," "might," "could possibly"). Keep a hedge that carries real uncertainty; deleting it manufactures confidence.
+5. Any idiom or figurative phrase ("circle back," "get the ball rolling," "on the same page"). Replace with the literal action.
+
+Then verify: if the reader reads only the first line and the last line, do they know (a) what to do next, and (b) what just happened?
+
+If yes, send.
+
+
+ARGUMENTS: Proceed with the independent completeness checker before treating the answer key as evaluation ground truth.
+The checker must be completely independent of `src/graph/` and must operate from the raw corpus/evidence text. Its purpose is specifically to detect the F-015 class of failure: the answer key being narrower than the set of answers actually supported by the corpus.
+Do not make the checker reproduce the graph's logic. Do not import graph modules, graph outputs, graph-derived entities, or graph-derived relations. If necessary, use only ingestion-level/raw evidence representations that existed independently of the graph.
+For each of the 9 scoreable questions:
+
+1. enumerate corpus-supported candidate answers;
+2. identify the raw passages supporting each candidate;
+3. compare the discovered candidate set with `answer_key.json`;
+4. flag missing valid answers;
+5. flag key answers for which supporting corpus evidence cannot be located;
+6. distinguish recall problems from precision problems;
+7. produce a human-reviewable report.
+
+Pay particular attention to questions whose answers can be documented from multiple directions, such as `1b_006`, where the faction's `Members` row and individual character pages produced disjoint evidence sets.
+Do not attempt to automatically resolve genuinely semantic disputes. The checker should surface them for human adjudication rather than pretending that enumeration proves truth.
+Keep the answer key provisional until this independent completeness check and the remaining precision review are complete. Do not use the graph to generate or validate its own ground truth.
+Correct `F-015` so that its original finding remains in the historical record, but its conclusion is amended: the demonstrated problem was systematic recall failure in manual verification, and the appropriate mitigation is independent corpus enumeration, with human review reserved for precision/semantic disputes.
+While this runs, the graph engineer should continue with `src/graph/`. Do not block graph implementation on this checker.
+Once the checker has produced its report, proceed directly into `src/query/` rather than doing another planning/documentation cycle.
+Priority order now:
+`independent key completeness → graph → query → conflict/sufficiency → fallback → UI → red-team → final evaluation`
+Preserve all measurements and make the checker itself part of the reproducible evaluation infrastructure.
+
+--- ASSISTANT  2026-08-30T06:47:05.437Z -----------------------------
+Building `eval/completeness.py` now. First, the shape of all 9 questions so the enumerator is generic, not question-specific.
+
+--- ASSISTANT  2026-08-30T06:47:08.583Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json k=json.load(open('eval/answer_key.json')) for q in k['questions']: pr ...
+
+--- USER  2026-08-30T06:47:10.646Z ----------------------------------
+[tool result] ok (3047 chars, 38 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:47:32.780Z -----------------------------
+All nine mapped. Writing the checker — raw evidence only, no graph imports.
+
+--- ASSISTANT  2026-08-30T06:48:42.698Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\completeness.py
+
+--- USER  2026-08-30T06:48:42.726Z ----------------------------------
+[tool result] ok (157 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:48:46.951Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.completeness 2>&1 | tail -20
+
+--- USER  2026-08-30T06:48:57.654Z ----------------------------------
+[tool result] ok (295 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:49:08.128Z -----------------------------
+Four flags — but I need to check whether they're real before reporting them. Looking at the actual output.
+
+--- ASSISTANT  2026-08-30T06:49:09.059Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/## `1b_006`/,/^## `1b_007`/p' eval/verification/completeness_report.md | head -60
+
+--- USER  2026-08-30T06:49:11.246Z ----------------------------------
+[tool result] ok (2348 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:49:22.501Z -----------------------------
+Two bugs in my own checker, one root cause: the wiki's `(character)`/`(faction)` heading suffix. It made the pivot page unrecognisable, so **Direction A never ran** — my checker had the exact F-015 blind spot it exists to catch.
+
+--- ASSISTANT  2026-08-30T06:49:30.641Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\completeness.py  (in-place edit)
+
+--- USER  2026-08-30T06:49:30.668Z ----------------------------------
+[tool result] ok (167 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:49:35.821Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.completeness 2>&1 | tail -8 && echo "=== 1b_006 now ===" && sed -n '/## `1b_00 ...
+
+--- USER  2026-08-30T06:49:43.164Z ----------------------------------
+[tool result] ok (839 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:49:56.218Z -----------------------------
+`1b_006` now enumerates **exactly 14** — 6 from the faction's `Members` row, 8 from character pages, zero overlap. Independent corroboration of the key. Checking the three remaining flags before trusting them.
+
+--- ASSISTANT  2026-08-30T06:49:59.555Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/## `1b_007`/,/^---$/p' eval/verification/completeness_report.md | head -25 && echo "=== does the key r ...
+
+--- USER  2026-08-30T06:50:01.650Z ----------------------------------
+[tool result] ok (2236 chars, 42 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:50:20.132Z -----------------------------
+All three are false positives, and the key already documents each. Fixing the classification — a `single`-answer question finding siblings is normal, not a recall problem.
+
+--- ASSISTANT  2026-08-30T06:50:24.423Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\completeness.py  (in-place edit)
+
+--- USER  2026-08-30T06:50:24.441Z ----------------------------------
+[tool result] ok (167 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:50:35.916Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\completeness.py  (in-place edit)
+
+--- USER  2026-08-30T06:50:35.934Z ----------------------------------
+[tool result] ok (167 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:50:47.490Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("eval/completeness.py") s = p.read_text(encod ...
+
+--- USER  2026-08-30T06:50:55.161Z ----------------------------------
+[tool result] ok (251 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:51:00.920Z -----------------------------
+Zero recall risks. Checking the two remaining flags are real, not another bug of mine.
+
+--- ASSISTANT  2026-08-30T06:51:02.502Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/## `1c_000`/,/^---$/p' eval/verification/completeness_report.md | head -40
+
+--- USER  2026-08-30T06:51:04.831Z ----------------------------------
+[tool result] ok (2830 chars, 40 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:51:19.941Z -----------------------------
+Two more bugs of mine: the value keys aren't normalised (so `246 AS` was found yet reported unlocated), and prose scanning is block-scoped, grabbing every year near the entity. Fixing both.
+
+--- ASSISTANT  2026-08-30T06:51:28.387Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\completeness.py  (in-place edit)
+
+--- USER  2026-08-30T06:51:28.407Z ----------------------------------
+[tool result] ok (167 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:51:37.280Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("eval/completeness.py") s = p.read_text(encod ...
+
+--- USER  2026-08-30T06:51:39.587Z ----------------------------------
+[tool result] ok (2235 chars, 37 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:51:43.913Z -----------------------------
+The heredoc ate the `\n`. Fixing directly.
+
+--- ASSISTANT  2026-08-30T06:51:45.927Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\eval\completeness.py  (in-place edit)
+
+--- USER  2026-08-30T06:51:45.943Z ----------------------------------
+[tool result] ok (167 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:51:50.549Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.completeness 2>&1 | tail -7 && echo "=== 1c_000 ===" && sed -n '/## `1c_000`/, ...
+
+--- USER  2026-08-30T06:51:58.374Z ----------------------------------
+[tool result] ok (1030 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:52:05.769Z -----------------------------
+Noise gone: 12 spurious candidates → 2 real, both already in the key. Final state and the summary table.
+
+--- ASSISTANT  2026-08-30T06:52:07.536Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/| qid |/,/^$/p' eval/verification/completeness_report.md && echo "=== 1b_006 direction split ===" && s ...
+
+--- USER  2026-08-30T06:52:09.550Z ----------------------------------
+[tool result] ok (506 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:52:15.567Z -----------------------------
+**`1b_006`: 6 from the faction page + 8 from character pages = 14, matching the key exactly.** Independent corroboration. Now tests — the important one mechanically enforces the independence guarantee.
+
+--- ASSISTANT  2026-08-30T06:52:42.112Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > tests/test_completeness.py <<'PYEOF' """Tests for the independent answer-key completeness checker. The fi ...
+
+--- USER  2026-08-30T06:52:53.007Z ----------------------------------
+[tool result] ok (763 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:53:00.935Z -----------------------------
+My test was string-matching the docstring, not the behaviour. Rewriting it to check actual file access via AST.
+
+--- ASSISTANT  2026-08-30T06:53:06.722Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\tests\test_completeness.py  (in-place edit)
+
+--- USER  2026-08-30T06:53:06.746Z ----------------------------------
+[tool result] ok (173 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:53:10.792Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_completeness.py -q 2>&1 | tail -12
+
+--- USER  2026-08-30T06:53:20.855Z ----------------------------------
+[tool result] ok (581 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:53:27.970Z -----------------------------
+The offender is report prose, not a file access. The meaningful invariant is simpler: the checker reads no config at all.
+
+--- ASSISTANT  2026-08-30T06:53:32.882Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\tests\test_completeness.py  (in-place edit)
+
+--- USER  2026-08-30T06:53:32.907Z ----------------------------------
+[tool result] ok (173 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:53:38.310Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_completeness.py -q 2>&1 | tail -8 && .venv/Scripts/python.exe -m  ...
+
+--- USER  2026-08-30T06:54:04.344Z ----------------------------------
+[tool result] ok (400 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:54:08.049Z -----------------------------
+143 tests pass. Correcting F-015 and committing.
+
+--- ASSISTANT  2026-08-30T06:54:19.038Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("docs/failures.md") s = p.read_text(encoding= ...
+
+--- USER  2026-08-30T06:54:21.310Z ----------------------------------
+[tool result] ok (487 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:54:29.686Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("README.md") s = p.read_text(encoding="utf-8" ...
+
+--- USER  2026-08-30T06:54:32.073Z ----------------------------------
+[tool result] ok (444 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:54:54.709Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import pathlib p = pathlib.Path("README.md") s = p.read_text(encoding="utf-8" ...
+
+--- USER  2026-08-30T06:55:00.850Z ----------------------------------
+[tool result] ok (307 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-08-30T06:55:12.863Z -----------------------------
+Done. Pushed as `ffb80d5`.
+
+```
+9 questions checked      0 recall defects
+1b_006                   14 found - 6 faction page, 8 character pages, 0 overlap
+```
+
+That corroborates the key's fourteen by a route independent of whoever built it. **The F-015 class is cleared.**
+
+## Independence is enforced, not promised
+
+`tests/test_completeness.py` AST-checks that `eval/completeness.py` imports nothing from `src/graph` and reads no YAML config. A future refactor reusing the graph's entity resolver would make every Checkpoint 2 number meaningless while all tests still passed — now it fails.
+
+## Three bugs in my own checker
+
+Two failed in exactly the direction it exists to catch:
+
+1. **Direction A never ran.** The wiki appends `(faction)` to 26 of 95 H1 headings, so `the_silent_choir.md` normalised to `silent_choir_faction`, never matched the pivot. Enumeration returned the 8 character-page members and missed the `Members` row — F-015's blind spot, reproduced inside the tool built to detect it.
+2. **Prose scanning was block-scoped**, so a character's `Born`/`Died` rows became candidate founding years for a settlement. 12 candidates where 2 were real.
+3. Value keys stored raw, compared normalised — `246 AS` was found *and* reported unlocated.
+
+It also cried wolf: 4 false RECALL RISKs → 0. A single-answer question finding siblings isn't a defect — `1b_007`'s Cartel genuinely won The Winter Reckoning, and only the question's type word excludes it. Extras now split into `semantic_siblings` (single) vs `missing_from_key` (any_of).
+
+## Two items still need a human
+
+- `1b_007` — confirm the key picked the right one of three true victories.
+- `1c_000` — `246 AS` (codex) vs `286 AS` (ephemera). Both recorded in the key; enumeration surfaces both and resolves neither.
+
+Precision review is still outstanding, so the key stays provisional and the harness keeps warning. F-015's original conclusion is preserved with the amendment beside it.
+
+**Next: `src/query/`** — routing, the type filter `1b_007` needs, and the sufficiency states separating "no path" from "path but not enough evidence". No planning cycle; straight into code.

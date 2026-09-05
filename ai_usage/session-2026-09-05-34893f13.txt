@@ -1,0 +1,629 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : 34893f13-4818-4bac-9d44-c153fcc9cd15
+Source          : 34893f13-4818-4bac-9d44-c153fcc9cd15.jsonl
+First activity  : 2026-09-05T14:36:28.193Z
+Last activity   : 2026-09-05T14:57:22.754Z
+Dialogue turns  : 182   (of 410 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-05T14:36:28.393Z ----------------------------------
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026 submission, sub-track 1B. Read CLAUDE.md first.
+Engineering best practices is 15% of the rubric, and the stated test is:
+"can a judge set up and run your project from the README alone?"
+Repository organization and dependency management are scored in the same 15%.
+
+README.md is materially stale. Verified stale facts:
+  - Says "143 tests" in three places (lines 86, 144, 165). Actual count is 320
+    (docs/decisions.md ADR-025). Re-derive, do not trust this number either.
+  - Repository layout section (line 136) omits src/query/, src/ui/, comparison/
+    and ai_usage/ entirely - three of them are the most important directories
+    in the repo.
+  - Says "ADR-001..016" and "F-001..020" (lines 246, 248). Actual: ADR-001..025
+    and F-001..027.
+  - Commands section (line 156) omits: src.query.engine, src.ui.server,
+    comparison.harness, comparison.ablations.
+  - Line 24 says "complete evidence 0 / 7"; line 187 says "0/9". One is wrong.
+  - The Status section (line 271) says routing-robustness measurement is the
+    NEXT work. It was done on 1 Sep (ADR-019).
+  - The Architecture ASCII diagram does not show the three routing tiers and
+    predates docs/diagrams/architecture.svg.
+
+TASK
+
+1. Re-derive every number before writing it. Run:
+     .venv\Scripts\python.exe -m pytest -q          (test count)
+     .venv\Scripts\python.exe -m src.ingest.pipeline
+     .venv\Scripts\python.exe -m src.graph.build
+     .venv\Scripts\python.exe -m src.ingest.integrity
+   Use what these print. CLAUDE.md's "Corpus facts that will bite you" section
+   warns that several numbers in this project have moved more than once.
+
+2. Fix README.md:
+   - Correct all stale counts.
+   - Rewrite the Repository layout block to include every top-level directory
+     that exists, with one line each.
+   - Add the missing commands, including `python -m src.ui.server` (the demo)
+     and `python -m src.query.engine "<question>"`.
+   - Replace the ASCII architecture diagram with a reference to
+     docs/diagrams/architecture.svg and docs/architecture.md, and add the three
+     routing tiers to the text.
+   - Update the Status section to reflect ADR-019 through ADR-025.
+   - Add a short "Run the demo" section at the top of Quickstart: exact commands
+     from a clean clone to a working http://127.0.0.1:8000, stating explicitly
+     that no API key is needed for the deterministic path.
+
+3. Populate `configuration-example/` (currently empty; §5.2 of the challenge doc
+   names it in the recommended structure). Put in it: a commented .env.example
+   copy, and copies of config/authority.yaml and config/relations.yaml with a
+   short README.md explaining that these two files are deliberately not code so
+   a judge can disagree with a line without touching Python.
+
+4. COLD-RUN TEST. This is the actual deliverable, not the README edit.
+   Clone this repo to a fresh directory (e.g. C:\Users\LENOVO\AppData\Local\Temp\
+   coldrun), create a new venv, and follow the README literally, top to bottom,
+   without using any knowledge you have from this repo. Note every place it
+   breaks or is ambiguous. Fix the README, then repeat until it runs clean.
+   Report what broke on the first pass - that list is report material.
+
+5. Atomic commit with a message stating why.
+
+DONE WHEN
+  - A cold clone reaches a working demo UI using only README instructions
+  - No number in README.md is unverified
+  - configuration-example/ is populated
+
+--- ASSISTANT  2026-09-05T14:36:30.762Z -----------------------------
+I'll start by reading CLAUDE.md and getting oriented.
+
+--- ASSISTANT  2026-09-05T14:36:31.491Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat CLAUDE.md
+
+--- USER  2026-09-05T14:36:32.608Z ----------------------------------
+[tool result] ok (17136 chars, 252 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:36:32.663Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -a && echo "--- git ---" && git log --oneline -15 && git status --short
+
+--- USER  2026-09-05T14:36:33.035Z ----------------------------------
+[tool result] ok (1431 chars, 40 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:36:36.516Z -----------------------------
+CLAUDE.md is rich. Let me read the README and start re-deriving the numbers.
+
+--- ASSISTANT  2026-09-05T14:36:37.230Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat -n README.md
+
+--- USER  2026-09-05T14:36:37.465Z ----------------------------------
+[tool result] ok (14628 chars, 284 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:36:38.008Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -20
+
+--- USER  2026-09-05T14:37:22.859Z ----------------------------------
+[tool result] ok (403 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:37:28.168Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | grep -E "passed|failed|error" | tail -5
+
+--- ASSISTANT  2026-09-05T14:37:30.166Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -1 && echo "=== top-level dirs ===" && find . -maxdepth 1 -type d -not -name ".*" | sort && echo "=== src == ...
+
+--- USER  2026-09-05T14:38:11.254Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- USER  2026-09-05T14:38:11.655Z ----------------------------------
+[tool result] ok (678 chars, 53 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:38:15.490Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat pytest.ini && echo "=== run ===" && .venv/Scripts/python.exe -m pytest 2>&1 | tail -6
+
+--- USER  2026-09-05T14:38:53.531Z ----------------------------------
+[tool result] ok (509 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:38:57.283Z -----------------------------
+320 tests confirmed. Now the other three commands:
+
+--- ASSISTANT  2026-09-05T14:38:58.808Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.ingest.integrity 2>&1 | tail -30
+
+--- ASSISTANT  2026-09-05T14:38:59.927Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.ingest.pipeline 2>&1 | tail -40
+
+--- USER  2026-09-05T14:39:01.092Z ----------------------------------
+[tool result] ok (167 chars, 6 lines, output not included)
+
+--- USER  2026-09-05T14:39:07.893Z ----------------------------------
+[tool result] ok (348 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:39:10.925Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.graph.build 2>&1 | tail -40
+
+--- ASSISTANT  2026-09-05T14:39:13.174Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -nE "^### ADR-0(19|2[0-9])" docs/decisions.md | head -20 && echo "=== last ADR ===" && grep -cE "^### ADR- ...
+
+--- USER  2026-09-05T14:39:17.939Z ----------------------------------
+[tool result] ok (620 chars, 22 lines, output not included)
+
+--- USER  2026-09-05T14:39:18.171Z ----------------------------------
+[tool result] ok (18 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:39:23.642Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -nE "^#{1,4} *ADR-" docs/decisions.md | tail -12 && echo "=== count ===" && grep -cE "^#{1,4} *ADR-" docs/ ...
+
+--- USER  2026-09-05T14:39:26.568Z ----------------------------------
+[tool result] ok (2186 chars, 28 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:39:35.074Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.run_eval --checkpoint baseline 2>&1 | tail -40
+
+--- ASSISTANT  2026-09-05T14:39:35.613Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '2122,2260p' docs/decisions.md
+
+--- USER  2026-09-05T14:39:39.114Z ----------------------------------
+[tool result] ok (1013 chars, 31 lines, output not included)
+
+--- USER  2026-09-05T14:39:39.269Z ----------------------------------
+[tool result] ok (5107 chars, 102 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:39:45.783Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json,glob,os f=sorted(glob.glob('eval/results/baseline_*.json'))[-1] d=jso ...
+
+--- USER  2026-09-05T14:39:47.500Z ----------------------------------
+[tool result] ok (404 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:39:51.682Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json,glob f=sorted(glob.glob('eval/results/baseline_*.json'))[-1] d=json.l ...
+
+--- USER  2026-09-05T14:39:53.873Z ----------------------------------
+[tool result] ok (1571 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:40:05.976Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json,glob f=sorted(glob.glob('eval/results/baseline_*.json'))[-1] qs=json. ...
+
+--- USER  2026-09-05T14:40:07.693Z ----------------------------------
+[tool result] ok (946 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:40:17.113Z -----------------------------
+Both `0/7` and `0/9` are correct — they're different scopes (1B-only vs all-scored). I'll label them. Now gathering the rest:
+
+--- ASSISTANT  2026-09-05T14:40:18.348Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== .env.example ===" && cat .env.example && echo && echo "=== requirements.txt ===" && cat requirements. ...
+
+--- USER  2026-09-05T14:40:18.591Z ----------------------------------
+[tool result] ok (2507 chars, 75 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:40:19.199Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -1 src/query src/ui comparison ai_usage eval tests docs/diagrams | head -80
+
+--- USER  2026-09-05T14:40:19.373Z ----------------------------------
+[tool result] ok (773 chars, 67 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:40:27.477Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -a ai_usage && echo "=== harness ===" && .venv/Scripts/python.exe -m comparison.harness 2>&1 | tail -45
+
+--- ASSISTANT  2026-09-05T14:40:28.555Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,120p' docs/architecture.md
+
+--- USER  2026-09-05T14:40:38.395Z ----------------------------------
+[tool result] ok (810 chars, 19 lines, output not included)
+
+--- USER  2026-09-05T14:40:38.532Z ----------------------------------
+[tool result] ok (6501 chars, 120 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:40:49.903Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== tracked in ai_usage/configuration-example/data ===" && git ls-files ai_usage configuration-example da ...
+
+--- ASSISTANT  2026-09-05T14:40:50.482Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && head -60 config/relations.yaml && echo "..." && echo "=== authority ===" && head -40 config/authority.yaml
+
+--- USER  2026-09-05T14:40:52.144Z ----------------------------------
+[tool result] ok (157 chars, 5 lines, output not included)
+
+--- USER  2026-09-05T14:40:52.348Z ----------------------------------
+[tool result] ok (4132 chars, 102 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:41:04.591Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import yaml d=yaml.safe_load(open('config/relations.yaml',encoding='utf-8')) rels ...
+
+--- ASSISTANT  2026-09-05T14:41:04.962Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat docs/TODO.md
+
+--- USER  2026-09-05T14:41:06.718Z ----------------------------------
+[tool result] ok (129 chars, 5 lines, output not included)
+
+--- USER  2026-09-05T14:41:06.950Z ----------------------------------
+[tool result] ok (5995 chars, 102 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:41:16.287Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import yaml d=yaml.safe_load(open('config/relations.yaml',encoding='utf-8')) rels ...
+
+--- ASSISTANT  2026-09-05T14:41:17.408Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.probes.corpus_shape 2>&1 | tail -50
+
+--- USER  2026-09-05T14:41:18.308Z ----------------------------------
+[tool result] ok (70 chars, 4 lines, output not included)
+
+--- USER  2026-09-05T14:41:21.075Z ----------------------------------
+[tool result] ok (1801 chars, 50 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:41:25.062Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.probes.corpus_shape 2>&1 | grep -inE "field name|109|110|651|infobox|cell" | h ...
+
+--- USER  2026-09-05T14:41:28.210Z ----------------------------------
+[tool result] ok (633 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:41:36.796Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.graph.build 2>&1 | head -60
+
+--- ASSISTANT  2026-09-05T14:41:38.219Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.query.engine "Which accord was ultimately won by the faction of which Ederon Fe ...
+
+--- USER  2026-09-05T14:41:44.200Z ----------------------------------
+[tool result] ok (620 chars, 22 lines, output not included)
+
+--- USER  2026-09-05T14:41:52.339Z ----------------------------------
+[tool result] ok (788 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:41:57.522Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && (.venv/Scripts/python.exe -m src.ui.server > /tmp/ui.log 2>&1 &) ; sleep 12; curl -s -o /dev/null -w "%{http_co ...
+
+--- USER  2026-09-05T14:42:12.945Z ----------------------------------
+[tool result] ok (21 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:42:18.315Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && curl -s http://127.0.0.1:8000/ | grep -oE 'href="[^"]*"' | sort -u | head -30; echo "=== argparse help ==="; .v ...
+
+--- USER  2026-09-05T14:42:20.891Z ----------------------------------
+[tool result] ok (1325 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:42:24.691Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && netstat -ano | grep ":8000" | head -3
+
+--- ASSISTANT  2026-09-05T14:42:26.582Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la .cache ocr_cache 2>&1 | head -20 && echo "=== git ls-files cache dirs ===" && git ls-files ocr_cache | h ...
+
+--- USER  2026-09-05T14:42:26.821Z ----------------------------------
+[tool result] ok (222 chars, 3 lines, output not included)
+
+--- USER  2026-09-05T14:42:27.302Z ----------------------------------
+[tool result] ok (1641 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:42:39.371Z -----------------------------
+`.cache/` is gitignored — that will matter. Let me do the **first-pass cold run against the current README** before I change anything, so the breakage list is honest.
+
+--- ASSISTANT  2026-09-05T14:42:40.755Z -----------------------------
+[tool] Bash: command=powershell -NoProfile -Command "Stop-Process -Id 27932 -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; 'killed'"
+
+--- ASSISTANT  2026-09-05T14:42:42.366Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git remote -v && echo "=== branch ===" && git branch --show-current && echo "=== does data exist ===" && ls dat ...
+
+--- USER  2026-09-05T14:42:44.359Z ----------------------------------
+[tool result] ok (6 chars, 1 lines, output not included)
+
+--- USER  2026-09-05T14:42:44.679Z ----------------------------------
+[tool result] ok (184 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:42:49.048Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -a data && echo "=== .env (keys redacted) ===" && sed -E 's/=(.{4}).*/=\1****/' .env
+
+--- USER  2026-09-05T14:42:51.084Z ----------------------------------
+[tool result] ok (160 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:42:54.254Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep CORPUS_PATH .env && ls "$(grep CORPUS_PATH .env | cut -d= -f2-)" 2>&1 | head
+
+--- USER  2026-09-05T14:42:57.142Z ----------------------------------
+[tool result] ok (125 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:43:03.283Z -----------------------------
+Now the cold run. Cloning to a fresh directory:
+
+--- ASSISTANT  2026-09-05T14:43:04.773Z -----------------------------
+[tool] Bash: command=rm -rf /c/Users/LENOVO/AppData/Local/Temp/coldrun && mkdir -p /c/Users/LENOVO/AppData/Local/Temp/coldrun && cd /c/Users/LENOVO/AppData/Local/Temp/coldrun && git ...
+
+--- USER  2026-09-05T14:43:11.066Z ----------------------------------
+[tool result] ok (89 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:43:13.997Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && git log --oneline -3 && echo "=== files ===" && ls -a
+
+--- USER  2026-09-05T14:43:16.814Z ----------------------------------
+[tool result] ok (452 chars, 23 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:43:28.411Z -----------------------------
+**Cold-run finding #1, and it's serious:** the GitHub URL in the README clones `885b5fd` — the remote is **8 commits behind local `main`**. A judge following the README gets a repo without ADR-019..025, the architecture diagram, or the F-026 fix.
+
+--- ASSISTANT  2026-09-05T14:43:29.886Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git rev-list --count origin/main..main 2>/dev/null; git log --oneline origin/main..main 2>/dev/null | cat
+
+--- ASSISTANT  2026-09-05T14:43:31.253Z -----------------------------
+[tool] Bash: command=rm -rf /c/Users/LENOVO/AppData/Local/Temp/coldrun && mkdir -p /c/Users/LENOVO/AppData/Local/Temp/coldrun && cd /c/Users/LENOVO/AppData/Local/Temp/coldrun && git ...
+
+--- USER  2026-09-05T14:43:31.637Z ----------------------------------
+[tool result] ok (968 chars, 13 lines, output not included)
+
+--- USER  2026-09-05T14:43:34.028Z ----------------------------------
+[tool result] ok (330 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:43:42.843Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && python --version 2>&1 && python -m venv .venv 2>&1 | tail -3 && echo "venv-created" &&  ...
+
+--- USER  2026-09-05T14:43:59.216Z ----------------------------------
+[tool result] ok (91 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:44:02.156Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && .venv/Scripts/python.exe -m pip install -r requirements.txt 2>&1 | tail -25
+
+--- USER  2026-09-05T14:45:29.282Z ----------------------------------
+[tool result] ok (3343 chars, 26 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:45:36.133Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && cp -r "E:/AI Challenge CodeFest/Ashen_Era_Archive" data/Ashen_Era_Archive && ls data/As ...
+
+--- USER  2026-09-05T14:45:39.229Z ----------------------------------
+[tool result] ok (286 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:45:41.684Z -----------------------------
+Now running the README's "Verify the setup" block literally, with no API keys:
+
+--- ASSISTANT  2026-09-05T14:45:43.179Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### 1. integrity ###" && .venv/Scripts/python.exe -m src.ingest.integrity 2>&1 |  ...
+
+--- USER  2026-09-05T14:45:46.048Z ----------------------------------
+[tool result] ok (244 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:45:49.549Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### 2. pytest ###" && .venv/Scripts/python.exe -m pytest 2>&1 | tail -25
+
+--- USER  2026-09-05T14:46:44.536Z ----------------------------------
+[tool result] ok (491 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:46:47.792Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### 3. pipeline ###" && .venv/Scripts/python.exe -m src.ingest.pipeline 2>&1 | ta ...
+
+--- USER  2026-09-05T14:47:00.803Z ----------------------------------
+[tool result] ok (662 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:47:06.616Z -----------------------------
+All four "Verify the setup" commands pass cold with no keys. Now the commands the README *claims* work, plus the ones it omits:
+
+--- ASSISTANT  2026-09-05T14:47:08.130Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### eval.run_eval --checkpoint baseline (README says: cached, under a second, no  ...
+
+--- USER  2026-09-05T14:47:10.891Z ----------------------------------
+[tool result] ok (278 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:47:17.928Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### src.baseline.index (not in README) ###" && timeout 90 .venv/Scripts/python.ex ...
+
+--- USER  2026-09-05T14:47:26.537Z ----------------------------------
+[tool result] ok (366 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:47:31.709Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && .venv/Scripts/python.exe -m src.baseline.index 2>&1 | head -20; echo "EXIT=${PIPESTATUS ...
+
+--- USER  2026-09-05T14:47:34.211Z ----------------------------------
+[tool result] ok (54 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:47:37.731Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && grep -n "__main__" -A 20 src/baseline/index.py | tail -30 && echo "=== does it have a m ...
+
+--- USER  2026-09-05T14:47:40.795Z ----------------------------------
+[tool result] ok (1122 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:47:46.523Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && ls src/baseline && echo "=== grep for __main__ across src/eval/comparison ===" && grep  ...
+
+--- USER  2026-09-05T14:47:49.196Z ----------------------------------
+[tool result] ok (1258 chars, 37 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:48:02.030Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### query.engine (no README mention) ###" && .venv/Scripts/python.exe -m src.quer ...
+
+--- ASSISTANT  2026-09-05T14:48:03.424Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### comparison.harness ###" && .venv/Scripts/python.exe -m comparison.harness 2>& ...
+
+--- USER  2026-09-05T14:48:14.977Z ----------------------------------
+[tool result] ok (856 chars, 18 lines, output not included)
+
+--- USER  2026-09-05T14:48:23.875Z ----------------------------------
+[tool result] ok (864 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:48:31.449Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && (.venv/Scripts/python.exe -m src.ui.server > ui.log 2>&1 &) ; sleep 15; echo "--- serve ...
+
+--- USER  2026-09-05T14:48:49.343Z ----------------------------------
+[tool result] ok (208 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:48:56.203Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && grep -n "__main__" -B 5 -A 30 src/ui/server.py | tail -45
+
+--- USER  2026-09-05T14:48:58.414Z ----------------------------------
+[tool result] ok (216 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:49:01.627Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && grep -n "def serve" -A 25 src/ui/server.py
+
+--- USER  2026-09-05T14:49:03.503Z ----------------------------------
+[tool result] ok (1175 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:49:09.381Z -----------------------------
+That "silent server" was my own stdout buffering, not a defect — `serve()` prints a clear banner with the URL. Running the remaining commands:
+
+--- ASSISTANT  2026-09-05T14:49:11.537Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### comparison.ablations ###" && .venv/Scripts/python.exe -m comparison.ablations ...
+
+--- ASSISTANT  2026-09-05T14:49:13.112Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### src.ingest.ocr (cached, README says needs GOOGLE_API_KEY) ###" && .venv/Scrip ...
+
+--- USER  2026-09-05T14:49:28.080Z ----------------------------------
+[tool result] ok (1170 chars, 22 lines, output not included)
+
+--- USER  2026-09-05T14:49:30.296Z ----------------------------------
+[tool result] ok (931 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:49:39.358Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && echo "### eval.probes.corpus_shape ###" && .venv/Scripts/python.exe -m eval.probes.corp ...
+
+--- USER  2026-09-05T14:49:43.371Z ----------------------------------
+[tool result] ok (923 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:50:01.468Z -----------------------------
+Cold run is complete. Let me capture the UI surfaces list, then write the fixes.
+
+--- ASSISTANT  2026-09-05T14:50:02.860Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun/CODEFEST---AI-Challenge && grep -nE 'path ==|startswith\("/|ROUTES|"/[a-z]' src/ui/server.py | head -30
+
+--- ASSISTANT  2026-09-05T14:50:03.774Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '120,200p' docs/architecture.md
+
+--- USER  2026-09-05T14:50:03.928Z ----------------------------------
+[tool result] ok (1347 chars, 27 lines, output not included)
+
+--- USER  2026-09-05T14:50:04.850Z ----------------------------------
+[tool result] ok (172 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:50:09.383Z -----------------------------
+Now populating `configuration-example/`:
+
+--- ASSISTANT  2026-09-05T14:50:10.564Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cp config/authority.yaml configuration-example/authority.yaml && cp config/relations.yaml configuration-example ...
+
+--- USER  2026-09-05T14:50:10.810Z ----------------------------------
+[tool result] ok (94 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:50:28.329Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > configuration-example/env.example <<'ENVEOF' # ---------------------------------------------------------- ...
+
+--- USER  2026-09-05T14:50:30.393Z ----------------------------------
+[tool result] ok (44 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:50:42.300Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import yaml, collections from src.ingest.pipeline import * " 2>/dev/null; .venv/S ...
+
+--- USER  2026-09-05T14:50:44.849Z ----------------------------------
+[tool result] ERROR: Exit code 1 Traceback (most recent call last): File "<stdin>", line 3, in <module> File "E:\AI Challenge CodeFest\ashen-assistant\.venv\Lib\site-packages\dotenv\main.py", line 346, in load_dotenv dote ...
+
+--- ASSISTANT  2026-09-05T14:50:53.330Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > /c/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/34893f13-4818-4bac-9d44-c153fcc9cd15/s ...
+
+--- USER  2026-09-05T14:50:55.469Z ----------------------------------
+[tool result] ok (193 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:07.256Z -----------------------------
+[tool] Bash: command=grep -ril "Secret keeper" "E:/AI Challenge CodeFest/Ashen_Era_Archive" | head -5; echo "hits=$(grep -ril 'Secret keeper' 'E:/AI Challenge CodeFest/Ashen_Era_Arc ...
+
+--- USER  2026-09-05T14:51:09.511Z ----------------------------------
+[tool result] ok (363 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:12.824Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "Secret keeper" config/relations.yaml && sed -n '125,136p' config/relations.yaml
+
+--- USER  2026-09-05T14:51:13.022Z ----------------------------------
+[tool result] ok (877 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:40.896Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > configuration-example/README.md <<'MDEOF' # Configuration examples Everything in this directory is a **co ...
+
+--- USER  2026-09-05T14:51:42.999Z ----------------------------------
+[tool result] ok (335 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:58.013Z -----------------------------
+Now the README. Writing it against the verified numbers:
+
+--- ASSISTANT  2026-09-05T14:53:15.415Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && touch ai_usage/.gitkeep && cat > README.md <<'MDEOF' # Ashen Era Intelligence Assistant A document assistant th ...
+
+--- USER  2026-09-05T14:53:17.296Z ----------------------------------
+[tool result] ERROR: Exit code 2 /usr/bin/bash: -c: line 164: unexpected EOF while looking for matching `''
+
+--- ASSISTANT  2026-09-05T14:53:24.227Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && wc -l README.md && git status --short && ls ai_usage
+
+--- USER  2026-09-05T14:53:24.546Z ----------------------------------
+[tool result] ok (731 chars, 26 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:53:35.681Z -----------------------------
+Something changed underneath me — `ai_usage/` is now populated and there are uncommitted `src/` edits that weren't mine. Let me check before touching anything.
+
+--- ASSISTANT  2026-09-05T14:53:37.414Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la --time-style=full-iso src/query/catalogue.py src/query/diagnostics.py src/query/engine.py src/ui/render. ...
+
+--- USER  2026-09-05T14:53:37.736Z ----------------------------------
+[tool result] ok (1559 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:53:51.024Z -----------------------------
+**Another session is actively writing to this repo right now** — `src/ui/render.py` was modified 36 seconds ago. I'll scope my commit tightly and leave their work alone.
+
+--- ASSISTANT  2026-09-05T14:53:52.362Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && rm -f ai_usage/.gitkeep && ls ai_usage/*.txt | wc -l && head -5 ai_usage/session-2026-08-28-801b2686.txt && ech ...
+
+--- USER  2026-09-05T14:53:55.354Z ----------------------------------
+[tool result] ok (296 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:08.969Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\README.md
+
+--- USER  2026-09-05T14:55:09.086Z ----------------------------------
+[tool result] ok (156 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:14.785Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "Checkpoint 1 (cached, free)" docs/architecture.md
+
+--- USER  2026-09-05T14:55:14.933Z ----------------------------------
+[tool result] ok (81 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:19.462Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\architecture.md  (in-place edit)
+
+--- USER  2026-09-05T14:55:19.543Z ----------------------------------
+[tool result] ok (167 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:21.698Z -----------------------------
+Now the atomic commit, scoped to only my files:
+
+--- ASSISTANT  2026-09-05T14:55:22.808Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add README.md docs/architecture.md configuration-example/ && git status --short && echo "=== staged only: = ...
+
+--- USER  2026-09-05T14:55:25.742Z ----------------------------------
+[tool result] ok (800 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:44.594Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git commit -F - <<'MSG' docs: rewrite README against re-derived numbers, after a cold-clone run Engineering pra ...
+
+--- USER  2026-09-05T14:55:46.871Z ----------------------------------
+[tool result] ok (439 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:49.815Z -----------------------------
+Now the second cold run — fresh clone of the new commit, following the rewritten README literally:
+
+--- ASSISTANT  2026-09-05T14:55:52.742Z -----------------------------
+[tool] Bash: command=rm -rf /c/Users/LENOVO/AppData/Local/Temp/coldrun2 && mkdir -p /c/Users/LENOVO/AppData/Local/Temp/coldrun2 && cd /c/Users/LENOVO/AppData/Local/Temp/coldrun2 &&  ...
+
+--- USER  2026-09-05T14:55:55.189Z ----------------------------------
+[tool result] ok (328 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:56:01.896Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun2/CODEFEST---AI-Challenge && python -m venv .venv && .venv/Scripts/python.exe -m pip install -r requirements.txt 2> ...
+
+--- USER  2026-09-05T14:57:14.005Z ----------------------------------
+[tool result] ok (254 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:57:18.796Z -----------------------------
+[tool] Bash: command=cd /c/Users/LENOVO/AppData/Local/Temp/coldrun2/CODEFEST---AI-Challenge && cp -r "E:/AI Challenge CodeFest/Ashen_Era_Archive" data/Ashen_Era_Archive && cp .env.e ...
+
+--- USER  2026-09-05T14:57:22.747Z ----------------------------------
+[tool result] ok (305 chars, 11 lines, output not included)

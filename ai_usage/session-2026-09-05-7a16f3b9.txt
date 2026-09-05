@@ -1,0 +1,438 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : 7a16f3b9-6c6d-44cd-ae11-d703a848ec88
+Source          : 7a16f3b9-6c6d-44cd-ae11-d703a848ec88.jsonl
+First activity  : 2026-09-05T14:36:18.080Z
+Last activity   : 2026-09-05T14:57:20.206Z
+Dialogue turns  : 104   (of 257 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant, E:\AI Challenge CodeFest\ashen-assistant\ai_usage
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-05T14:36:18.260Z ----------------------------------
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+This repo is a SLIIT Codefest 2026 AI Competition submission (sub-track 1B).
+Deadline 9 Sep 2026 11:30 PM. Read CLAUDE.md first for project context.
+
+Challenge doc §4.1 requires, as a MANDATORY deliverable:
+  - The full conversation logs with any AI agents used during development,
+    exported as plain text (.txt) files, included in the git repository.
+  - An AI Usage Disclosure naming which tools were used, for what, and which
+    decisions the team made.
+Human-AI collaboration quality is 15% of the rubric and is judged from exactly
+these logs plus the commit history. Incomplete submissions are not evaluated.
+
+The `ai_usage/` directory in this repo is currently EMPTY.
+
+The raw logs DO exist. Claude Code stores per-session transcripts at:
+  C:\Users\LENOVO\.claude\projects\E--AI-Challenge-CodeFest\*.jsonl
+There are 10 .jsonl files, ~42 MB total, dated 29 Aug - 5 Sep 2026. Each line is
+a JSON object representing one turn (user message, assistant message, tool call,
+or tool result).
+
+TASK
+
+Step 0 - SECURITY, do this before anything else.
+  Rotate every API key in .env NOW (Google/Gemini, Voyage, OpenRouter) at the
+  provider dashboards. The transcripts may contain key values, .env contents, or
+  environment dumps, and they are about to be committed to a repo judges read.
+  Do not proceed to Step 1 until rotation is done. Tell me when to do this and
+  wait for my confirmation.
+
+Step 1 - Write a converter at `ai_usage/export_logs.py`.
+  It must:
+  - Read each .jsonl in the projects directory above.
+  - Emit one .txt per session, named `session-<YYYY-MM-DD>-<short-id>.txt`.
+  - Render turns readably: a header line per turn with role and timestamp, then
+    the text. Include tool calls as one summary line each (tool name + a short
+    argument summary), NOT full tool output - full file dumps would bury the
+    human-AI dialogue the judges are actually reading.
+  - REDACT secrets before writing. Scan every string for: anything matching
+    common key shapes (sk-*, AIza*, pa-*, sk-or-*), any line containing
+    GOOGLE_API_KEY / VOYAGE_API_KEY / OPENROUTER_API_KEY followed by a value,
+    and any 32+ char high-entropy token. Replace with [REDACTED]. Print a count
+    of redactions per file so I can eyeball it.
+  - Be deterministic and rerunnable.
+
+Step 2 - Run it, then MANUALLY grep the output for leaked secrets before
+  committing. Report the redaction counts to me.
+
+Step 3 - Write `ai_usage/ai-usage-disclosure.md`. It must state:
+  - Which AI tools were used and for what (Claude Code as a coding assistant;
+    Gemini via API for OCR of 17 scanned pages; Voyage for embeddings in the
+    Checkpoint-1 baseline; OpenRouter for the opt-in planner/phrasing tiers).
+    Be precise about the difference between AI used to BUILD the system and AI
+    used INSIDE the system - judges care about both and they are separate.
+  - Which decisions the TEAM made rather than the AI. Mine these from
+    docs/decisions.md and docs/failures.md - the strongest examples are where a
+    measurement overturned something an assistant had already written down.
+    Name at least five concrete ones with their ADR/F numbers. Good candidates:
+    ADR-003 (collection-dependent dedup), ADR-011 (exact-match entity
+    resolution, refusing fuzzy matching), F-015 (a single reviewer's "high
+    confidence" answer that the corpus contradicted), F-025 (the model that
+    produced a confident cited answer to a question nobody asked, which led the
+    team to make the LLM tier opt-in), ADR-013 CORRECTION (the team's own
+    earlier conclusion overturned).
+  - How the team directed the AI: the deterministic-first rule in CLAUDE.md, the
+    "measure before asserting" rule, and the practice of keeping overturned
+    assumptions visible in the record instead of editing them out.
+  - Honest disclosure carries no penalty. Do not undersell AI involvement and do
+    not oversell human involvement. Both are checkable against the logs.
+
+Step 4 - Commit. Atomic commit, message says why. Do not commit .env.
+
+DONE WHEN
+  - `ai_usage/` contains one .txt per session plus ai-usage-disclosure.md
+  - `git grep -iE "sk-|AIza|api[_-]?key.*=.*[A-Za-z0-9]{20}"` over ai_usage/
+    returns nothing
+  - Keys are rotated
+
+DO NOT
+  - Do not fabricate or reconstruct any conversation from memory. Export the
+    real transcripts only. Fabricated evidence against a rule demanding the logs
+    reflect actual work is a disqualification risk, not a deduction.
+
+--- ASSISTANT  2026-09-05T14:36:27.219Z -----------------------------
+I'll start by getting oriented — reading project context while you handle the key rotation. First, let me look at the repo.
+
+--- ASSISTANT  2026-09-05T14:36:27.925Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && ls -la && echo "--- ashen-assistant ---" && ls -la ashen-assistant 2>/dev/null | head -50
+
+--- ASSISTANT  2026-09-05T14:36:28.940Z -----------------------------
+[tool] Bash: command=ls -la "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest/" | head -40
+
+--- USER  2026-09-05T14:36:29.261Z ----------------------------------
+[tool result] ok (2134 chars, 26 lines, output not included)
+
+--- USER  2026-09-05T14:36:29.328Z ----------------------------------
+[tool result] ok (1959 chars, 36 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:36:36.430Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== .env KEY NAMES ONLY ===" && sed -E 's/=.*/=<redacted>/' .env && echo && echo "=== .gitignore ===" &&  ...
+
+--- USER  2026-09-05T14:36:36.816Z ----------------------------------
+[tool result] ok (1393 chars, 54 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:36:37.169Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat CLAUDE.md
+
+--- USER  2026-09-05T14:36:37.332Z ----------------------------------
+[tool result] ok (17136 chars, 252 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:36:45.745Z -----------------------------
+[tool] Bash: command=cd "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest" && "E:/AI Challenge CodeFest/ashen-assistant/.venv/Scripts/python.exe" -c " import json,glob,coll ...
+
+--- USER  2026-09-05T14:36:48.415Z ----------------------------------
+[tool result] ok (3706 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:36:49.791Z -----------------------------
+[tool] Bash: command=cd "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest" && "E:/AI Challenge CodeFest/ashen-assistant/.venv/Scripts/python.exe" -c " import json seen=set( ...
+
+--- USER  2026-09-05T14:36:51.903Z ----------------------------------
+[tool result] ok (1220 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:37:08.190Z -----------------------------
+[tool] Bash: command=cd "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest" && "E:/AI Challenge CodeFest/ashen-assistant/.venv/Scripts/python.exe" -c " import json,glob,coll ...
+
+--- USER  2026-09-05T14:37:10.184Z ----------------------------------
+[tool result] ok (691 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:37:31.094Z -----------------------------
+[tool] Bash: command=cd "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest" && "E:/AI Challenge CodeFest/ashen-assistant/.venv/Scripts/python.exe" -c " import glob,os,collec ...
+
+--- USER  2026-09-05T14:37:33.093Z ----------------------------------
+[tool result] ok (348 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:37:47.255Z -----------------------------
+## Step 0 — rotate the keys now. This is confirmed, not precautionary.
+
+I checked whether your live key values literally appear in the transcripts. They do:
+
+| Transcript | Key | Occurrences |
+|---|---|---|
+| `801b2686-…jsonl` (28–30 Aug, 11.7 MB) | `GOOGLE_API_KEY` value | 21 |
+| `801b2686-…jsonl` | `VOYAGE_API_KEY` value | 21 |
+
+Those are the **current** values from `.env`, in plaintext, in a file that is about to be converted and committed to a repo judges read. `OPENROUTER_API_KEY` did not match literally, but rotate it too — it was added later (`.env` mtime 1 Sep) and the same session pattern that leaked the other two would have leaked it had it existed then.
+
+**Please rotate all three now, at the provider dashboards:**
+
+- **Google / Gemini** — https://aistudio.google.com/apikey — delete the existing key, create a new one
+- **Voyage** — https://dashboard.voyageai.com/organization/api-keys — revoke and reissue
+- **OpenRouter** — https://openrouter.ai/settings/keys — revoke and reissue
+
+Then update `E:\AI Challenge CodeFest\ashen-assistant\.env` with the new values. `.env` is correctly gitignored, so nothing else needs to change.
+
+I'm not touching `.env` myself — entering or editing credentials is yours to do, and I'd rather the new values never pass through this transcript either.
+
+Two things worth knowing before you go:
+
+**Rotation is necessary but not sufficient.** The redactor in Step 1 must still scrub the old values, because the exported `.txt` files go into git history permanently and a revoked key still tells a reader exactly what your key material looks like and which sessions handled it. I'll pattern-match on shape (`AIza*`, `pa-*`, `sk-or-*`, entropy) rather than on the specific literals, so the export stays safe even for keys I never saw — and I'll re-run the literal check against the *old* values as a backstop before we commit.
+
+**File count differs from your brief.** You said 10 `.jsonl`; there are 12. Ten are real work sessions (28 Aug – 5 Sep). The other two are today's sessions — `7a16f3b9` is *this* conversation and `34893f13` is its sibling, both about producing this deliverable. My default is to export all 12 and re-run the converter immediately before the commit so today's are current. Say the word if you'd rather the two meta-sessions were left out.
+
+Tell me when rotation is done and I'll start Step 1.
+
+--- USER  2026-09-05T14:47:04.260Z ----------------------------------
+keys rotated, go ahead with step 1
+
+--- ASSISTANT  2026-09-05T14:47:40.838Z -----------------------------
+Keys rotated — good. Writing the converter.
+
+--- ASSISTANT  2026-09-05T14:48:44.034Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && mkdir -p ai_usage && cat > ai_usage/export_logs.py <<'PYEOF' #!/usr/bin/env python3 """Export Claude Code sessi ...
+
+--- USER  2026-09-05T14:48:46.647Z ----------------------------------
+[tool result] ERROR: Exit code 2 /usr/bin/bash: -c: line 177: unexpected EOF while looking for matching `''
+
+--- ASSISTANT  2026-09-05T14:48:52.299Z -----------------------------
+Heredoc tripped on the file's quoting. Using Write instead.
+
+--- ASSISTANT  2026-09-05T14:49:44.304Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\export_logs.py
+
+--- USER  2026-09-05T14:49:44.416Z ----------------------------------
+[tool result] ok (160 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:49:49.014Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe ai_usage/export_logs.py --check
+
+--- USER  2026-09-05T14:49:51.854Z ----------------------------------
+[tool result] ok (1288 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:50:06.749Z -----------------------------
+Report looks suspicious in one way — the Google key appeared 21× in the raw JSONL but rule 1 fired zero times. Before writing anything, let me audit what rule 3 is actually catching and confirm where those 21 occurrences live.
+
+--- ASSISTANT  2026-09-05T14:50:12.391Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import sys, json, collections sys.path.insert(0,'ai_usage') import export_logs  ...
+
+--- USER  2026-09-05T14:50:14.544Z ----------------------------------
+[tool result] ok (2939 chars, 41 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:50:17.983Z -----------------------------
+[tool] Bash: command=cd "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest" && "E:/AI Challenge CodeFest/ashen-assistant/.venv/Scripts/python.exe" -c " import json,collectio ...
+
+--- USER  2026-09-05T14:50:21.070Z ----------------------------------
+[tool result] ok (343 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:50:49.513Z -----------------------------
+Two problems found. Rule 3 is catching **only file paths** (246/246 hits — zero real secrets), and rule 1 never matched the Google key even though its literal value occurs 21× in that transcript. Let me find the actual shape of that key before I fix anything.
+
+--- ASSISTANT  2026-09-05T14:50:54.879Z -----------------------------
+[tool] Bash: command=cd "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest" && "E:/AI Challenge CodeFest/ashen-assistant/.venv/Scripts/python.exe" -c " import json,re,collec ...
+
+--- USER  2026-09-05T14:50:57.263Z ----------------------------------
+[tool result] ok (228 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:09.573Z -----------------------------
+Found it. The Google key is the newer **`AQ.` format, 53 chars** — not `AIza`. My rule 1 would have missed it entirely, and it appears in rendered content (a user prompt and a Bash command), not just skipped records. Fixing both problems.
+
+--- ASSISTANT  2026-09-05T14:51:17.269Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\export_logs.py  (in-place edit)
+
+--- USER  2026-09-05T14:51:17.367Z ----------------------------------
+[tool result] ok (170 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:25.228Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\export_logs.py  (in-place edit)
+
+--- USER  2026-09-05T14:51:25.339Z ----------------------------------
+[tool result] ok (170 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:28.863Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\export_logs.py  (in-place edit)
+
+--- USER  2026-09-05T14:51:28.948Z ----------------------------------
+[tool result] ok (170 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:32.560Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\export_logs.py  (in-place edit)
+
+--- USER  2026-09-05T14:51:32.642Z ----------------------------------
+[tool result] ok (170 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:35.424Z -----------------------------
+Now re-auditing rule 3 with the tightened alphabet:
+
+--- ASSISTANT  2026-09-05T14:51:40.509Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import sys, collections sys.path.insert(0,'ai_usage') import export_logs as E s ...
+
+--- USER  2026-09-05T14:51:43.171Z ----------------------------------
+[tool result] ok (298 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:51:56.184Z -----------------------------
+18 left, and all 18 are still false positives (MCP tool names, a Google quota metric). One more exemption for word-like identifiers:
+
+--- ASSISTANT  2026-09-05T14:52:00.640Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\export_logs.py  (in-place edit)
+
+--- USER  2026-09-05T14:52:00.734Z ----------------------------------
+[tool result] ok (170 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:52:04.232Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe ai_usage/export_logs.py --check
+
+--- USER  2026-09-05T14:52:06.980Z ----------------------------------
+[tool result] ok (1203 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:52:10.654Z -----------------------------
+Down to 8. Let me confirm the 5 remaining rule-3 hits are genuine before writing:
+
+--- ASSISTANT  2026-09-05T14:52:15.153Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import sys, collections, re sys.path.insert(0,'ai_usage') import export_logs as ...
+
+--- USER  2026-09-05T14:52:17.638Z ----------------------------------
+[tool result] ok (183 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:52:29.088Z -----------------------------
+Those 5 are also false positives — corpus plate filenames (`plate_047_the_...`) and a test function name. Tightening once more so the logs stay faithful:
+
+--- ASSISTANT  2026-09-05T14:52:35.596Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\export_logs.py  (in-place edit)
+
+--- USER  2026-09-05T14:52:35.691Z ----------------------------------
+[tool result] ok (170 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:52:42.641Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe ai_usage/export_logs.py
+
+--- USER  2026-09-05T14:52:45.472Z ----------------------------------
+[tool result] ok (1152 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:52:50.772Z -----------------------------
+Written. Now Step 2 verification — grepping the output myself rather than trusting the counter.
+
+--- ASSISTANT  2026-09-05T14:52:55.038Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant/ai_usage" && echo "=== [1] key prefixes (AIza / AQ. / pa- / sk- / sk-or-) ===" && grep -nE "AIza[0-9A-Za-z_-]{20,}| ...
+
+--- USER  2026-09-05T14:52:55.395Z ----------------------------------
+[tool result] ok (2803 chars, 35 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:53:00.062Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant/ai_usage" && echo "=== [4] any surviving 32+ char opaque token ===" && "E:/AI Challenge CodeFest/ashen-assistant/.v ...
+
+--- USER  2026-09-05T14:53:02.977Z ----------------------------------
+[tool result] ok (2872 chars, 35 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:53:22.703Z -----------------------------
+Greps [1] and [2] are clean. Grep [3] fires only on false positives — `sk-` matching inside `<ta**sk-**notification>`. Let me confirm that and check determinism.
+
+--- ASSISTANT  2026-09-05T14:53:28.883Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant/ai_usage" && echo "=== [3b] DONE-WHEN grep, minus the 'task-' false positive ===" && grep -iE "sk-|AIza|api[_-]?key ...
+
+--- USER  2026-09-05T14:53:31.039Z ----------------------------------
+[tool result] ok (1518 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:53:34.581Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== determinism: hash, re-run, hash again ===" && ./.venv/Scripts/python.exe -c " import hashlib,glob,os  ...
+
+--- USER  2026-09-05T14:53:38.240Z ----------------------------------
+[tool result] ok (1353 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:53:47.238Z -----------------------------
+Determinism check botched by my shell redirect. Redoing it properly:
+
+--- ASSISTANT  2026-09-05T14:53:51.523Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import hashlib,glob,os,subprocess,sys def snap(): return {os.path.basename(f):  ...
+
+--- ASSISTANT  2026-09-05T14:53:52.677Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== readability sample: a real exchange ===" && sed -n '20,72p' ai_usage/session-2026-08-30-0da104e9.txt
+
+--- USER  2026-09-05T14:53:54.922Z ----------------------------------
+[tool result] ok (284 chars, 6 lines, output not included)
+
+--- USER  2026-09-05T14:53:55.091Z ----------------------------------
+[tool result] ok (2627 chars, 53 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:54:07.515Z -----------------------------
+Output reads well. But one completed session changed between two runs — that's a real determinism failure. Investigating:
+
+--- ASSISTANT  2026-09-05T14:54:12.862Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -c " import hashlib,os,time,subprocess,sys,glob src=os.path.expanduser(r'~/.claude/p ...
+
+--- USER  2026-09-05T14:54:16.512Z ----------------------------------
+[tool result] ok (934 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:54:26.501Z -----------------------------
+Not a bug in the converter — **the source file is live**. Session `0da104e9` (started 30 Aug) was resumed today and is appending records right now (browser calls at 14:53–14:54 UTC); it has grown from 1.2 MB to 2.1 MB since I first listed it. Let me prove determinism against fixed input:
+
+--- ASSISTANT  2026-09-05T14:54:33.184Z -----------------------------
+[tool] Bash: command=SNAP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/7a16f3b9-6c6d-44cd-ae11-d703a848ec88/scratchpad/snap" && rm -rf "$SNAP" && mkdir -p "$S ...
+
+--- USER  2026-09-05T14:54:39.126Z ----------------------------------
+[tool result] ok (953 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:54:44.338Z -----------------------------
+Determinism confirmed on a frozen snapshot. Now Step 3 — mining the real ADRs and failures for the disclosure.
+
+--- ASSISTANT  2026-09-05T14:54:45.837Z -----------------------------
+[tool] mcp__ccd_session__mark_chapter: summary=Exporter verified clean and deterministic; writing the AI usage disclosure
+
+--- USER  2026-09-05T14:54:45.852Z ----------------------------------
+[tool result] ok (66 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:54:46.885Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== ADR titles ===" && grep -nE "^#{1,3} *ADR-[0-9]+" docs/decisions.md && echo && echo "=== Failure titl ...
+
+--- USER  2026-09-05T14:54:49.290Z ----------------------------------
+[tool result] ok (4154 chars, 56 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:54:55.712Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '117,193p' docs/decisions.md && echo "@@@@@@@@@@@@@@@@@@@@" && sed -n '655,719p' docs/decisions.md
+
+--- USER  2026-09-05T14:54:55.903Z ----------------------------------
+[tool result] ok (5588 chars, 142 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:54:56.702Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '433,500p' docs/failures.md && echo "@@@@@@@@@@@@@@@@@@@@" && sed -n '911,975p' docs/failures.md
+
+--- USER  2026-09-05T14:54:56.901Z ----------------------------------
+[tool result] ok (6821 chars, 133 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:02.826Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1010,1086p' docs/decisions.md
+
+--- USER  2026-09-05T14:55:02.977Z ----------------------------------
+[tool result] ok (3702 chars, 76 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:05.782Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== in-system AI: where each provider is called ===" && grep -rnE "GOOGLE_API_KEY|VOYAGE_API_KEY|OPENROUT ...
+
+--- USER  2026-09-05T14:55:06.239Z ----------------------------------
+[tool result] ok (2128 chars, 30 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:14.029Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== Gemini model rotation ===" && grep -nE "gemini-[a-z0-9.\-]+" src/clients/gemini.py | head -10 && echo ...
+
+--- USER  2026-09-05T14:55:14.535Z ----------------------------------
+[tool result] ok (1335 chars, 37 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:20.543Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== OpenRouter model rotation ===" && grep -nE '"[a-z0-9_-]+/[a-zA-Z0-9._:-]+"' src/clients/openrouter.py ...
+
+--- USER  2026-09-05T14:55:20.788Z ----------------------------------
+[tool result] ok (1202 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:55:37.094Z -----------------------------
+Everything verified. Writing the disclosure now — grounded in the ADRs and failures I just read, not from memory.
+
+--- ASSISTANT  2026-09-05T14:57:12.471Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\ai-usage-disclosure.md
+
+--- USER  2026-09-05T14:57:12.587Z ----------------------------------
+[tool result] ok (168 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:57:19.284Z -----------------------------
+Now the final export before committing, so the live sessions are current:
+
+--- ASSISTANT  2026-09-05T14:57:20.206Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe ai_usage/export_logs.py

@@ -1,0 +1,1639 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : 216df882-c78e-4b27-ba88-60d722329c1c
+Source          : 216df882-c78e-4b27-ba88-60d722329c1c.jsonl
+First activity  : 2026-09-05T13:46:45.117Z
+Last activity   : 2026-09-05T14:29:26.640Z
+Dialogue turns  : 78   (of 213 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-05T13:46:45.299Z ----------------------------------
+<command-message>i-have-adhd:i-have-adhd</command-message>
+<command-name>/i-have-adhd:i-have-adhd</command-name>
+<command-args>Council this: Run through the entire project architecture and problem statement of subtrack 1B. What was done right, what can be improved, what is to be removed. Give me a full breakdown.</command-args>
+
+--- USER  2026-09-05T13:46:45.299Z ----------------------------------
+Base directory for this skill: C:\Users\LENOVO\.claude\plugins\cache\i-have-adhd\i-have-adhd\0.2.0\skills\i-have-adhd
+
+# i-have-adhd
+
+The reader has ADHD. Output is not just brief. It is shaped so an ADHD brain can act on it.
+
+## Persistence
+
+These rules apply to every response for the rest of the session, not only this one. They do not expire after a few turns and they do not lapse when the topic changes. If you are unsure whether they still apply, they do.
+
+Turn them off only when the reader says "stop adhd mode" or "normal mode". Confirm in one line, then return to your default style.
+
+## What ADHD changes about reading
+
+Five facts drive every rule below:
+
+1. Working memory is small. Anything not on screen is forgotten. Do not ask the reader to "keep in mind X."
+2. Knowing the answer is not doing the answer. The friction between "got it" and "done it" is where work dies.
+3. Starting is the hardest step. The first action must be obvious, small, and doable now.
+4. Time estimates feel uniform. "A bit of work" and "a few hours" register the same. Vague estimates fail.
+5. Dopamine is scarce. Visible progress matters. Buried wins do not register.
+
+## Rules
+
+### 1. Lead with the next action
+
+The first line is something the reader can do. Not context. Not a plan. The action.
+
+Bad: "Let's think about this. Your auth flow has a few moving pieces..."
+Good: "Run `npm install jsonwebtoken`, then edit `src/auth.ts:42`."
+
+If the answer is a command, path, or snippet, it goes first. Prose comes after, if at all.
+
+### 2. Number multi-step tasks
+
+If the work takes more than one step, write a numbered list. Each step is one bounded action. No step contains "and then" twice.
+
+Use the fewest steps that still work. Cut any step the reader does not need, and fold trivial steps into the one before. A short path finished beats a complete path abandoned.
+
+Bad: "First open the file, find the function, swap it out, then run the tests."
+
+Good:
+```
+1. Open `src/auth.ts`
+2. Replace `verifyToken` (lines 42 to 58) with the snippet below
+3. Run `npm test -- auth.spec.ts`
+```
+
+### 3. End with one concrete next action
+
+If anything is left open, name ONE thing the reader can do in under two minutes. Even "open the file" counts.
+
+Bad: "Hope that helps. Let me know if you want to dig deeper."
+Good: "Next: run `npm test` and paste the first failing line."
+
+### 4. Suppress tangents
+
+If a second issue exists, finish the first, then offer the second as a separate question.
+
+Bad: "Here's the fix. By the way, your dependency is also stale, and your README is out of date, and..."
+Good: "Here's the fix. Separately: there is also a stale dependency. Want me to handle that next?"
+
+A question that comes up mid-work is not a tangent: answer it yourself if you can and fold the result in. If it still needs the reader, surface it once, at the end.
+
+### 5. Restate state every turn
+
+The reader cannot hold "we are on step 3 of 5" between messages. Restate it.
+
+Bad: "Done. Ready for the next part?"
+Good: "Step 3 of 5 done: schema updated. Next: backfill the new column. Run the script?"
+
+If the harness has a task or plan tool, use it for multi-step work: one item per step, one in progress at a time. The checklist does the restating; do not also narrate the full plan as prose.
+
+### 6. Give specific time estimates
+
+Vague estimates fail. Ballpark in concrete units.
+
+Bad: "This will take some work."
+Good: "About 15 minutes if tests already cover this. An afternoon if not."
+
+### 7. Make completed work visible
+
+Show what now works, in concrete terms. Do not bury wins in a recap.
+
+Bad: "I've made some changes to the auth flow. Among other things..."
+Good: "Login now works with magic links. Try: `npm run dev`, open `/login`."
+
+### 8. Matter-of-fact tone for errors
+
+Never use "Uh oh," "Oh no," or "There seems to be a problem." State cause and fix.
+
+Bad: "Uh oh, the test is failing. There seems to be an issue..."
+Good: "Test fails at `auth.spec.ts:42`: expected 200, got 401. Cause: missing auth header. Fix: add `Authorization: Bearer ${token}` to the request."
+
+### 9. Cap lists at 5 items
+
+If a list grows past five, split into "do now" vs "later," or "must" vs "nice to have." Five items ranked beats ten unranked.
+
+### 10. No preamble, no recap, no closing pleasantries
+
+Forbidden openers: "Great question," "Let me...", "I'll...", "Sure!", "Looking at your...", "To answer your question..."
+
+Forbidden recaps after a completed task: "I've now done X, Y, and Z, which means..."
+
+Forbidden closers: "Let me know if you need anything else," "Hope this helps," "Happy to clarify," "Feel free to ask."
+
+Start with the answer. End when the answer is done.
+
+## When to break the rules
+
+Override the defaults when:
+
+1. User asks to "explain" or "walk me through." Explain fully. Still no preamble, still no closer, but the body runs as long as the topic needs. Add headers so the reader can skim back.
+2. Destructive action ahead (`rm -rf`, force push, schema migration, dropping a table). Confirm before acting. Safety wins over brevity.
+3. Debug spiral. If the last three turns have been "still broken," stop iterating on code. Name the assumption that might be wrong. Ask one diagnostic question.
+4. Real ambiguity in the request. One short clarifying question beats guessing and rewriting.
+5. A rule fights the task. When a rule would delete the answer itself, the task wins; the shape stays. Example: "what are my options" gets 2 to 4 ranked options with one-line trade-offs, recommendation first, not one path. The options are the answer.
+6. A rule fights the harness. Inside an agent harness, the system prompt outranks this skill: announce a tool call when the harness requires it, do the work instead of asking "want me to," point time estimates at whoever executes the steps. Same principle as 5: the constraint wins, the shape stays.
+
+## Pre-send check
+
+Before sending, delete:
+
+1. The first sentence if it announces what you are about to do.
+2. The last sentence if it asks "anything else?" or recaps what just happened.
+3. Any "by the way" sidebar.
+4. Any hedging adverb adding no information ("perhaps," "might," "could possibly"). Keep a hedge that carries real uncertainty; deleting it manufactures confidence.
+5. Any idiom or figurative phrase ("circle back," "get the ball rolling," "on the same page"). Replace with the literal action.
+
+Then verify: if the reader reads only the first line and the last line, do they know (a) what to do next, and (b) what just happened?
+
+If yes, send.
+
+
+ARGUMENTS: Council this: Run through the entire project architecture and problem statement of subtrack 1B. What was done right, what can be improved, what is to be removed. Give me a full breakdown.
+
+--- ASSISTANT  2026-09-05T13:46:51.547Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && ls -la && echo "---TREE---" && find . -maxdepth 2 -not -path '*/node_modules*' -not -path '*/.git/*' -not -path '*/venv/*' -not ...
+
+--- USER  2026-09-05T13:46:52.828Z ----------------------------------
+[tool result] ok (2453 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:46:56.237Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===CLAUDE.md===" && cat CLAUDE.md && echo "===README===" && cat README.md
+
+--- USER  2026-09-05T13:46:56.532Z ----------------------------------
+[tool result] ok (2212 chars, 51 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:46:57.321Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && cat Notes.txt && echo "===CORPUS LINK===" && cat "Document Corpus link.txt" && echo "===ARCHIVE README===" && cat Ashen_Era_Arc ...
+
+--- USER  2026-09-05T13:46:57.579Z ----------------------------------
+[tool result] ok (892 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:01.387Z -----------------------------
+[tool] Bash: command=cat "C:\Users\LENOVO\.claude\projects\E--AI-Challenge-CodeFest\216df882-c78e-4b27-ba88-60d722329c1c\tool-results\b2uaosqmd.txt"
+
+--- USER  2026-09-05T13:47:01.551Z ----------------------------------
+[tool result] ok (2212 chars, 51 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:04.164Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\CLAUDE.md
+
+--- USER  2026-09-05T13:47:04.187Z ----------------------------------
+[tool result] ok (18041 chars, 253 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:08.719Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===DOCS===" && ls -la docs/ && echo "===SRC TREE===" && find src eval comparison tests config -type f -na ...
+
+--- USER  2026-09-05T13:47:11.469Z ----------------------------------
+[tool result] ok (2785 chars, 103 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:13.575Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\architecture.md
+
+--- USER  2026-09-05T13:47:13.605Z ----------------------------------
+[tool result] ok (8305 chars, 147 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:13.889Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\TODO.md
+
+--- USER  2026-09-05T13:47:13.935Z ----------------------------------
+[tool result] ok (6300 chars, 103 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:16.801Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\AI_Competition_Challenge.pdf
+
+--- USER  2026-09-05T13:47:17.773Z ----------------------------------
+[tool result] ok (163 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:33.818Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===build.py===" && sed -n '1,80p' src/graph/build.py && echo "..." && grep -n "wiki\|collection\|source"  ...
+
+--- USER  2026-09-05T13:47:34.188Z ----------------------------------
+[tool result] ok (4108 chars, 89 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:34.623Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===engine.py===" && sed -n '1,120p' src/query/engine.py
+
+--- USER  2026-09-05T13:47:34.832Z ----------------------------------
+[tool result] ok (5084 chars, 121 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:43.429Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat docs/limitations.md
+
+--- USER  2026-09-05T13:47:43.665Z ----------------------------------
+[tool result] ok (3018 chars, 67 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:44.129Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && python -c " import json,collections d=json.load(open('Ashen_Era_Archive/sample_questions.json')) print(type(d)) s=json.dumps(d) ...
+
+--- USER  2026-09-05T13:47:46.647Z ----------------------------------
+[tool result] ok (3016 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:47:57.961Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===ADR LIST===" && grep -n "^## ADR\|^## F-" docs/decisions.md | head -60 && echo "===FAILURE LIST===" && ...
+
+--- USER  2026-09-05T13:47:58.340Z ----------------------------------
+[tool result] ok (4145 chars, 55 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:48:00.009Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && ls Ashen_Era_Archive/wiki | wc -l && ls Ashen_Era_Archive/chronicles | wc -l && ls Ashen_Era_Archive/codex | wc -l && ls Ashen_ ...
+
+--- USER  2026-09-05T13:48:02.638Z ----------------------------------
+[tool result] ok (866 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:48:20.496Z -----------------------------
+[tool] Skill: skill=llm-council
+
+--- USER  2026-09-05T13:48:20.519Z ----------------------------------
+[tool result] ok (28 chars, 1 lines, output not included)
+
+--- USER  2026-09-05T13:48:20.515Z ----------------------------------
+Base directory for this skill: C:\Users\LENOVO\.claude\skills\llm-council
+
+# LLM Council
+
+
+You ask one AI a question, you get one answer. That answer might be great. It might be mid. You have no way to tell because you only saw one perspective.
+
+
+The council fixes this. It runs your question through 5 independent advisors, each thinking from a fundamentally different angle. Then they review each other's work. Then a chairman synthesizes everything into a final recommendation that tells you where the advisors agree, where they clash, and what you should actually do.
+
+
+This is adapted from Andrej Karpathy's LLM Council. He dispatches queries to multiple models, has them peer-review each other anonymously, then a chairman produces the final answer. We do the same thing inside Claude using sub-agents with different thinking lenses instead of different models.
+
+
+---
+
+
+## when to run the council
+
+
+The council is for questions where being wrong is expensive.
+
+
+Good council questions:
+
+- "Should I launch a $97 workshop or a $497 course?"
+
+- "Which of these 3 positioning angles is strongest?"
+
+- "I'm thinking of pivoting from X to Y. Am I crazy?"
+
+- "Here's my landing page copy. What's weak?"
+
+- "Should I hire a VA or build an automation first?"
+
+
+Bad council questions:
+
+- "What's the capital of France?" (one right answer, no need for perspectives)
+
+- "Write me a tweet" (creation task, not a decision)
+
+- "Summarize this article" (processing task, not judgment)
+
+
+The council shines when there's genuine uncertainty and the cost of a bad call is high. If you already know the answer and just want validation, the council will likely tell you things you don't want to hear. That's the point.
+
+
+---
+
+
+## the five advisors
+
+
+Each advisor thinks from a different angle. They're not job titles or personas. They're thinking styles that naturally create tension with each other.
+
+
+### 1. The Contrarian
+
+Actively looks for what's wrong, what's missing, what will fail. Assumes the idea has a fatal flaw and tries to find it. If everything looks solid, digs deeper. The Contrarian is not a pessimist. They're the friend who saves you from a bad deal by asking the questions you're avoiding.
+
+
+### 2. The First Principles Thinker
+
+Ignores the surface-level question and asks "what are we actually trying to solve here?" Strips away assumptions. Rebuilds the problem from the ground up. Sometimes the most valuable council output is the First Principles Thinker saying "you're asking the wrong question entirely."
+
+
+### 3. The Expansionist
+
+Looks for upside everyone else is missing. What could be bigger? What adjacent opportunity is hiding? What's being undervalued? The Expansionist doesn't care about risk (that's the Contrarian's job). They care about what happens if this works even better than expected.
+
+
+### 4. The Outsider
+
+Has zero context about you, your field, or your history. Responds purely to what's in front of them. This is the most underrated advisor. Experts develop blind spots. The Outsider catches the curse of knowledge: things that are obvious to you but confusing to everyone else.
+
+
+### 5. The Executor
+
+Only cares about one thing: can this actually be done, and what's the fastest path to doing it? Ignores theory, strategy, and big-picture thinking. The Executor looks at every idea through the lens of "OK but what do you do Monday morning?" If an idea sounds brilliant but has no clear first step, the Executor will say so.
+
+
+**Why these five:** They create three natural tensions. Contrarian vs Expansionist (downside vs upside). First Principles vs Executor (rethink everything vs just do it). The Outsider sits in the middle keeping everyone honest by seeing what fresh eyes see.
+
+
+---
+
+
+## how a council session works
+
+
+### step 1: frame the question (with context enrichment)
+
+
+When the user says "council this" (or any trigger phrase), do two things before framing:
+
+
+**A. Scan the workspace for context.** The user's question is often just the tip of the iceberg. Their Claude setup likely contains files that would dramatically improve the council's output. Before framing, quickly scan for and read any relevant context files:
+
+
+- `CLAUDE.md` or `claude.md` in the project root or workspace (business context, preferences, constraints)
+
+- Any `memory/` folder (audience profiles, voice docs, business details, past decisions)
+
+- Any files the user explicitly referenced or attached
+
+- Recent council transcripts in this folder (to avoid re-counciling the same ground)
+
+- Any other context files that seem relevant to the specific question (e.g., if they're asking about pricing, look for revenue data, past launch results, audience research)
+
+
+Use `Glob` and quick `Read` calls to find these. Don't spend more than 30 seconds on this. You're looking for the 2-3 files that would give advisors the context they need to give specific, grounded advice instead of generic takes.
+
+
+**B. Frame the question.** Take the user's raw question AND the enriched context and reframe it as a clear, neutral prompt that all five advisors will receive. The framed question should include:
+
+
+1. The core decision or question
+
+2. Key context from the user's message
+
+3. Key context from workspace files (business stage, audience, constraints, past results, relevant numbers)
+
+4. What's at stake (why this decision matters)
+
+
+Don't add your own opinion. Don't steer it. But DO make sure each advisor has enough context to give a specific, grounded answer rather than generic advice.
+
+
+If the question is too vague ("council this: my business"), ask one clarifying question. Just one. Then proceed.
+
+
+Save the framed question for the transcript.
+
+
+### step 2: convene the council (5 sub-agents in parallel)
+
+
+Spawn all 5 advisors simultaneously as sub-agents. Each gets:
+
+
+1. Their advisor identity and thinking style (from the descriptions above)
+
+2. The framed question
+
+3. A clear instruction: respond independently. Do not hedge. Do not try to be balanced. Lean fully into your assigned perspective. If you see a fatal flaw, say it. If you see massive upside, say it. Your job is to represent your angle as strongly as possible. The synthesis comes later.
+
+
+Each advisor should produce a response of 150-300 words. Long enough to be substantive, short enough to be scannable.
+
+
+**Sub-agent prompt template:**
+
+
+```
+
+You are [Advisor Name] on an LLM Council.
+
+
+Your thinking style: [advisor description from above]
+
+
+A user has brought this question to the council:
+
+
+---
+
+[framed question]
+
+---
+
+
+Respond from your perspective. Be direct and specific. Don't hedge or try to be balanced. Lean fully into your assigned angle. The other advisors will cover the angles you're not covering.
+
+
+Keep your response between 150-300 words. No preamble. Go straight into your analysis.
+
+```
+
+
+### step 3: peer review (5 sub-agents in parallel)
+
+
+This is the step that makes the council more than just "ask 5 times." It's the core of Karpathy's insight.
+
+
+Collect all 5 advisor responses. Anonymize them as Response A through E (randomize which advisor maps to which letter so there's no positional bias).
+
+
+Spawn 5 new sub-agents, one for each advisor. Each reviewer sees all 5 anonymized responses and answers three questions:
+
+
+1. Which response is the strongest and why? (pick one)
+
+2. Which response has the biggest blind spot and what is it?
+
+3. What did ALL responses miss that the council should consider?
+
+
+**Reviewer prompt template:**
+
+
+```
+
+You are reviewing the outputs of an LLM Council. Five advisors independently answered this question:
+
+
+---
+
+[framed question]
+
+---
+
+
+Here are their anonymized responses:
+
+
+**Response A:**
+
+[response]
+
+
+**Response B:**
+
+[response]
+
+
+**Response C:**
+
+[response]
+
+
+**Response D:**
+
+[response]
+
+
+**Response E:**
+
+[response]
+
+
+Answer these three questions. Be specific. Reference responses by letter.
+
+
+1. Which response is the strongest? Why?
+
+2. Which response has the biggest blind spot? What is it missing?
+
+3. What did ALL five responses miss that the council should consider?
+
+
+Keep your review under 200 words. Be direct.
+
+```
+
+
+### step 4: chairman synthesis
+
+
+This is the final step. One agent gets everything: the original question, all 5 advisor responses (now de-anonymized so you can see which advisor said what), and all 5 peer reviews.
+
+
+The chairman's job is to produce the final council output. It follows this structure:
+
+
+**COUNCIL VERDICT**
+
+
+1. **Where the council agrees** — the points that multiple advisors converged on independently. These are high-confidence signals.
+
+
+2. **Where the council clashes** — the genuine disagreements. Don't smooth these over. Present both sides and explain why reasonable advisors disagree.
+
+
+3. **Blind spots the council caught** — things that only emerged through the peer review round. Things individual advisors missed that other advisors flagged.
+
+
+4. **The recommendation** — a clear, actionable recommendation. Not "it depends." Not "consider both sides." A real answer. The chairman can disagree with the majority if the reasoning supports it.
+
+
+5. **The one thing you should do first** — a single concrete next step. Not a list of 10 things. One thing.
+
+
+**Chairman prompt template:**
+
+
+```
+
+You are the Chairman of an LLM Council. Your job is to synthesize the work of 5 advisors and their peer reviews into a final verdict.
+
+
+The question brought to the council:
+
+---
+
+[framed question]
+
+---
+
+
+ADVISOR RESPONSES:
+
+
+**The Contrarian:**
+
+[response]
+
+
+**The First Principles Thinker:**
+
+[response]
+
+
+**The Expansionist:**
+
+[response]
+
+
+**The Outsider:**
+
+[response]
+
+
+**The Executor:**
+
+[response]
+
+
+PEER REVIEWS:
+
+[all 5 peer reviews]
+
+
+Produce the council verdict using this exact structure:
+
+
+## Where the Council Agrees
+
+[Points multiple advisors converged on independently. These are high-confidence signals.]
+
+
+## Where the Council Clashes
+
+[Genuine disagreements. Present both sides. Explain why reasonable advisors disagree.]
+
+
+## Blind Spots the Council Caught
+
+[Things that only emerged through peer review. Things individual advisors missed that others flagged.]
+
+
+## The Recommendation
+
+[A clear, direct recommendation. Not "it depends." A real answer with reasoning.]
+
+
+## The One Thing to Do First
+
+[A single concrete next step. Not a list. One thing.]
+
+
+Be direct. Don't hedge. The whole point of the council is to give the user clarity they couldn't get from a single perspective.
+
+```
+
+
+### step 5: present the verdict in chat
+
+
+After the chairman synthesis is complete, present the full verdict directly in chat using markdown. Do NOT generate an HTML report or any files. The user reads it in the conversation.
+
+Format the output as:
+
+```
+## Council Verdict: {short topic}
+
+### Where the Council Agrees
+{content}
+
+### Where the Council Clashes
+{content}
+
+### Blind Spots the Council Caught
+{content}
+
+### The Recommendation
+{content}
+
+### The One Thing to Do First
+{content}
+```
+
+Keep it scannable. Use bullet points. Include the before/after examples where relevant.
+
+
+### step 6: save the transcript (optional)
+
+
+Only save a transcript if the user asks for it or if the question is significant enough to reference later. If saving, write to `council-transcript-[timestamp].md` in the project's `active/` directory.
+
+
+---
+
+
+## example: counciling a product decision
+
+
+**User:** "Council this: I'm thinking of building a $297 course on Claude Code for beginners. My audience is mostly non-technical solopreneurs. Is this the right move?"
+
+
+**The Contrarian:** "The market is flooded with Claude courses right now. At $297, you're competing with free YouTube content. Your audience is non-technical, which means high support burden and refund risk. The people who would pay $297 are likely already past beginner level..."
+
+
+**The First Principles Thinker:** "What are you actually trying to achieve? If it's revenue, a course is one of the slowest paths. If it's authority, a free resource might do more. If it's building a customer base for higher-ticket offers, the price point and audience might be mismatched..."
+
+
+**The Expansionist:** "Beginner Claude for solopreneurs is a massive underserved market. Everyone's teaching advanced stuff. If you nail the beginner angle, you own the entry point to this entire space. The $297 might be low. What if this became a $997 program with community access..."
+
+
+**The Outsider:** "I don't know what Claude Code is. If I saw '$297 course on Claude Code for beginners,' I wouldn't know if this is for me. The name means nothing to someone outside your world. Your landing page needs to sell the outcome, not the tool..."
+
+
+**The Executor:** "A full course takes 4-8 weeks to produce properly. Before building anything, run a live workshop at $97 to 50 people. You validate demand, generate testimonials, and create the raw material for the course. If 50 people don't buy the workshop, 500 won't buy the course..."
+
+
+**Chairman's Verdict:**
+
+
+*Where the council agrees:* The beginner solopreneur angle has real demand, but the current framing (Claude Code course) is too tool-specific and won't resonate with non-technical buyers.
+
+
+*Where the council clashes:* Price. The Contrarian says $297 is too high given competition. The Expansionist says it's too low for the value. The resolution likely depends on how much support and community access is bundled.
+
+
+*Blind spots caught:* The Outsider's point that "Claude Code" means nothing to the target buyer is the single most important insight. Every advisor except the Outsider assumed the audience already knows what this is.
+
+
+*Recommendation:* Don't build the course yet. Validate with a lower-commitment offer first. But reframe entirely: sell the outcome (automate your business, get 10 hours back per week), not the tool.
+
+
+*One thing to do first:* Run a $97 live workshop called "How to automate your first business task with AI" to 50 people. Don't mention Claude Code in the title.
+
+
+---
+
+
+## important notes
+
+
+- **Always spawn all 5 advisors in parallel.** Sequential spawning wastes time and lets earlier responses bleed into later ones.
+
+- **Always anonymize for peer review.** If reviewers know which advisor said what, they'll defer to certain thinking styles instead of evaluating on merit.
+
+- **The chairman can disagree with the majority.** If 4 out of 5 advisors say "do it" but the reasoning of the 1 dissenter is strongest, the chairman should side with the dissenter and explain why.
+
+- **Don't council trivial questions.** If the user asks something with one right answer, just answer it. The council is for genuine uncertainty where multiple perspectives add value.
+
+- **The visual report matters.** Most users will scan the report, not read the full transcript. Make the HTML output clean and scannable.
+
+
+ARGUMENTS: Full architectural and strategic review of the "Ashen Assistant" submission for SLIIT Codefest 2026 AI Competition sub-track 1B. What was done right, what should be improved, what should be removed. Today is 5 Sep 2026; deadline 9 Sep 2026 11:30 PM. Full briefing follows in the next message.
+
+--- ASSISTANT  2026-09-05T13:48:30.648Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===git log===" && git log --oneline | head -30 && echo "COMMITS: $(git log --oneline | wc -l)" && echo "= ...
+
+--- USER  2026-09-05T13:48:33.190Z ----------------------------------
+[tool result] ok (3042 chars, 57 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:48:39.085Z -----------------------------
+Context gathered. Convening the council.
+
+--- ASSISTANT  2026-09-05T13:49:31.503Z -----------------------------
+[tool] Agent: prompt=You are The Contrarian on an LLM Council. Your thinking style: You actively look for what's wrong, what's missing, what will fail. You assume the idea has a fat ...
+
+--- USER  2026-09-05T13:49:55.664Z ----------------------------------
+[tool result] ok (1924 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:50:06.065Z -----------------------------
+[tool] Agent: prompt=You are The First Principles Thinker on an LLM Council. Your thinking style: You ignore the surface-level question and ask "what are we actually trying to solve ...
+
+--- USER  2026-09-05T13:50:34.632Z ----------------------------------
+[tool result] ok (1959 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:50:40.674Z -----------------------------
+[tool] Agent: prompt=You are The Expansionist on an LLM Council. Your thinking style: You look for upside everyone else is missing. What could be bigger? What adjacent opportunity i ...
+
+--- USER  2026-09-05T13:51:07.793Z ----------------------------------
+[tool result] ok (2002 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:51:15.943Z -----------------------------
+[tool] Agent: prompt=You are The Outsider on an LLM Council. Your thinking style: You have zero context about this person, their field, or their history. You respond purely to what' ...
+
+--- USER  2026-09-05T13:51:42.228Z ----------------------------------
+[tool result] ok (1922 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:51:44.379Z -----------------------------
+[tool] Agent: prompt=You are The Executor on an LLM Council. Your thinking style: You only care about one thing — can this actually be done, and what is the fastest path to doing it ...
+
+--- USER  2026-09-05T13:52:11.872Z ----------------------------------
+[tool result] ok (1921 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:52:19.159Z -----------------------------
+Advisors reported. Running the anonymized peer-review round.
+
+--- ASSISTANT  2026-09-05T13:53:12.805Z -----------------------------
+[tool] Agent: prompt=You are reviewing the outputs of an LLM Council. Five advisors independently answered this question: --- **THE QUESTION:** Full architectural and strategic revi ...
+
+--- USER  2026-09-05T13:53:40.332Z ----------------------------------
+[tool result] ok (1524 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:53:54.454Z -----------------------------
+[tool] Agent: prompt=You are reviewing the outputs of an LLM Council. Five advisors independently answered this question. You are the second of five independent reviewers; give your ...
+
+--- USER  2026-09-05T13:54:18.425Z ----------------------------------
+[tool result] ok (1449 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:54:36.202Z -----------------------------
+[tool] Agent: prompt=You are reviewing the outputs of an LLM Council. Five advisors independently answered this question. You are the third of five independent reviewers; give your  ...
+
+--- ASSISTANT  2026-09-05T13:55:18.512Z -----------------------------
+[tool] Agent: prompt=You are reviewing the outputs of an LLM Council. Five advisors independently answered this question. You are the fourth of five independent reviewers; give your ...
+
+--- USER  2026-09-05T13:55:19.473Z ----------------------------------
+[tool result] ok (1514 chars, 13 lines, output not included)
+
+--- USER  2026-09-05T13:55:45.850Z ----------------------------------
+[tool result] ok (1505 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:55:59.359Z -----------------------------
+[tool] Agent: prompt=You are reviewing the outputs of an LLM Council. Five advisors independently answered this question. You are the fifth of five independent reviewers; give your  ...
+
+--- USER  2026-09-05T13:56:31.360Z ----------------------------------
+[tool result] ok (1537 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:56:39.369Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===conflict.py head===" && sed -n '1,40p' src/query/conflict.py && echo "===must_surface in ui===" && gre ...
+
+--- USER  2026-09-05T13:56:39.596Z ----------------------------------
+[tool result] ok (3629 chars, 62 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:57:02.925Z -----------------------------
+[tool] Bash: command=ls -la "C:/Users/LENOVO/.claude/projects/" 2>/dev/null | head -20 && echo "===THIS PROJECT===" && ls -la "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeF ...
+
+--- USER  2026-09-05T13:57:05.022Z ----------------------------------
+[tool result] ok (3042 chars, 43 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:57:17.964Z -----------------------------
+[tool] Bash: command=cd "C:/Users/LENOVO/.claude/projects/E--AI-Challenge-CodeFest" && ls -1 *.jsonl | wc -l && du -sh . 2>/dev/null && ls -1t *.jsonl | head -12 | xargs -I{} stat - ...
+
+--- USER  2026-09-05T13:57:20.752Z ----------------------------------
+[tool result] ok (656 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-05T13:58:03.301Z -----------------------------
+Council complete. Two of its factual claims failed verification — I've corrected them inline.
+
+## Council Verdict: Ashen Assistant, sub-track 1B
+
+**Do this first: convert `C:\Users\LENOVO\.claude\projects\E--AI-Challenge-CodeFest\*.jsonl` to `.txt` into `ai_usage/`.** 10 transcripts, 42 MB, dated 29 Aug → 5 Sep. That is 15% of the rubric currently scored zero, and it is a file conversion, not a writing job.
+
+---
+
+### Where the Council Agrees
+
+- **The gate is multiplicative and you are on the wrong side of it.** `ai_usage/` empty + no report + no video = 40% at zero *and* "incomplete submissions are not evaluated." Right now the expected value of 7,900 lines and 301 tests is zero.
+- **Code freeze.** 4/5 advisors, unprompted. The competition's "every member must explain any part" rule means code written Sunday is code someone must defend on stage.
+- **The wiki-only graph is the thing that sinks you if a judge finds it before you name it.** `src/graph/build.py:196` reads `if unit.collection == "wiki":`. Track title: "Connecting Facts Across Thousands of Pages."
+- **35/49 is the report's headline, not its confession.** You built an adversarial frozen eval against your own router before seeing results. Almost no team does that.
+- **Do not backfill commits.** Unanimous. Two reviewers extended it: don't retro-write `ai_usage/` from memory either — same integrity trap.
+
+### Where the Council Clashes
+
+**Ship code in the last 4 days, or not?**
+
+- *Contrarian + Expansionist:* extend the graph past wiki. Even 40 non-wiki edges changes the sentence on your architecture slide.
+- *Executor + First Principles:* freeze. Name the scope in the report; judges forgive a stated boundary and punish a discovered one.
+- **Resolved by the reviewers against the Expansionist.** Its "the gap is one line" is factually wrong — non-wiki collections have no infobox pipe tables. Deleting the filter yields zero edges, not more.
+
+**Turn Tier 3 (LLM planner) on for the demo?** The Contrarian says yes — it's the only tier that can route an unseen shape. Three reviewers said no, hard: F-025 is that exact tier producing a confident, fully-cited answer to a question nobody asked. Enabling an unmeasured tier in front of live judges manufactures the failure it's meant to prevent.
+
+### Blind Spots the Council Caught
+
+1. **Advisor claim failed verification.** The Expansionist said "you carry `authority_tier` and are doing nothing with it — 6 hours for a conflict screen." False. `src/query/conflict.py` implements same-tier contradiction detection and `src/ui/render.py:375` already renders it. It's a packaging job. **You are under-selling a feature you already shipped.**
+2. **A principled decline looks identical to a crash on camera.** `EvidenceStatus: no_route` in a live segment costs you the 25% regardless of how correct it is. Every decline must render the neighbourhood it *did* find, cited, and say what it couldn't join.
+3. **Nobody shapes the demo's input side.** Entity autocomplete over the 117 nodes + a visible relation vocabulary converts judge-typed questions into routable ones without faking capability.
+4. **Every eval number is PROVISIONAL** on a single unverified reviewer — including the 35/49 two advisors want as your headline. Verify before you lead with it.
+5. **Deleting demo surfaces breaks the 10 tests pinning the architecture SVG.** Hide from nav; don't delete near a freeze.
+
+### The Recommendation
+
+Freeze the code, with **one** exception, and it is the First Principles reframe: the sub-track says *connect*, not *traverse*. Attach corroborating evidence units from codex/ephemera/chronicles onto the edges the graph already returns. You have 30,553 units with provenance and tier attached. That is a lookup against data you already ingested — not a new extractor, not a retrieval system. It turns "graph over 96 wiki pages" into "every answer cites across four collections," which is the track title, literally true, and defensible on stage.
+
+One caveat the reviewers raised and I'm passing on: with exact-match-only resolution, joining ephemera text to entities *is* entity linking. Timebox it to Saturday. If it isn't working by Saturday night, drop it and state the scope in the report's first paragraph on your own terms.
+
+---
+
+## Full Breakdown
+
+### Done right — keep and lead with these
+
+| | Why it scores |
+|---|---|
+| Measured your own weakness on frozen questions (35/49, 1/21 novel) | 10% judgment outright, half of 15% insight. Rare. |
+| Deterministic answer path, LLM tiers off by default | Directly answers "explain any part or be disqualified" |
+| Baseline built as a comparison arm (RAG 2/7, **0/9 complete evidence**) | Proves the graph was necessary, not preferred |
+| 27 logged failures with the number that killed each | The report's "approaches that failed" section is already written |
+| Architecture SVG pinned by tests that re-derive from the live corpus | No other team will have this. Show the test going red. |
+
+### Improve
+
+1. **Every decline renders partial evidence** — neighbourhood + citations + "could not join X to Y." Highest-value 25% fix available.
+2. **Surface the conflict detector you already have.** Two sources disagreeing, both cited, tier-resolved — put it on the video.
+3. **Two-person verify the answer key** so the word PROVISIONAL leaves the report.
+4. **Distil 156 KB of ADRs into two report pages.** Nobody reads the rest; that work only scores if it reaches the PDF.
+5. **Name the wiki scope yourself, in paragraph one**, with the roadmap fix.
+
+### Remove
+
+1. **Tier 3 planner from the shipped path** — keep the ADR explaining the cut. Cutting an unmeasured feature *is* the technical-judgment story.
+2. **Nine demo surfaces → three.** Hide from nav, don't delete (the diagram tests).
+3. **The 117-node SVG from the demo flow** — reads as decoration. Keep the file, drop it from the video.
+4. **Any further test-writing.** 301 is enough.
+5. **The ambition to measure the planner.** Report it as unmeasured, with the quota reason. That's honest and cheap.
+
+### The 4 days
+
+- **Tonight (Fri 5):** convert the `.jsonl` transcripts to `ai_usage/*.txt`. Rotate API keys *before* you commit them. Commit the 3 Sep work — the gap is a commit gap, not a work gap, and the transcripts prove it.
+- **Sat 6:** split four ways — disclosure doc / PDF end-to-end from the outline / README cold-run + `configuration-example/` / answer-key second reviewer. Timeboxed evidence-join experiment in whatever's left.
+- **Sun 7:** names, roles, contributions. PDF to 5 pages. Video as a timed shot list. Warm the cache.
+- **Mon 8:** record. All four present.
+- **Tue 9:** ZIP, verify links from a logged-out browser, submit by 6 PM.
+
+**Next: run `ls C:\Users\LENOVO\.claude\projects\E--AI-Challenge-CodeFest\*.jsonl` and tell me to write the converter — it's a 20-line script and it's worth 15%.**
+
+--- USER  2026-09-05T14:25:30.148Z ----------------------------------
+Give me seperate copy pastable sections to be pasted into multiple context windows for the above tasks to be done. Be thorough with the remaining tasks.
+
+--- ASSISTANT  2026-09-05T14:25:47.835Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===EvidenceStatus===" && grep -n "class EvidenceStatus" -A 40 src/query/evidence.py | head -50
+
+--- USER  2026-09-05T14:25:48.045Z ----------------------------------
+[tool result] ok (2458 chars, 42 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:25:48.925Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===render.py map===" && sed -n '1,60p' src/ui/render.py && echo "===server routes===" && grep -n "path == ...
+
+--- USER  2026-09-05T14:25:49.256Z ----------------------------------
+[tool result] ok (2625 chars, 70 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:25:59.712Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '100,187p' src/ui/server.py
+
+--- USER  2026-09-05T14:25:59.890Z ----------------------------------
+[tool result] ok (3324 chars, 87 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:26:09.004Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\README.md
+
+--- USER  2026-09-05T14:26:09.097Z ----------------------------------
+[tool result] ok (13390 chars, 285 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:26:20.482Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "===OUTLINE HEADINGS===" && grep -n "^#\|^##\|^###" docs/report-outline.md && echo "" && echo "===DRAFT HE ...
+
+--- USER  2026-09-05T14:26:21.534Z ----------------------------------
+[tool result] ok (1180 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:29:26.640Z -----------------------------
+Two corrections before the blocks — both change what you do.
+
+**1. "Nine demo surfaces → three" was wrong. Drop it.** I verified `src/ui/server.py:109-138`: there are only three routes (`/`, `/ask`, `/graph`). The "nine surfaces" are nine evidence blocks on the answer page — answer, strategy, evidence path, per-hop passages, source tier, conflicts, sufficiency, fallback reason. That is exactly what 1B has to show. Deleting them would remove your best material. The council misread it and I passed it on.
+
+**2. Your README is badly stale** — says "143 tests" three times (actual 320), "ADR-001..016" (actual 025), "F-001..020" (actual 027), and its repo layout omits `src/query/`, `src/ui/` and `comparison/` entirely. That is the exact thing the 15% engineering criterion tests: "can a judge set up and run your project from the README alone?"
+
+---
+
+## Order and dependencies
+
+| # | Task | Rubric | Est. | Blocks |
+|---|---|---|---|---|
+| 1 | AI usage logs + disclosure | 15% | 2h | Nothing — do tonight |
+| 2 | README + repo hygiene | 15% | 2h | — |
+| 3 | Decline rendering | 25% | 3h | — |
+| 4 | Answer-key verification | unblocks report | 3h | Report §4 |
+| 5 | Tier 3 decision + ADR | 10% | 1h | Video, report |
+| 6 | Cross-collection evidence join | 25% + 10% | 4h, timeboxed | Droppable |
+| 7 | PDF report | 10% + carries 25% | 5h | Needs 1,4,5 |
+| 8 | Video shot list + record | 10% | 4h | Needs 3,5,7 |
+| 9 | Final packaging | the gate | 1h | Needs all |
+
+Run 1–3 in parallel windows now. 6 is the only droppable one.
+
+---
+
+## Block 1 — AI usage logs + disclosure (do tonight)
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+This repo is a SLIIT Codefest 2026 AI Competition submission (sub-track 1B).
+Deadline 9 Sep 2026 11:30 PM. Read CLAUDE.md first for project context.
+
+Challenge doc §4.1 requires, as a MANDATORY deliverable:
+  - The full conversation logs with any AI agents used during development,
+    exported as plain text (.txt) files, included in the git repository.
+  - An AI Usage Disclosure naming which tools were used, for what, and which
+    decisions the team made.
+Human-AI collaboration quality is 15% of the rubric and is judged from exactly
+these logs plus the commit history. Incomplete submissions are not evaluated.
+
+The `ai_usage/` directory in this repo is currently EMPTY.
+
+The raw logs DO exist. Claude Code stores per-session transcripts at:
+  C:\Users\LENOVO\.claude\projects\E--AI-Challenge-CodeFest\*.jsonl
+There are 10 .jsonl files, ~42 MB total, dated 29 Aug - 5 Sep 2026. Each line is
+a JSON object representing one turn (user message, assistant message, tool call,
+or tool result).
+
+TASK
+
+Step 0 - SECURITY, do this before anything else.
+  Rotate every API key in .env NOW (Google/Gemini, Voyage, OpenRouter) at the
+  provider dashboards. The transcripts may contain key values, .env contents, or
+  environment dumps, and they are about to be committed to a repo judges read.
+  Do not proceed to Step 1 until rotation is done. Tell me when to do this and
+  wait for my confirmation.
+
+Step 1 - Write a converter at `ai_usage/export_logs.py`.
+  It must:
+  - Read each .jsonl in the projects directory above.
+  - Emit one .txt per session, named `session-<YYYY-MM-DD>-<short-id>.txt`.
+  - Render turns readably: a header line per turn with role and timestamp, then
+    the text. Include tool calls as one summary line each (tool name + a short
+    argument summary), NOT full tool output - full file dumps would bury the
+    human-AI dialogue the judges are actually reading.
+  - REDACT secrets before writing. Scan every string for: anything matching
+    common key shapes (sk-*, AIza*, pa-*, sk-or-*), any line containing
+    GOOGLE_API_KEY / VOYAGE_API_KEY / OPENROUTER_API_KEY followed by a value,
+    and any 32+ char high-entropy token. Replace with [REDACTED]. Print a count
+    of redactions per file so I can eyeball it.
+  - Be deterministic and rerunnable.
+
+Step 2 - Run it, then MANUALLY grep the output for leaked secrets before
+  committing. Report the redaction counts to me.
+
+Step 3 - Write `ai_usage/ai-usage-disclosure.md`. It must state:
+  - Which AI tools were used and for what (Claude Code as a coding assistant;
+    Gemini via API for OCR of 17 scanned pages; Voyage for embeddings in the
+    Checkpoint-1 baseline; OpenRouter for the opt-in planner/phrasing tiers).
+    Be precise about the difference between AI used to BUILD the system and AI
+    used INSIDE the system - judges care about both and they are separate.
+  - Which decisions the TEAM made rather than the AI. Mine these from
+    docs/decisions.md and docs/failures.md - the strongest examples are where a
+    measurement overturned something an assistant had already written down.
+    Name at least five concrete ones with their ADR/F numbers. Good candidates:
+    ADR-003 (collection-dependent dedup), ADR-011 (exact-match entity
+    resolution, refusing fuzzy matching), F-015 (a single reviewer's "high
+    confidence" answer that the corpus contradicted), F-025 (the model that
+    produced a confident cited answer to a question nobody asked, which led the
+    team to make the LLM tier opt-in), ADR-013 CORRECTION (the team's own
+    earlier conclusion overturned).
+  - How the team directed the AI: the deterministic-first rule in CLAUDE.md, the
+    "measure before asserting" rule, and the practice of keeping overturned
+    assumptions visible in the record instead of editing them out.
+  - Honest disclosure carries no penalty. Do not undersell AI involvement and do
+    not oversell human involvement. Both are checkable against the logs.
+
+Step 4 - Commit. Atomic commit, message says why. Do not commit .env.
+
+DONE WHEN
+  - `ai_usage/` contains one .txt per session plus ai-usage-disclosure.md
+  - `git grep -iE "sk-|AIza|api[_-]?key.*=.*[A-Za-z0-9]{20}"` over ai_usage/
+    returns nothing
+  - Keys are rotated
+
+DO NOT
+  - Do not fabricate or reconstruct any conversation from memory. Export the
+    real transcripts only. Fabricated evidence against a rule demanding the logs
+    reflect actual work is a disqualification risk, not a deduction.
+```
+
+---
+
+## Block 2 — README + repo hygiene
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026 submission, sub-track 1B. Read CLAUDE.md first.
+Engineering best practices is 15% of the rubric, and the stated test is:
+"can a judge set up and run your project from the README alone?"
+Repository organization and dependency management are scored in the same 15%.
+
+README.md is materially stale. Verified stale facts:
+  - Says "143 tests" in three places (lines 86, 144, 165). Actual count is 320
+    (docs/decisions.md ADR-025). Re-derive, do not trust this number either.
+  - Repository layout section (line 136) omits src/query/, src/ui/, comparison/
+    and ai_usage/ entirely - three of them are the most important directories
+    in the repo.
+  - Says "ADR-001..016" and "F-001..020" (lines 246, 248). Actual: ADR-001..025
+    and F-001..027.
+  - Commands section (line 156) omits: src.query.engine, src.ui.server,
+    comparison.harness, comparison.ablations.
+  - Line 24 says "complete evidence 0 / 7"; line 187 says "0/9". One is wrong.
+  - The Status section (line 271) says routing-robustness measurement is the
+    NEXT work. It was done on 1 Sep (ADR-019).
+  - The Architecture ASCII diagram does not show the three routing tiers and
+    predates docs/diagrams/architecture.svg.
+
+TASK
+
+1. Re-derive every number before writing it. Run:
+     .venv\Scripts\python.exe -m pytest -q          (test count)
+     .venv\Scripts\python.exe -m src.ingest.pipeline
+     .venv\Scripts\python.exe -m src.graph.build
+     .venv\Scripts\python.exe -m src.ingest.integrity
+   Use what these print. CLAUDE.md's "Corpus facts that will bite you" section
+   warns that several numbers in this project have moved more than once.
+
+2. Fix README.md:
+   - Correct all stale counts.
+   - Rewrite the Repository layout block to include every top-level directory
+     that exists, with one line each.
+   - Add the missing commands, including `python -m src.ui.server` (the demo)
+     and `python -m src.query.engine "<question>"`.
+   - Replace the ASCII architecture diagram with a reference to
+     docs/diagrams/architecture.svg and docs/architecture.md, and add the three
+     routing tiers to the text.
+   - Update the Status section to reflect ADR-019 through ADR-025.
+   - Add a short "Run the demo" section at the top of Quickstart: exact commands
+     from a clean clone to a working http://127.0.0.1:8000, stating explicitly
+     that no API key is needed for the deterministic path.
+
+3. Populate `configuration-example/` (currently empty; §5.2 of the challenge doc
+   names it in the recommended structure). Put in it: a commented .env.example
+   copy, and copies of config/authority.yaml and config/relations.yaml with a
+   short README.md explaining that these two files are deliberately not code so
+   a judge can disagree with a line without touching Python.
+
+4. COLD-RUN TEST. This is the actual deliverable, not the README edit.
+   Clone this repo to a fresh directory (e.g. C:\Users\LENOVO\AppData\Local\Temp\
+   coldrun), create a new venv, and follow the README literally, top to bottom,
+   without using any knowledge you have from this repo. Note every place it
+   breaks or is ambiguous. Fix the README, then repeat until it runs clean.
+   Report what broke on the first pass - that list is report material.
+
+5. Atomic commit with a message stating why.
+
+DONE WHEN
+  - A cold clone reaches a working demo UI using only README instructions
+  - No number in README.md is unverified
+  - configuration-example/ is populated
+```
+
+---
+
+## Block 3 — Decline rendering (highest-value 25% fix)
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md and docs/architecture.md first.
+Technical execution & robustness is 25% of the rubric, and judges assess it on
+"does it actually work, end-to-end, on inputs the team didn't script."
+
+The submission includes a live demo where a judge may type their own question.
+
+MEASURED PROBLEM
+The four routing templates match no route shape on 35 of 49 independently
+authored questions; on the 21 novel ones they match one (ADR-019, ADR-025;
+reproduce with `python -m comparison.harness`). So on a judge-typed question the
+most likely outcome is a decline.
+
+The declines are architecturally correct - each ends at a named EvidenceStatus
+(src/query/evidence.py) rather than at an invented answer, and that is the
+project's core claim. But on screen, a bare status string is indistinguishable
+from a crash. A principled decline that LOOKS like a failure loses the 25%
+anyway.
+
+TASK
+Make every decline render what the system DID establish, so the failure is
+legible as reasoning rather than as breakage. Nothing here may add reasoning to
+the UI - src/ui/ has three architectural tests (ADR-018) enforcing that the
+presentation layer only renders what src/query/view.build_view already put in a
+plain dict. Keep that property. If new information is needed on the page, it
+must come from the engine into the view dict, not be computed in render.py.
+
+For each declining status, the answer page should show:
+
+  UNRESOLVED_ENTITY
+    - the span the engine thought was an entity
+    - the near-miss suggestion if one was reported at >=0.90 (ADR-021), stated
+      as a suggestion the user must confirm, never auto-applied
+    - a link or hint to the entity list
+
+  AMBIGUOUS_ENTITY
+    - every candidate it matched, each with its type and its source document
+
+  NO_TEMPLATE_MATCH
+    - the entities it DID resolve in the question
+    - each resolved entity's neighbourhood: its edges, with relation names and
+      the source document for each
+    - the sentence: which relation vocabulary the system knows (from
+      config/relations.yaml) - so the judge can see the boundary is declared,
+      not accidental
+
+  RELATION_UNAVAILABLE
+    - the resolved start entity, the relation asked for, and the relations that
+      entity DOES have edges for
+
+  NO_PATH / PATH_MISSING_ATTRIBUTE
+    - the start node, the goal node, and how far the traversal got
+    - explicitly: "could not join X to Y" naming both
+
+  OUTSIDE_STRUCTURED_COVERAGE
+    - state plainly that the graph is built from wiki infobox rows only
+      (src/graph/build.py line ~196, `if unit.collection == "wiki":`), and that
+      the named entity appears in the corpus but not in the structured layer.
+      Name the collection(s) it does appear in if that is cheap to determine.
+
+Every one of these must carry citations - document id and locator - for
+anything it displays, exactly as the SUFFICIENT path already does.
+
+ALSO
+Add an entity autocomplete or a browsable entity list to the `/` page, sourced
+from the 117 graph nodes, plus the relation vocabulary. This converts a
+judge-typed question into a routable one without faking capability - it shows
+what the system can answer instead of letting them discover it by failing.
+
+TESTS
+Add tests covering each declining status renders its evidence block. Keep the
+three architectural thinness tests passing. Run the full suite.
+
+DONE WHEN
+  - Every EvidenceStatus renders partial evidence with citations
+  - `python -m pytest` is green
+  - The three ADR-018 thinness tests still pass
+  - Manually: start the UI, type three questions you know will decline, confirm
+    each page reads as reasoning rather than as an error
+
+Write an ADR in docs/decisions.md recording this and why (a decline is a result,
+and a result the user cannot inspect is indistinguishable from a bug).
+Atomic commit.
+```
+
+---
+
+## Block 4 — Answer-key verification
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md first.
+
+Every evaluation number in this project is currently flagged PROVISIONAL because
+eval/answer_key.json has not been two-person verified. Measured verification
+state: `single_review` x6, `draft` x2, `unresolved` x1, and all seven reviewed
+entries name the same single reviewer - which is precisely the failure mode
+docs/failures.md F-015 records (one careful reviewer reported "high confidence"
+on an answer with two valid values; the corpus had fourteen).
+
+Recall is already independently corroborated: `python -m eval.completeness`
+reports 0 defects. What is outstanding is PRECISION / semantic review - is each
+recorded answer actually right?
+
+This blocks the report. The 35/49 routing-robustness figure is the strongest
+single number in the submission, and it cannot be led with while every number
+carries a PROVISIONAL warning.
+
+TASK
+
+1. Run `python -m eval.verify_key` to regenerate the review pack, and read
+   eval/verification/answer_key_review.md for the process the project already
+   defined for itself. Follow that process; do not invent a new one.
+
+2. For each of the 9 entries, independently re-derive the answer from the corpus
+   WITHOUT looking at the recorded answer first. Work from the primary documents.
+   For each, record:
+     - the answer you derived
+     - every document you used, with locators
+     - whether it agrees with the recorded answer
+     - if it disagrees, which one the corpus actually supports
+
+3. Pay specific attention to the three entries that are not `single_review`:
+   the 2 `draft` and the 1 `unresolved`. Those are where the key is weakest.
+
+4. Update `verification.status` per entry honestly. If a second reviewer is not
+   actually a second human, DO NOT mark it two-person verified - record it as
+   what it is. An honestly-labelled single review is defensible; a falsely
+   labelled double review is an integrity problem judges can catch by asking
+   the other three team members.
+
+5. Re-run `python -m eval.run_eval --checkpoint baseline` and
+   `python -m comparison.harness`. If any headline number moved, say so
+   explicitly and update CLAUDE.md, README.md and docs/architecture.md - note
+   that CLAUDE.md warns the 35/49 figure has already moved twice in opposite
+   directions and must never be quoted from memory.
+
+6. If and only if verification is genuinely complete, remove the PROVISIONAL
+   warnings from README.md and docs/architecture.md.
+
+7. Log what you found in docs/failures.md if any recorded answer was wrong.
+   Atomic commit.
+
+DONE WHEN
+  - Every entry's verification.status reflects reality
+  - Any moved number is propagated to all four docs that quote it
+  - You can state, in one sentence for the report, what the verification status
+    now is
+```
+
+---
+
+## Block 5 — Tier 3 decision + ADR
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md, docs/decisions.md ADR-020,
+and docs/failures.md F-025 first.
+
+Technical judgment & decisions is 10% of the rubric: "why this approach over
+alternatives; honest analysis of trade-offs, failures, and limitations; human
+decisions clearly visible."
+
+DECISION TO MAKE AND RECORD
+src/query/planner.py is the third routing tier: an LLM emits a validated plan,
+never an answer. It is off by default. It is UNMEASURED on the frozen 49-question
+set, because measuring it spends daily free-tier quota and produces a number that
+moves with OpenRouter's free model lineup.
+
+F-025 records what this tier did before its grounding guard existed: it returned
+a schema-valid, name-checked, hop-bounded plan for "What color is the sky in the
+Ashen Era?" by latching onto the word "Ashen", and the engine walked it into a
+confident, fully cited answer to a question nobody asked.
+
+The live demo segment is 3-4 minutes of unedited screen recording, and a judge
+may type their own question. Enabling an unmeasured tier in that setting risks
+reproducing F-025 on camera.
+
+TASK
+Decide ONE of these and record it as an ADR:
+
+  (a) Cut the tier from the shipped path. Keep planner.py and its tests in the
+      repo, keep ADR-020, and write a new ADR explaining that an unmeasured tier
+      whose recorded failure mode is a confident wrong answer does not ship.
+      Cutting a feature you built, for a stated reason, IS the technical-judgment
+      story - it is stronger than shipping it unmeasured.
+
+  (b) Measure it once on the frozen set, cache the result, and ship it with the
+      number attached. Costs roughly two models' daily quota. Only choose this
+      if you are prepared to report whatever number comes back, including a bad
+      one.
+
+Recommendation: (a). But make the call deliberately and write down why.
+
+Whichever you choose:
+  - Run `python -m src.clients.openrouter --verify` to confirm the model
+    rotations are still live (the model list was last verified 1 Sep 2026).
+  - Write the ADR in docs/decisions.md using the existing format. State the
+    decision, the alternatives, the measurement or the absence of one, and the
+    condition under which the decision would be revisited.
+  - Update CLAUDE.md's component table and docs/architecture.md's tier table.
+  - If you chose (a), make sure `python -m src.ui.server --with-model` still
+    documents clearly what it enables, and decide whether that flag stays.
+  - Atomic commit.
+
+DONE WHEN
+  - The ADR exists and names the decision, the reason, and the revisit condition
+  - CLAUDE.md and docs/architecture.md agree with it
+  - You can answer, in one sentence on camera, "why is there an LLM tier you
+    don't use?"
+```
+
+---
+
+## Block 6 — Cross-collection evidence join (timeboxed, droppable)
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B: "Connecting Facts Across Thousands of Pages -
+build a system that can connect related information across the whole document
+set and answer questions with no single document answers on its own."
+Read CLAUDE.md and docs/architecture.md first.
+
+THE GAP
+src/graph/build.py line ~196 reads `if unit.collection == "wiki":`. The answer
+graph is built exclusively from the 96 wiki files' infobox rows. The other 319
+documents - 4 novels in chronicles/, 3 codexes, 145 ephemera - are fully ingested
+into 30,553 EvidenceUnits, each already carrying its canonical document id, its
+locator and its authority tier, and the shipped answer path never touches them.
+
+A judge who greps that line concludes the system solved a smaller problem than
+the track describes.
+
+THE REFRAME
+The sub-track says CONNECT, not TRAVERSE. You do not need to traverse 319
+documents. You need each answered edge to arrive carrying corroborating evidence
+from the other collections you already ingested. That is a lookup against
+existing data, not a new retrieval system.
+
+Do NOT try to delete the wiki filter and build edges from the other collections.
+That does not work: only wiki pages have infobox pipe tables, so removing the
+filter yields zero additional edges, not more. This is a corroboration layer,
+not a graph extension.
+
+TASK - HARD TIMEBOX: stop at the end of Saturday whatever state it is in.
+
+1. For each edge the graph already holds (subject, relation, object), search the
+   non-wiki EvidenceUnits for units mentioning both the subject and object
+   display names. Exact-name matching only - src/query/resolve.py and ADR-011
+   forbid fuzzy matching that could silently pick a winner, and that rule holds
+   here. Where names are ambiguous, report rather than resolve.
+
+2. Attach the matches to the edge as corroborating evidence, each carrying its
+   document id, locator and authority tier. Cap the number attached per edge so
+   the answer page stays readable.
+
+3. Surface it on the answer page: under each hop, "also attested in:" with the
+   corroborating documents and their tiers. This makes every answer visibly
+   span multiple collections.
+
+4. Where the corroborating units DISAGREE with the graph edge, route that into
+   the existing conflict machinery. NOTE: src/query/conflict.py already exists
+   and implements same-tier contradiction detection, and src/ui/render.py's
+   `_conflict_block` (line ~375) already renders it - read both before writing
+   anything. This is an extension of shipped code, not new code. Also read
+   CLAUDE.md's note that all 7 measured corpus conflicts are codex (tier 1) vs
+   ephemera (tier 4) and that the codex announces its own authority in prose.
+
+5. MEASURE IT. How many of the 267 edges gained corroborating evidence? From
+   which collections? Report the number. An unmeasured feature is worth less
+   than no feature in this competition.
+
+6. Write an ADR. Add tests. Note that any change to graph counts will break
+   tests/test_diagram.py, which re-derives every number in the architecture SVG
+   from the live corpus - if the picture goes stale the suite goes red by design.
+   Update the SVG if the numbers move.
+
+IF IT IS NOT WORKING BY SATURDAY NIGHT
+Stop. Delete the branch. Tell me, and the report will state the wiki-only scope
+in its first paragraph as a declared limitation with this as the roadmap fix.
+A stated boundary is forgiven; a discovered one is not. Do not ship a
+half-working corroboration layer into the demo.
+
+DONE WHEN
+  - A measured count of corroborated edges exists
+  - The answer page shows cross-collection attestation with citations
+  - The suite is green
+```
+
+---
+
+## Block 7 — The ≤5-page PDF report
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md, docs/architecture.md,
+docs/report-outline.md and docs/report-draft.md first. The outline is already
+structured as an evidence register with a page budget - follow it.
+
+DELIVERABLE
+A single PDF, maximum 5 pages, containing all of:
+  1. Problem statement and chosen sub-track
+  2. Solution overview and architecture, WITH the diagram
+  3. Key technical decisions and why you made them
+  4. What works, what doesn't, and limitations - including approaches you tried
+     that failed
+  5. AI Usage Disclosure
+  6. Team member names, roles, and contributions
+  7. The unlisted YouTube video link, pasted at the top
+
+Missing any of these makes the submission incomplete, and incomplete submissions
+are not evaluated.
+
+TEAM NAMES, ROLES AND CONTRIBUTIONS ARE RECORDED NOWHERE IN THIS REPO. Ask me
+for them before drafting §6. Do not invent them.
+
+WHAT TO LEAD WITH
+The strongest asset in this submission is not the 7/7 on the dev questions. It
+is that the team measured the gap between fit and capability, on questions frozen
+before either router ran, and published the unflattering number:
+
+  - Four templates: 7/7 on the seven dev 1B questions
+  - The same templates: match no route shape on 35 of 49 independently authored
+    questions; on the 21 novel ones, they match one
+  - CLAUDE.md's own rule: "Do not quote 7/7 without the 35/49 beside it"
+
+Most teams will report a number measured on the questions they optimised
+against. Lead with the honest one. It buys the 10% technical-judgment criterion
+outright and much of the 15% problem-understanding criterion.
+
+Second-strongest: the baseline comparison. A competent Voyage+Gemini vector RAG
+scores 2/7 correct and 0/9 COMPLETE EVIDENCE on 1B - not one question retrieved
+every document its answer needs, and 3 of 7 reached neither required document.
+That number proves the graph was necessary rather than preferred. Reproduce it
+with `python -m eval.run_eval --checkpoint baseline` before quoting it.
+
+CONSTRAINTS AND CAUTIONS
+  - Re-derive every number before it goes in. CLAUDE.md warns several numbers in
+    this project have moved more than once, in opposite directions, for
+    legitimate reasons. Never quote from memory.
+  - State the verification status of the answer key honestly (check with whoever
+    ran the verification task - it may have changed today).
+  - Declare the wiki-only scope of the graph in your own words, in §1 or §2, not
+    buried in limitations. `if unit.collection == "wiki":` in
+    src/graph/build.py is one grep away for any judge. Own it, give the reason
+    (only wiki pages carry structured infobox rows), and give the roadmap.
+  - docs/decisions.md is 103 KB and docs/failures.md is 53 KB. Nobody will read
+    them. That work only scores if a distillation reaches this PDF. Pick the
+    five ADRs and three failures that carry the most weight and summarise them
+    in a sentence each with a pointer.
+  - Strong failure candidates for §4: F-025 (a validated plan that was
+    well-formed, relevant to nothing, and confidently wrong), F-016 (trusting
+    a read-only corpus stayed read-only, which cost 36 files), F-015 (a single
+    careful reviewer), F-008 (an extractor that found zero conflicts corpus-wide
+    and reported full confidence - silent failure).
+  - Embed docs/diagrams/architecture.svg. It is hand-authored, self-contained,
+    and every number in it is re-derived from the live corpus by
+    tests/test_diagram.py, which goes red if the picture goes stale. Say that in
+    one line under the figure - it is a credibility signal.
+  - Five pages is tight. Write it long, then cut. Do not cut §4 or §6 to fit -
+    §6 is mandatory and §4 carries two rubric criteria.
+
+PROCESS
+1. Draft the full thing in docs/report.md first, in markdown.
+2. Show me the draft before converting.
+3. Convert to PDF, verify it is <= 5 pages, verify the diagram rendered.
+4. Commit the markdown source and the PDF.
+
+DONE WHEN
+  - All seven required elements are present
+  - Every number is re-derived, not remembered
+  - The PDF is 5 pages or fewer with the diagram legible
+```
+
+---
+
+## Block 8 — Video shot list and recording
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md first.
+
+DELIVERABLE
+One video, 10 minutes MAXIMUM, uploaded to YouTube as UNLISTED (not public, not
+private). At least 3-4 minutes must be a live, unedited screen recording of the
+working prototype running end-to-end on real inputs. Videos over 10 minutes, or
+without a genuine live demo segment, are penalised. The upload timestamp is
+checked. The link goes at the top of the submission report.
+
+Presentation, documentation & demonstration is 10% of the rubric, and the live
+demo is also the primary evidence for the 25% technical-execution criterion.
+
+CRITICAL: CLAUDE.md's rule is "Never record the demo against a cold cache."
+Warm every cache before recording. Run the ingest, the graph build, and each
+demo question once so nothing is being computed for the first time on camera.
+
+TASK
+
+1. Write a TIMED SHOT LIST first, not a script. Something like:
+     0:00-1:00  The problem: why one question needs two documents
+     1:00-1:30  The baseline result: 2/7 correct, 0/9 complete evidence
+     1:30-2:30  Architecture walkthrough on the diagram
+     2:30-6:30  LIVE DEMO - unedited, one continuous take
+     6:30-8:00  The honest number: 7/7 vs 35/49, and what it means
+     8:00-9:00  What we removed and why; limitations
+     9:00-9:30  Team, roles, AI usage
+   Adjust, but the live segment must be one continuous unedited take of at least
+   3-4 minutes, and the total must not exceed 10:00.
+
+2. Design the live demo segment deliberately. It should include:
+   - At least one question that works, showing the full evidence path: both
+     documents, both hops, the source tiers, the citations. Suggested:
+     "Which accord was ultimately won by the faction of which Ederon Fellgard is
+     a member?" - two hops, no shared vocabulary, reverse lookup on hop two.
+   - The conflict surface. src/query/conflict.py detects same-tier contradiction
+     and src/ui/render.py renders it. Show two sources disagreeing, both cited.
+     Almost no other team will have this.
+   - AT LEAST ONE DELIBERATE FAILURE. Type a question the system declines, and
+     show that it names why and shows what it did establish. Framing: "our
+     system tells you when it cannot answer, and shows you what it found." This
+     turns your biggest weakness into your strongest credibility moment. Do not
+     hide the declines - a judge will find them in 30 seconds anyway.
+   - The /graph page, briefly.
+
+3. Say the 35/49 number out loud on camera. Volunteering your own unflattering
+   measurement is worth more than any polish.
+
+4. Rehearse the live segment at least twice before recording. Every team member
+   should be able to answer any question about any part - that rule is
+   disqualifying in the final round, so use the rehearsal to check it.
+
+5. Record. Upload unlisted. Paste the link at the top of the report.
+
+DONE WHEN
+  - Video is <= 10:00 with a >= 3-4 min continuous unedited live segment
+  - The live segment includes a working answer, a conflict, and a decline
+  - It is uploaded unlisted and the link is in the report
+  - Uploaded before 9 Sep 11:30 PM
+```
+
+---
+
+## Block 9 — Final packaging and submission
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Final submission. Deadline 9 Sep 2026,
+11:30 PM. Incomplete submissions are not evaluated at all.
+
+Three deliverables, all required:
+  1. ZIP of the complete git repository INCLUDING full commit history
+  2. The <= 5-page PDF report
+  3. The unlisted YouTube video link (pasted at the top of the report)
+
+PRE-FLIGHT CHECKS - run every one, report pass/fail for each
+
+REPOSITORY
+  [ ] `git status` is clean
+  [ ] `git log --oneline | wc -l` - history is intact and pushed
+  [ ] .env is NOT committed. `git log --all -p -- .env` returns nothing.
+  [ ] No API key anywhere in history:
+      `git grep -iE "sk-[A-Za-z0-9]{20}|AIza[A-Za-z0-9_-]{30}|sk-or-v1" $(git rev-list --all)`
+      If this hits, the key is leaked in history - rotate it immediately at the
+      provider and tell me. Do not rewrite history this close to the deadline
+      without telling me first.
+  [ ] The corpus (~123 MB) is NOT committed; data/ is gitignored
+  [ ] ai_usage/ contains the .txt session logs and ai-usage-disclosure.md
+  [ ] configuration-example/ is populated
+  [ ] docs/ contains architecture.md, decisions.md, limitations.md, diagrams/
+  [ ] `python -m pytest` is green - report the count
+  [ ] requirements.txt is complete and pinned
+
+COLD RUN
+  [ ] Clone the repo fresh to a temp directory, fresh venv, follow README
+      literally. It must reach a working demo without any knowledge from this
+      session. Report anything that breaks.
+
+REPORT
+  [ ] <= 5 pages
+  [ ] Contains: problem + sub-track, architecture + diagram, key decisions,
+      what works / what doesn't / limitations / failed approaches, AI Usage
+      Disclosure, team names + roles + contributions
+  [ ] The YouTube link is at the top and opens from a logged-out browser
+  [ ] Every number in it matches what the commands actually print today
+
+VIDEO
+  [ ] <= 10:00 total
+  [ ] >= 3-4 minutes of continuous unedited live demo
+  [ ] Uploaded as UNLISTED - verify by opening the link in a private window
+  [ ] Upload timestamp is before the deadline
+
+PACKAGE
+  [ ] ZIP the repo INCLUDING the .git directory - the history is a graded
+      deliverable, and a ZIP of the working tree alone loses 15% of the rubric
+  [ ] Verify the ZIP: extract it somewhere else and run `git log` inside it
+  [ ] Name it per the challenge doc: <Team_Name>.zip
+
+SUBMIT
+  [ ] Submit via the link in the competition email
+  [ ] TARGET 6:00 PM on 9 Sep, not 11:29 PM
+  [ ] Confirm receipt
+
+Report every check as pass or fail. Do not mark anything passed that you did not
+actually run.
+```
+
+**Next: open a new window, paste Block 1, and answer its Step 0 question about rotating keys — nothing else in `ai_usage/` should be written until that's done.**
