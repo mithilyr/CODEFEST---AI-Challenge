@@ -152,5 +152,8 @@ python -m pytest                                # the whole suite
 ```
 
 **All evaluation numbers are PROVISIONAL until two people verify
-`eval/answer_key.json`** — measured status today: 6 `single_review`, 2 `draft`,
-1 `unresolved`, all reviewed entries by the same reviewer (F-015).
+`eval/answer_key.json`** — measured status today: **7 `single_review`, 2
+`draft`, 0 confirmed**, every entry by the same single human reviewer (F-015).
+An AI re-derivation on 6 Sep agreed with all nine answers and corrected two
+conflict inventories (F-028); it is recorded per entry and deliberately does
+not advance status.

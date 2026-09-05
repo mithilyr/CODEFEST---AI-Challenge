@@ -1134,3 +1134,100 @@ was unreachable in production while live in tests. Both were *named states that
 could not occur*. A named state deserves a test that reaches it the way the
 product does, not the way the unit test finds convenient.
 
+
+---
+
+## F-028 — A conflict inventory that stopped at the first competing source
+
+**Approach.** When the answer key gained conflict blocks (ADR-015), each one
+recorded the sources the 2026-08-29 review had cited: the authority, the
+competing claim, the abstention. Three or four sources per conflict, which
+looked like a complete picture of the disagreement.
+
+**Hypothesis.** The recorded claims are every source bearing on the question.
+
+**Experiment.** Independent re-derivation on 2026-09-06. For each 1C question,
+sweep the *whole corpus* for statements about the contested attribute rather
+than checking the sources already listed.
+
+**Result.**
+
+| Question | Sources recorded | Sources in the corpus |
+|---|---|---|
+| `1c_000` Gloamreach founding | 3 | **4** |
+| `1c_003` Sorrowfell forging | 4 | **9** |
+
+`1c_003` is the striking one. The key had the codex (391 AS), one sermon
+asserting 360 AS, one ledger saying the date is unrecorded, and the wiki
+abstention. The corpus actually carries:
+
+- **two** sources asserting 360 AS — the second is
+  `ephemera/sermon_concerning_the_war_of_drowned_light.pdf`: *"I proclaim that
+  it was forged in 360 AS."*
+- **five** asserting the date is unrecorded — a decree, a field report, an
+  interrogation record, a quartermaster ledger and a second sermon, each
+  refusing in its own voice: *"no keeper shall invent a year"*, *"Let no clerk
+  fill this blank with a guess merely to make the page look complete."*
+
+`1c_000` had missed `ephemera/contract_concerning_thessaly_coldwater.pdf`, a
+second tier-4 contract asserting 286 AS.
+
+**Why it failed.** The same shape as F-015, one level down. F-015 was a reviewer
+who found 2 of 14 valid *answers*; this is a reviewer who found 4 of 9 relevant
+*sources*. Both come from checking the citations in front of you rather than
+sweeping the corpus for what else it says. Neither produced a wrong answer —
+`1c_000` is still 246 AS and `1c_003` is still 391 AS — which is precisely why
+it survived three weeks: nothing downstream failed.
+
+**What it would have cost.** The corpus is more emphatic about this conflict
+than the key represented it. Five separate in-world documents refuse to state a
+forging date, and two assert a wrong one. A report describing 1c_003 as "a
+sermon disagrees with the codex" understates a corpus that is arguing with
+itself in seven voices. It is a weaker story than the truth.
+
+**What changed.** All nine sources are recorded. The five restatements carry
+`corroborating: true` and are excluded from `required_documents`: requiring nine
+documents against a k=5 retriever would make complete evidence unreachable by
+construction, which measures the metric rather than the system. The distinction
+is in the schema, the loader, and a test.
+
+**No number moved.** Baseline stayed at 1B 2/7, 1C 2/2, 4/9; the router
+comparison re-derived at 35 no-route-shape and 17 correct / 27 complete
+evidence. Recording the sources faithfully cost nothing, which is the argument
+for having done it.
+
+---
+
+## F-029 — Believing an AI recheck could close a two-human requirement
+
+**Approach.** With the answer key blocking the report and only one human
+reviewer available, run a careful independent re-derivation and mark the
+entries verified.
+
+**Result.** Rejected before it was written. The re-derivation on 2026-09-06 did
+the work — all nine answers re-derived from primary documents, all nine agreeing,
+`1b_006`'s fourteen corroborated from `codex/the_annals_of_the_ashen_era`, a
+tier-1 source the original review never opened. It still cannot count, for two
+reasons that are worth separating:
+
+1. **It is not a second human.** ADR-014 requires two, and the rule exists
+   because F-015 showed one careful reviewer reporting high confidence on an
+   answer that was 12 short.
+2. **It was not blind.** The same agent had seen the recorded answers earlier in
+   the session. Agreement from a reviewer who already knows the answer is worth
+   materially less than agreement from one who does not, and no amount of
+   procedural care recovers that.
+
+**Why this matters more than the status field.** Marking nine entries
+"two-person verified" when the second person is a language model is a claim any
+judge can falsify in one question to the other three team members — and the
+challenge document lists misrepresenting what your system can do under
+**Integrity**, alongside plagiarism, as grounds for disqualification. The
+downside is not a lower score on one criterion. An honestly-labelled single
+review costs a warning banner; a falsely-labelled double review costs the
+submission.
+
+**What changed.** `verification.independent_recheck` records the pass with
+`is_second_human_reviewer: false` and `counts_toward_confirmed: false`, and a
+test asserts both stay false while status stays in `{draft, single_review}`.
+`confirmed` remains 0 of 9 and the PROVISIONAL banners stay up.

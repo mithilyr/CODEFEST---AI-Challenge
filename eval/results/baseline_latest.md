@@ -6,15 +6,15 @@
 > ADR-014 requires **two independent reviewers** per entry; the breakdown below
 > shows where each one stands.
 >
-> Key status: **2 draft**, **6 single_review**, **1 unresolved**
+> Key status: **2 draft**, **7 single_review**
 >
 > Every number below is provisional. Do not quote it in the report, the video,
 > or a decision until the entries are confirmed - see `eval/verification/` for
 > the review pack.
 
 
-- run at `2026-08-29T23:00:01` in 0.7s
-- commit `7251073`, Python 3.11.16
+- run at `2026-09-06T00:27:38` in 1.0s
+- commit `bc77f80`, Python 3.11.16
 - schema version 2
 - **0 LLM call(s)**, 20 served from cache
 
@@ -54,7 +54,7 @@ Mean evidence precision: **0.281** (ceiling is `len(expected)/k`, not 1.0 - see 
 | qid | key status | correct | category | answers | conflict | ev. recall | ev. prec |
 |---|---|---|---|---|---|---|---|
 | `1b_007` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
-| `1b_006` | unresolved | yes | correct | 14 (any_of) | n/a | 0.33 | 0.25 |
+| `1b_006` | single_review | yes | correct | 14 (any_of) | n/a | 0.33 | 0.25 |
 | `1b_022` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
 | `1b_013` | single_review | no | partial_retrieval | 1 (single) | n/a | 0.50 | 0.50 |
 | `1b_005` | single_review | yes | correct | 1 (single) | n/a | 0.50 | 0.20 |

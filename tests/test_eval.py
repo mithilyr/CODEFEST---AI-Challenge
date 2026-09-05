@@ -13,7 +13,7 @@ from types import SimpleNamespace
 import pytest
 
 from eval.harness import QuestionResult, new_run, render_markdown
-from eval.answer_key import load_key, required_documents
+from eval.answer_key import load_key, load_raw, required_documents
 from eval.run_eval import has_citations
 from eval.scoring import (
     score_conflict_handling,
@@ -218,10 +218,53 @@ def test_confirmed_requires_two_reviewers():
     key = load_key()
     assert not any(e.verification.is_confirmed for e in key.values()), (
         "No entry should be confirmed yet - the 2026-08-29 review was a single "
-        "pass and covered 1B only. If that has changed, update ADR-014 too."
+        "pass and covered 1B only, and the 2026-09-06 pass was an AI "
+        "re-derivation, not a second human. If that has changed, update ADR-014."
     )
-    assert key["1b_006"].verification.status == "unresolved"
-    assert key["1c_000"].verification.status == "draft", "1C was not reviewed"
+    assert key["1c_000"].verification.status == "draft", "1C was not human-reviewed"
+    assert key["1c_003"].verification.status == "draft", "1C was not human-reviewed"
+
+
+def test_an_ai_recheck_never_advances_verification_status():
+    """The 2026-09-06 pass re-derived all nine answers from the primary corpus
+    and agreed with every one. It still does not count: it was not a second
+    human, and it was not blind - the same agent had seen the recorded answers
+    earlier in the session. Agreement from a non-independent reviewer is
+    corroboration, not confirmation, and the file must keep saying so."""
+    raw = load_raw()
+    for entry in raw["questions"]:
+        recheck = entry["verification"].get("independent_recheck")
+        assert recheck, f"{entry['qid']} lost its recheck record"
+        assert recheck["is_second_human_reviewer"] is False
+        assert recheck["counts_toward_confirmed"] is False
+        assert entry["verification"]["status"] in {"draft", "single_review"}
+
+
+def test_1b_006_discrepancy_was_settled_on_evidence_not_by_narrowing():
+    """The review said 2, the key says 14. Settled 2026-09-06 against
+    codex/the_annals_of_the_ashen_era - a tier-1 source the review never used -
+    which states membership for ten of the fourteen. The set was not narrowed
+    to match the reviewer, which is the move that would have made the harness
+    teach the system to be worse."""
+    entry = load_key()["1b_006"]
+    assert len(entry.accepted_answers) == 14
+    assert entry.verification.status == "single_review"
+    assert entry.verification.discrepancy is None, "the factual dispute is closed"
+    raw = next(q for q in load_raw()["questions"] if q["qid"] == "1b_006")
+    assert "annals" in raw["verification"]["resolved_discrepancy"].lower()
+
+
+def test_corroborating_claims_are_recorded_but_not_required():
+    """1c_003 has nine sources bearing on it; the key listed four until
+    2026-09-06. All nine are recorded now. Requiring all nine against a k=5
+    retriever would make complete evidence unreachable by construction, so the
+    five restatements are flagged corroborating and excluded from the
+    denominator - faithful representation without a broken metric."""
+    entry = load_key()["1c_003"]
+    claims = entry.conflicts[0].claims
+    assert len(claims) == 9, "the full inventory must stay recorded"
+    assert sum(c.corroborating for c in claims) == 5
+    assert len(required_documents(entry)) == 4, "denominator unchanged"
 
 
 # -- reporting -----------------------------------------------------------

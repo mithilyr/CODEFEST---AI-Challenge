@@ -11,9 +11,9 @@
     "accepted_answers": "List of {answer, aliases}. Aliases are surface variants of the SAME answer, not alternative answers.",
     "required_evidence": "Documents an answer must be grounded in. Drives evidence recall/precision and the complete-evidence count.",
     "acceptable_paths": "One or more traversals that legitimately reach the answer. More than one entry means genuinely different valid routes, not the same route written twice.",
-    "conflicts": "Claims the corpus makes about the same subject-relation that disagree. stance is asserts | denies | silent. same_tier records whether the authority model can separate them at all. assertion_markers lists the words that indicate an answer is asserting the disputed claim, as opposed to merely naming the entities involved.",
+    "conflicts": "Claims the corpus makes about the same subject-relation that disagree. stance is asserts | denies | silent. same_tier records whether the authority model can separate them at all. assertion_markers lists the words that indicate an answer is asserting the disputed claim, as opposed to merely naming the entities involved. Claims flagged corroborating restate a position another source already carries; they are recorded for faithfulness but excluded from required_documents.",
     "expected_conflict_status": "none | may_surface | must_surface. must_surface means an answer presenting the disputed claim as settled fact is wrong however it is phrased.",
-    "verification": "status: draft | single_review | confirmed | unresolved. confirmed requires TWO independent reviewers per ADR-014; one consolidated review is single_review."
+    "verification": "status: draft | single_review | confirmed | unresolved. confirmed requires TWO independent HUMAN reviewers per ADR-014. An AI re-derivation is recorded under independent_recheck and never advances status - it corroborates, it does not confirm."
   },
   "questions": [
     {
@@ -64,7 +64,17 @@
           "teammate_review_2026_08_29"
         ],
         "reviewed_on": "2026-08-29",
-        "reviewer_confidence": "high"
+        "reviewer_confidence": "high",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "Cerys Sablewood the Ashen -> Wields [[The Cinder-Wrought Aegis]], since 356 AS (wiki/cerys_sablewood_the_ashen.md) -> Place of housing [[Gloamreach]] (wiki/the_cinder_wrought_aegis.md). Derived: Gloamreach. Agrees."
+        }
       }
     },
     {
@@ -116,7 +126,17 @@
           "teammate_review_2026_08_29"
         ],
         "reviewed_on": "2026-08-29",
-        "reviewer_confidence": "high"
+        "reviewer_confidence": "high",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "Isolde Mournvale -> Member of [[The Silent Choir]] (wiki/isolde_mournvale.md); War of Drowned Light -> Victor [[The Silent Choir]] (wiki/the_war_of_drowned_light.md). Derived: The War of Drowned Light. Agrees."
+        }
       }
     },
     {
@@ -236,13 +256,23 @@
       "confidence": "high",
       "notes": "FOURTEEN valid answers, and membership is recorded in TWO DISJOINT places with zero overlap: 6 names on the faction page's 'Members' row, 8 more on individual character pages. Both directions are required; either alone loses more than half the members. Re-verified against the corpus on 2026-08-29 by enumerating both directions. NOTE ON REVIEW: the 2026-08-29 human review reported only two valid answers (Ravena Stormwell, Isolde Mournvale). That is incomplete - it missed the faction page's Members row entirely and six of the eight character pages. The fourteen-name set is the corpus-verified one and is retained. Recorded rather than quietly corrected, because it is the clearest evidence for why ADR-014 requires two independent reviewers.",
       "verification": {
-        "status": "unresolved",
+        "status": "single_review",
         "reviewers": [
           "teammate_review_2026_08_29"
         ],
         "reviewed_on": "2026-08-29",
         "reviewer_confidence": "high",
-        "discrepancy": "Review listed 2 accepted answers; corpus enumeration finds 14. Machine check re-run 2026-08-29 confirms 6 on wiki/the_silent_choir.md 'Members' plus 8 character pages carrying a membership row. Needs a second reviewer to settle before this entry counts as confirmed."
+        "resolved_discrepancy": "Review reported 2 accepted answers; the key records 14. SETTLED on evidence 2026-09-06: codex/the_annals_of_the_ashen_era - a tier-1 source the original review never consulted - states membership for 10 of the 14 explicitly, three of them anaphorically (#303 Ignatz Fellgard, #337 Isolde Mournvale, #520 Morwenna Vosgard, each resolved against the preceding paragraph). A corpus-wide sweep for 'X member of The Silent Choir' returns zero names outside the 14. The remaining 4 are recorded via infobox rows and epithet-suffixed forms. The set is complete and correct. Human sign-off is still outstanding; the factual dispute is not.",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "See resolved_discrepancy. Derived: the same 14. Agrees."
+        }
       }
     },
     {
@@ -321,7 +351,17 @@
           "teammate_review_2026_08_29"
         ],
         "reviewed_on": "2026-08-29",
-        "reviewer_confidence": "high"
+        "reviewer_confidence": "high",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "Ederon Fellgard -> Membership [[The Iron-Ring Cartel]] (wiki/ederon_fellgard.md); Cartel -> Victor of [[The Winter Reckoning]]; [[The Leaden Accord]] (wiki/the_iron_ring_cartel.md). Only one is an accord. Derived: The Leaden Accord. Agrees."
+        }
       }
     },
     {
@@ -412,7 +452,17 @@
         ],
         "reviewed_on": "2026-08-29",
         "reviewer_confidence": "medium",
-        "machine_recheck": "Both cited passages re-read verbatim from the corpus on 2026-08-29; the contradiction is real and is affirmative on both sides, not an omission. The Cartel page states the exclusion twice in prose and excludes the Purge from its 'Victor of' row while listing the other two conflicts."
+        "machine_recheck": "Both cited passages re-read verbatim from the corpus on 2026-08-29; the contradiction is real and is affirmative on both sides, not an omission. The Cartel page states the exclusion twice in prose and excludes the Purge from its 'Victor of' row while listing the other two conflicts.",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "Membership uncontested (wiki/the_iron_ring_cartel.md, Member row and prose). Victor designation contradicted between wiki/the_purge_of_blackport.md and wiki/the_iron_ring_cartel.md, both tier 2. Derived: membership, with the victor claim flagged disputed. Agrees."
+        }
       }
     },
     {
@@ -463,7 +513,17 @@
           "teammate_review_2026_08_29"
         ],
         "reviewed_on": "2026-08-29",
-        "reviewer_confidence": "high"
+        "reviewer_confidence": "high",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "Gravemaw Wyrm -> Lair [[Marrowwell Abbey]] (wiki/gravemaw_wyrm.md) -> Ruled by [[The Bleeding Crown]] (wiki/marrowwell_abbey.md). Derived: The Bleeding Crown. Agrees."
+        }
       }
     },
     {
@@ -515,7 +575,17 @@
           "teammate_review_2026_08_29"
         ],
         "reviewed_on": "2026-08-29",
-        "reviewer_confidence": "high"
+        "reviewer_confidence": "high",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "Ravena Stormwell -> Member of [[The Silent Choir]] (wiki/ravena_stormwell.md); Victor row as 1b_005. Derived: The War of Drowned Light. Agrees."
+        }
       }
     },
     {
@@ -579,6 +649,15 @@
               "source": "wiki/gloamreach.md",
               "tier": 2,
               "quote": "Founded | Contested; consult the [[Annals]] and [[Codex]]"
+            },
+            {
+              "stance": "asserts",
+              "value": "286 AS",
+              "source": "ephemera/contract_concerning_thessaly_coldwater.pdf",
+              "tier": 4,
+              "quote": "Its founded year is 286 AS; I state this plainly, and no contrary reckoning shall trouble this writ.",
+              "corroborating": true,
+              "found_by": "independent re-derivation 2026-09-06"
             }
           ]
         }
@@ -590,7 +669,17 @@
         "status": "draft",
         "reviewers": [],
         "reviewed_on": null,
-        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed."
+        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "codex_vaeloria_i #188 states 246 AS and rejects competing accounts; two tier-4 contracts assert 286 AS; wiki/gloamreach.md abstains. Derived: 246 AS. Agrees. DEFECT FOUND: one 286 AS source was missing from this conflict block."
+        }
       }
     },
     {
@@ -662,6 +751,51 @@
               "source": "wiki/gauntlet_of_sorrowfell.md",
               "tier": 2,
               "quote": "Forging date | Contested; no year is stated"
+            },
+            {
+              "stance": "asserts",
+              "value": "360 AS",
+              "source": "ephemera/sermon_concerning_the_war_of_drowned_light.pdf",
+              "tier": 4,
+              "quote": "I proclaim that it was forged in 360 AS.",
+              "corroborating": true,
+              "found_by": "independent re-derivation 2026-09-06"
+            },
+            {
+              "stance": "silent",
+              "value": "not recorded",
+              "source": "ephemera/decree_concerning_vharencrag_fortress.pdf",
+              "tier": 4,
+              "quote": "Its forging date is not recorded in the supplied facts, and no keeper shall invent a year, claim a maker, or inscribe a false origin upon it.",
+              "corroborating": true,
+              "found_by": "independent re-derivation 2026-09-06"
+            },
+            {
+              "stance": "silent",
+              "value": "not recorded",
+              "source": "ephemera/field_report_concerning_tamsin_greyfen.pdf",
+              "tier": 4,
+              "quote": "It is regalia, though no account supplied here fixes its forging date.",
+              "corroborating": true,
+              "found_by": "independent re-derivation 2026-09-06"
+            },
+            {
+              "stance": "silent",
+              "value": "not recorded",
+              "source": "ephemera/interrogation_record_concerning_gauntlet_of_sorrowfell.pdf",
+              "tier": 4,
+              "quote": "The forging date is not recorded in the supplied facts.",
+              "corroborating": true,
+              "found_by": "independent re-derivation 2026-09-06"
+            },
+            {
+              "stance": "silent",
+              "value": "not recorded",
+              "source": "ephemera/sermon_concerning_ignatz_fellgard.txt",
+              "tier": 4,
+              "quote": "Its forging date is not recorded. Thus we shall not invent one, though the ignorant always prefer a false date to an honest blank.",
+              "corroborating": true,
+              "found_by": "independent re-derivation 2026-09-06"
             }
           ]
         }
@@ -673,7 +807,17 @@
         "status": "draft",
         "reviewers": [],
         "reviewed_on": null,
-        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed."
+        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.",
+        "independent_recheck": {
+          "by": "ai_independent_rederivation",
+          "on": "2026-09-06",
+          "method": "Each answer re-derived from the primary corpus documents; agreement checked afterwards.",
+          "is_second_human_reviewer": false,
+          "counts_toward_confirmed": false,
+          "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
+          "agrees_with_recorded_answer": true,
+          "derivation": "codex_vaeloria_ii #119 states 391 AS; two tier-4 sermons assert 360 AS; five tier-4 sources say the date is unrecorded; wiki abstains. Derived: 391 AS. Agrees. DEFECT FOUND: the block listed 4 of the 9 sources bearing on this question."
+        }
       }
     }
   ],

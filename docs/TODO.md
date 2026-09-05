@@ -14,7 +14,7 @@ are done: `origin` is configured
 
 - [ ] Human-verify `eval/answer_key.json` — two people, per
       `eval/verification/answer_key_review.md`. Measured `verification.status`:
-      `single_review` ×6, `draft` ×2, `unresolved` ×1, all seven reviewed
+      `single_review` ×7, `draft` ×2, 0 confirmed, all reviewed
       entries by the same reviewer (F-015). There is no `verified_by` field;
       this line named one until 30 Aug. Recall is now
       independently corroborated (`eval/completeness.py`, 0 defects); what's

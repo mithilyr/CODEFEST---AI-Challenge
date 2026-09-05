@@ -53,6 +53,14 @@ class Claim:
     value: str | None = None
     field_name: str | None = None
     quote: str | None = None
+    #: True when this source restates a position another source already
+    #: carries. Recorded so the corpus is represented faithfully, but excluded
+    #: from required_documents: a correct answer needs the authority, one
+    #: competing claim and the abstention - not all five paraphrases of "not
+    #: recorded". Counting every restatement would put 9 documents behind
+    #: 1c_003 against a k=5 retriever, making complete evidence unreachable by
+    #: construction, which measures the metric rather than the system.
+    corroborating: bool = False
 
 
 @dataclass(frozen=True)
@@ -156,6 +164,7 @@ def _conflict(raw: dict) -> Conflict:
                 value=c.get("value"),
                 field_name=c.get("field"),
                 quote=c.get("quote"),
+                corroborating=bool(c.get("corroborating")),
             )
             for c in raw.get("claims", [])
         ),
@@ -209,10 +218,19 @@ def required_documents(entry: KeyEntry) -> list[str]:
     questions: a system that never retrieves the sermon cannot know there was a
     disagreement to resolve, so those documents are part of the evidence the
     answer needs rather than distractors to be avoided.
+
+    Claims flagged ``corroborating`` are excluded. They are additional sources
+    restating a position already represented, recorded in the key for
+    faithfulness but not required for an answer to be grounded. See the note on
+    ``Claim.corroborating``.
     """
     docs = list(entry.required_evidence)
     for conflict in entry.conflicts:
-        docs.extend(claim.source for claim in conflict.claims if claim.source)
+        docs.extend(
+            claim.source
+            for claim in conflict.claims
+            if claim.source and not claim.corroborating
+        )
     for path in entry.acceptable_paths:
         docs.extend(hop["source"] for hop in path.get("hops", []) if hop.get("source"))
     return list(dict.fromkeys(docs))

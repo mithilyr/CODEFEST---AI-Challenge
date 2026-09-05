@@ -135,9 +135,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which individual was a member of the faction that ultimately won the War of Drowned Light?
 
-**Status.** `unresolved` - reviewed by teammate_review_2026_08_29
-
-> **OPEN DISCREPANCY.** Review listed 2 accepted answers; corpus enumeration finds 14. Machine check re-run 2026-08-29 confirms 6 on wiki/the_silent_choir.md 'Members' plus 8 character pages carrying a membership row. Needs a second reviewer to settle before this entry counts as confirmed.
+**Status.** `single_review` - reviewed by teammate_review_2026_08_29
 
 **Key accepts any of 14 answers** (`answer_cardinality: any_of`). Check that the set is **complete** as well as that its members are right - an incomplete set marks correct answers wrong.
 
@@ -526,6 +524,9 @@ same tier: **False**  |  resolution: **authority**  |  must surface: **False**
 - **silent**: `-` from `wiki/gloamreach.md` (tier 2)
   - key quotes: "Founded | Contested; consult the [[Annals]] and [[Codex]]"
   - corpus says: "| Field | Value | |---|---| | Region | [[Pale Coast]] | | Type | Core location | | Garrison strength | 2483 | | Status | Quarantined | | Ruled by | [[House Morvain]] | | Appearance | Pallid, bleak, and shadowed | | Demeanor | Sealed-off, ominous, isolated, and guarded | | Founded | Contested; consult the [[Annals]] and [[Codex]] |"
+- **asserts**: `286 AS` from `ephemera/contract_concerning_thessaly_coldwater.pdf` (tier 4)
+  - key quotes: "Its founded year is 286 AS; I state this plainly, and no contrary reckoning shall trouble this writ."
+  - corpus says: "... rrounding coast. Gloamreach bears the pallid, bleak visual character of the Pale Coast and the shadowed identity carried by its name. It feels sealed-off and ominous, defined by isolation and guarded uncertainty. Its founded year is 286 AS; I state this plainly, and no contrary reckoning shall trouble this writ. This compact binds the named parties to vigilance, labor, and silence concerning the sealed ways of Gloamreach. Any breach shall be counted against the breacher before the walls, the garrison, and the dead. Marked by: Thessaly Coldwater, Outrider Morwenna Vosgard, Sapper ..."
 
 ### Tracer's notes
 
@@ -590,6 +591,21 @@ same tier: **False**  |  resolution: **authority**  |  must surface: **False**
 - **silent**: `-` from `wiki/gauntlet_of_sorrowfell.md` (tier 2)
   - key quotes: "Forging date | Contested; no year is stated"
   - corpus says: "| Field | Value | |---|---| | Name | [[Gauntlet of Sorrowfell]] | | Artifact class | Regalia | | Attunement cost | 12 | | Forged at | [[Vharencrag Fortress]] | | Housed in | [[Greyfell Citadel]] | | Forging date | Contested; no year is stated |"
+- **asserts**: `360 AS` from `ephemera/sermon_concerning_the_war_of_drowned_light.pdf` (tier 4)
+  - key quotes: "I proclaim that it was forged in 360 AS."
+  - corpus says: "... only famous faces shape an age. Hands without songs may still alter the ground beneath every throne. Before us stands the Gauntlet of Sorrowfell, regalia of grim authority. Its attunement cost is 12. I proclaim that it was forged in 360 AS. Wear it, if you must, as one wears judgment-not as a prize, but as a burden. Sorrow is not weakness. Sorrow is the weight that keeps the hand from becoming eager. So kneel, but do not kneel blindly. Mourn, but do not let mourning become permission. The drowned dead have no mouths, yet their silence accuses every oath sworn in secret and every banner raised over ashes. Let the Choir keep its victory. Let the Pale Spymaster keep their hidden vow. Let the Sa ..."
+- **silent**: `not recorded` from `ephemera/decree_concerning_vharencrag_fortress.pdf` (tier 4)
+  - key quotes: "Its forging date is not recorded in the supplied facts, and no keeper shall invent a year, claim a maker, or inscribe a false origin upon it."
+  - corpus says: "... ollowvale plainly, lest silence invite ruin. Concerning the regalia called Gauntlet of Sorrowfell: let it be kept under solemn custody and neither displayed as common ornament nor handled as a trinket. Its attunement cost is 12. Its forging date is not recorded in the supplied facts, and no keeper shall invent a year, claim a maker, or inscribe a false origin upon it. The Gauntlet of Sorrowfell bears an atmosphere of sorrow and grim authority; let those who approach it conduct themselves accordingly. Its name shall remain unaltered in all records, whether the record be scratched in iron, inked upon vellum, or spoken before witnesses. Any hand that alters the stated founding years, garrison c ..."
+- **silent**: `not recorded` from `ephemera/field_report_concerning_tamsin_greyfen.pdf` (tier 4)
+  - key quotes: "It is regalia, though no account supplied here fixes its forging date."
+  - corpus says: "Field Report: Concerning Tamsin Greyfen and the Gauntlet of Sorrowfell Filed under: Ashen Era personnel and regalia Condition of record: Incomplete; witness confidence divided I submit this report for those who prefer a clean account, though clean accounts are scarce in the Ashen Era. The name Tamsin Greyfen appears in the field rolls as a minor figure, her trade marked plainly: Sapper. No rank beyond that is preserved here. No allegiance is safely attached to her name in the supplied record. Those who claim to have known her speak with the confidence of people remembering someone else. The register gives her birth without ornament: Tamsin Greyfen - born: 393 AS. No canonical physical detail ..."
+- **silent**: `not recorded` from `ephemera/interrogation_record_concerning_gauntlet_of_sorrowfell.pdf` (tier 4)
+  - key quotes: "The forging date is not recorded in the supplied facts."
+  - corpus says: "...  That is sufficient. [Here the subject ceased speaking. The interrogator continued for an unrecorded interval. No further answers were entered.] FINAL ENTRY: Gauntlet of Sorrowfell remains classified as regalia. Attunement cost: 12. Forging date: not recorded in the supplied facts. ..."
+- **silent**: `not recorded` from `ephemera/sermon_concerning_ignatz_fellgard.txt` (tier 4)
+  - key quotes: "Its forging date is not recorded. Thus we shall not invent one, though the ignorant always prefer a false date to an honest blank."
+  - corpus says: "Now consider the **Gauntlet of Sorrowfell**. It is regalia, bearing the name **Gauntlet of Sorrowfell**, and around it clings an atmosphere of sorrow and grim authority. Its forging date is not recorded. Thus we shall not invent one, though the ignorant always prefer a false date to an honest blank."
 
 ### Tracer's notes
 

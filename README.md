@@ -115,7 +115,7 @@ buys.
 
 ```bash
 python -m src.ingest.integrity   # is your corpus the corpus we measured against?
-python -m pytest                 # 342 tests
+python -m pytest                 # 345 tests
 python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
 python -m src.graph.build        # 117 entities, 267 edges, 15 relations
 ```
@@ -204,7 +204,7 @@ comparison/            the router comparison and guard ablations behind ADR-019
 config/                authority.yaml, relations.yaml, corpus_manifest.sha256
 configuration-example/ annotated copies of the above, readable without the tree
 docs/                  ADRs, failure log, limitations, architecture, diagram, TODO
-tests/                 342 tests
+tests/                 345 tests
 ai_usage/              exported AI collaboration transcripts (deliverable §4.1)
 ocr_cache/             the 17 scan transcripts, committed so OCR needs no key
 data/                  where the corpus goes; gitignored, ships empty
@@ -230,7 +230,7 @@ python -m src.ingest.integrity                   # verify corpus against the man
 python -m src.ingest.pipeline                    # ingest, print summary
 python -m src.ingest.ocr                         # transcribe scans (17/17 from cache)
 python -m src.graph.build                        # build graph, print coverage
-python -m pytest                                 # 342 tests
+python -m pytest                                 # 345 tests
 
 # Answering
 python -m src.ui.server                          # the demo, http://127.0.0.1:8000
@@ -257,10 +257,16 @@ python -m src.clients.openrouter --verify        # are the model rotations still
 > answers by a route independent of the graph. *Precision* review (is each answer
 > right?) is still outstanding, so the harness continues to warn and we are not
 > quoting these numbers as final. Per-entry state, from `python -m
-> eval.verify_key`: **`single_review` ×6, `draft` ×2, `unresolved` ×1**, and
-> **0 of 9 confirmed by two reviewers** — all seven reviewed entries name the
-> same single reviewer, which is the failure mode `docs/failures.md` F-015
-> records.
+> eval.verify_key`: **`single_review` ×7, `draft` ×2**, and **0 of 9 confirmed by two
+> reviewers** — every entry names the same single human reviewer, which is the
+> failure mode `docs/failures.md` F-015 records.
+>
+> On 6 Sep an **AI re-derivation** worked all nine answers from the primary
+> documents without reading the recorded answer first. It agreed with every
+> one, and found two defects in the 1C conflict inventories (F-028). Recorded
+> per entry under `verification.independent_recheck`. It does **not** advance
+> any status: it was not a second human, and not blind — the same agent had
+> seen the key earlier in the session. Corroboration, not confirmation.
 
 ### Checkpoint 1 — vector RAG baseline
 
