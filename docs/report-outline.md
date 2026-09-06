@@ -144,7 +144,7 @@ This section is the submission's strongest asset and the easiest to weaken by
 overclaiming. Rules:
 
 **Never quote 7/7 without the robustness number beside it.** Templates answer
-**7/7 dev 1B** questions (ADR-017) *and* match no route shape on **35 of 49**
+**7/7 dev 1B** questions (ADR-017) *and* match no route shape on **36 of 49**
 independently authored questions — on the 21 novel ones, **one**. Both
 sentences, always together.
 Source: `python -m comparison.harness`. Re-run it the day the report is
@@ -243,6 +243,47 @@ Two caveats that must travel with it, because both are the section's own rule:
   unit and produce the *fewest* useful attestations per unit; the codex, at 808
   paragraphs, carries the restatements. Worth one sentence — it is the most
   counter-intuitive measurement in the repo.
+
+**The node set, measured — the boundary the corroboration figure does not
+cover.** 255/261 measures edges *between entities the graph already holds*. The
+graph's nodes come from wiki infobox rows, so an entity only the prose names has
+no node and a question about it declines by construction. **Measured 6 Sep
+(ADR-030):** of the **79** non-wiki documents that declare their own subject in
+the filename, **77 reach a graph node**. Of the two that do not, one is a corpus
+filename truncated mid-word, leaving **exactly one entity the corpus treats as
+first-class with no node — Halvard Cindervale**, named in 21 evidence units
+across the codex, the ephemera and the wiki.
+Source: `python -m eval.probes.entity_reachability`; ADR-030; F-032.
+
+Three things must travel with that number, in this order:
+
+- **The cause is ours, and it is one row.** `wiki/the_ashen_vanguard.md` writes
+  `| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |` with no
+  `[[links]]`, and an unlinked infobox cell can only resolve against entities
+  that already own a wiki page. It is a defect (F-032), not a limit of the
+  corpus, and it is disclosed rather than fixed: the fix moves the graph to
+  118/264, reddens `tests/test_diagram.py`, invalidates the 117/261 quoted in
+  five documents, and changes no measured answer three days out.
+- **The user is told, not just the reader of this report.** The question returns
+  `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`, and the demo renders *"Present
+  in the corpus, absent from the graph"* with the reason, the file that imposes
+  it, and quoted codex/ephemera/wiki passages with tiers. This is the strongest
+  live demo of the decline machinery in the repo — **show it from the UI**, not
+  from `python -m src.query.engine`, which lacks the evidence-unit scan the
+  status needs and degrades to `unresolved_entity`.
+- **Do not quote the 579.** The probe's second, noisier extractor finds 741
+  distinct capitalised names outside the wiki, 579 of which reach no node. A
+  hand-check of 15 found **0 genuine entities** — document titles, section
+  headings, form labels, and verbs swept in beside names that do resolve. The
+  honest number is 1 of 79. Quoting 579 would be exactly the overclaim this
+  section exists to avoid.
+
+This is also what repairs a soft spot in ADR-027's reasoning, and saying so is
+worth a sentence: ADR-027 declined to build a prose relation extractor partly
+because the wrong answers named only wiki pages in `required_evidence` — which
+was itself derived from the wiki-built graph, so the argument was partly
+circular. This measurement supplies the non-circular half: **the corpus does not
+carry a population of prose-only entities an extractor would have found.**
 
 **A refusal worth reporting as a result.** We did not wire the corroborating
 passages into the conflict detector. `_DENIAL_RE` matches 5 units across the

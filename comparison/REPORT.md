@@ -1,5 +1,12 @@
 # Router comparison — measured report
 
+> **Amendment, 2026-09-06 (ADR-029).** The figures below are ADR-019's, correct
+> as measured. Re-running `python -m comparison.harness` today gives
+> `no_route_shape` **36**/4/16 and `answer_correct` 10/12/**18**: F-031's
+> coverage guard declines `rb_039` at the template tier, and the cue tier then
+> answers it correctly. Templates' precision is unchanged at 10/11. The tables
+> below are not edited — they record what was measured when the comparison ran.
+
 **Phase 1 deliverable.** Our four-template router (`src/query/route.py`) against the
 sister prototype's cue-based router (`github.com/YasiruRF/delphi`, their ADR-019),
 on one independently authored question set.

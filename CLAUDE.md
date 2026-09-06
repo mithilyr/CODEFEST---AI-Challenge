@@ -62,9 +62,9 @@ that result and adds no reasoning of its own (ADR-018).
 
 **The query engine is Checkpoint 2, not a finished reasoning system.**
 Routing robustness has been measured (ADR-019): the four templates match no
-route shape on **35 of 49** realistic questions — on 21 *novel* ones they match
+route shape on **36 of 49** realistic questions — on 21 *novel* ones they match
 **one**. Our 7/7 measures fit, not routing capability. Do not quote 7/7 without
-the 35/49 beside it. (This number has moved twice, in opposite directions, for
+the 36/49 beside it. (This number has moved three times, in opposite directions, for
 two different and both legitimate reasons — never quote it from memory,
 re-derive with `python -m comparison.harness`. ADR-019 first measured **35**;
 ADR-021's near-miss reporter reclassified four misses to `ambiguous_entity`,
@@ -72,7 +72,12 @@ dropping it to **33**, but one of those four — `ederon fellgards` — was a
 misdiagnosis of its own (F-026): a correctly-spelled name reported as a typo.
 ADR-025 fixed that specific case, which moved it back to **35** — restoring
 the *more correct* `relation_unavailable` diagnosis for that one question, not
-reopening the regression. No answer's correctness changed at either step.)
+reopening the regression. ADR-029's coverage guard then moved it to **36**:
+`rb_039`'s template matched a two-hop shape inside a longer question and is now
+declined, which is the fourth move and the first one that *improved* an answer —
+arm C went 17→**18** correct and 27→**28** complete evidence, because the
+template had been blocking a correct cue-tier answer. No answer's correctness
+changed at the first three steps.)
 
 Three tiers now exist (templates → cue fallback → LLM plan), each declining
 rather than guessing. **A decline is a result, and the UI renders it as one**
@@ -93,8 +98,8 @@ that moves with the provider's free lineup.
 | `src/baseline/` | Done — chunker, vector index, naive RAG (Checkpoint 1) |
 | `eval/answer_key.json` | Drafted, **not two-person verified** — measured `verification.status`: `single_review` ×7, `draft` ×2, **0 of 9 confirmed**. Every entry names the same single human reviewer, which is F-015 exactly. `1b_006` left `unresolved` until 6 Sep; its 2-vs-14 dispute is now settled *on evidence* (the Annals, tier 1, state membership for 10 of the 14 — F-028), so it reads `single_review` like the rest. A second, **AI** re-derivation on 6 Sep worked each answer from the primary documents and agreed with all nine, and found two defects in the 1C conflict inventories (1c_000 missed one source of the 286 AS claim; 1c_003 listed 4 of the 9 sources bearing on it). It does **not** count toward `confirmed`: not a second human, and not blind. Recall is independently corroborated by `eval/completeness.py` (0 defects) |
 | `eval/` harness | Done — deterministic scoring, response cache, reproducible artifacts |
-| `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016). Direction comes from the field name *unless* the cell's own verb contradicts it, in which case the cell wins and the flip is counted in `direction_overrides` (ADR-023). That bug had 3 of 267 edges pointing backwards; fixing it changed no score. A row whose value resolves to the page's own subject is a title row whatever field name it wears, and is skipped and counted in `self_references` (ADR-028) — that took the edge count **267 → 261** and removed six self-loops (F-030). `corroborate.py` attaches non-wiki attestation to edges without modifying them (ADR-027): **255 of 261 edges (97.7%) are named by a codex, chronicle or ephemera passage**, so an answer built from wiki infoboxes visibly spans collections |
-| `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **17 correct / 27 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019, evidence count updated by ADR-024), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default**. Identity questions ("Who is X?") return `EvidenceStatus.PROFILE` — the entity's whole record, labelled as such, never presented as an answer to a narrow question. A near-miss spelling is **reported** at ≥0.90 similarity and never resolved (ADR-021, ADR-011 intact). The apostrophe-less-possessive false-positive (F-026, 3 of 49) is fixed (ADR-025) — the suggestion is suppressed, not the boundary widened |
+| `src/graph/` | Cell parsers, provenance, construction, traversal — **7/7 complete evidence on dev 1B** (ADR-016). Direction comes from the field name *unless* the cell's own verb contradicts it, in which case the cell wins and the flip is counted in `direction_overrides` (ADR-023). That bug had 3 of 267 edges pointing backwards; fixing it changed no score. A row whose value resolves to the page's own subject is a title row whatever field name it wears, and is skipped and counted in `self_references` (ADR-028) — that took the edge count **267 → 261** and removed six self-loops (F-030). `corroborate.py` attaches non-wiki attestation to edges without modifying them (ADR-027): **255 of 261 edges (97.7%) are named by a codex, chronicle or ephemera passage**, so an answer built from wiki infoboxes visibly spans collections. The **node set** is measured too (ADR-030): of the 79 non-wiki documents that declare their own subject, 77 reach a node, one is a truncated corpus filename, and **exactly one first-class entity has no node** - `halvard_cindervale`, dropped by an unlinked `Members` row on `the_ashen_vanguard.md` (F-032, open by choice). Quote 1 of 79; the probe's noisier span scan reports 579 unreachable names and a hand-check of 15 found 0 real entities |
+| `src/query/` | Three routing tiers, each running only if the previous declined. Templates: **7/7 dev 1B** (ADR-017). Cue fallback: **18 correct / 28 complete evidence** vs templates-alone 10 / 11 on 49 independent questions (ADR-019; evidence count updated by ADR-024, both counts by ADR-029), 40% precision vs templates' 91%. LLM planner (ADR-020): emits a validated plan, never an answer; **off by default**. Identity questions ("Who is X?") return `EvidenceStatus.PROFILE` — the entity's whole record, labelled as such, never presented as an answer to a narrow question. A near-miss spelling is **reported** at ≥0.90 similarity and never resolved (ADR-021, ADR-011 intact). The apostrophe-less-possessive false-positive (F-026, 3 of 49) is fixed (ADR-025) — the suggestion is suppressed, not the boundary widened |
 | `src/clients/openrouter.py` | Done — rotation, cache, structured output, timeout, retry classification. Model list verified live 2026-09-01, re-checkable with `--verify` |
 | `src/query/synthesis.py` | Done — prose from a verified chain, `phrasing: model \| template \| none`. Template path needs no key |
 | `src/ui/graphview.py` | Done — all 117 entities as one static SVG, no CDN, no JS, deterministic (ADR-020) |
@@ -211,12 +216,13 @@ python -m src.graph.build          # build the graph, print coverage
 python -m src.graph.corroborate    # cross-collection attestation, ADR-027's numbers
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 360 tests
+python -m pytest                   # 379 tests
 python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
                                    #   /graph shows the whole graph as one SVG
 python -m src.ui.server --with-model   # enable the LLM planner + phrasing
 python -m src.clients.openrouter --verify  # are the model rotations still live?
 python -m eval.probes.corpus_shape # reproduce every ADR-009..013 number
+python -m eval.probes.entity_reachability  # ADR-030's node-set measurement
 python -m eval.run_eval --checkpoint baseline   # reproduce Checkpoint 1
 python -m eval.completeness        # independent answer-key completeness check
 python -m eval.verify_key          # regenerate the answer-key review pack

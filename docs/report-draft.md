@@ -1,5 +1,15 @@
 # Report draft — query layer material for §2 and §3
 
+> **Update, 2026-09-06 (ADR-029).** A fourth move of the same number, and the
+> first that is not a diagnosis fix. `no_route_shape` is now **36/4/16**,
+> `answer_correct` **10/12/18**, `complete_evidence` **11/20/28**,
+> `route_success` **11/30/31**. F-031's coverage guard makes a template decline
+> when the question names a relation its chain never walks; `rb_039` had been
+> matched by `victory_membership` on a two-hop shape nested inside it, and
+> declining hands it to the cue tier, which answers it correctly. Templates'
+> own precision is unchanged at 10/11 (91%) and the dev 7/7 is unchanged.
+> Body below left as originally drafted, per the same rule as the note above.
+
 > **Update, same day, commit `<pending>` (ADR-025).** Every `33` below is now
 > **35** again, and `no_route_shape 33/4/14` is now `35/4/16` — not a typo in
 > this draft, a real third move of the same number. ADR-025 fixed F-026 (a

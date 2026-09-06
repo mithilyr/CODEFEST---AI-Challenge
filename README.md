@@ -159,8 +159,8 @@ never at an empty result and never at an invented answer.
 
 | Tier | Module | Measured |
 |---|---|---|
-| 1 — templates | `route.py` | **7/7** on the dev 1B questions (ADR-017); matches no route shape on **35 of 49** independently written questions |
-| 2 — cue fallback | `fallback.py` | **17 correct / 27 complete evidence** of 49, against templates-alone's 10 / 11 (ADR-019, evidence count updated by ADR-024) — at 40% precision against templates' 91% |
+| 1 — templates | `route.py` | **7/7** on the dev 1B questions (ADR-017); matches no route shape on **36 of 49** independently written questions |
+| 2 — cue fallback | `fallback.py` | **18 correct / 28 complete evidence** of 49, against templates-alone's 10 / 11 (ADR-019; counts updated by ADR-024 and ADR-029) — at 40% precision against templates' 91% |
 | 3 — LLM plan | `planner.py` | Emits a validated *plan*, never an answer. **Off by default**, and deliberately unmeasured on the frozen set |
 
 **Never quote the 7/7 without the 35/49 beside it.** 7/7 measures fit to seven

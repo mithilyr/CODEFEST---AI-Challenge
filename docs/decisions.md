@@ -2533,3 +2533,312 @@ edges and were correct when written.
 
 *Status: accepted. 360 tests, 1 of them new (the self-reference count). SVG
 updated to "117 entities, 261 edges" and re-pinned.*
+
+## ADR-029 — A template must consume the whole question, and only an unambiguous cue counts as unconsumed
+
+**Problem**
+
+F-031. `victory_membership` fires on the substring shape `member_of ->
+victor_of`. Given *"Which war was won by the faction that Hesper Wrenfield's
+mentor belongs to?"* it matched, resolved the start entity to Hesper, walked
+two hops from *Hesper*, and returned **The War of Endless Vigil** with
+`status: sufficient` and a clean citation trail. That is the answer to *"which
+war did Hesper's own faction win"* — a different question. The mentor hop was
+never walked, and nothing in the router asked whether the template had accounted
+for the whole question.
+
+It is ADR-017's `walk_relations` constraint one layer up. That guard exists
+because the shortest path to the right endpoint took the wrong relation — right
+endpoint, wrong route. This is right *shape*, wrong question.
+
+**Decision**
+
+After a template produces a `RouteResult`, `_covers_the_question` compares the
+relations the question names against the chain the template will walk. If the
+question names a relation the chain never walks, the template **declines** and
+the question falls through to the next tier. A decline is a result (ADR-026); a
+confident wrong answer is not.
+
+**The measurement that shaped the rule, not just confirmed it**
+
+The obvious version — guard on the full cue vocabulary — was built first and
+measured before being wired in. It fails:
+
+```
+DEV (answer_key)  routed 7    would decline 0
+FROZEN 55         routed 13   would decline 5   <- rb_023, rb_025, rb_039, rb_041, rb_043
+3-HOP draft       routed 1    would decline 1
+```
+
+Three of those five — `rb_023`, `rb_025`, `rb_041` — are **currently answered
+correctly**. The cause is the cue-vocabulary contamination first measured on
+2 Sep: 7 of 65 cue words are shared across relations, and several are ordinary
+nouns that arrive from field names carrying their own values.
+
+```
+plac       -> forged_at, housed_in, serves_at    ("Place of forging/housing/service")
+conflict   -> belligerent_in, waged_at
+record     -> belligerent_in, wields             ("Later weapon record")
+major, military, personnel, serv
+```
+
+*"Which faction rules the **place** where the Pale Stag makes its lair?"*
+contains "place" and means nothing by it. A word shared across relations is not
+evidence that the question asks about any of them.
+
+So the rule adopted counts **only cue words that name exactly one relation** —
+58 of 65. Restricting it that way costs nothing and still catches F-031, because
+`mentor` names only `mentor_of`.
+
+**MEASURED, before and after, `python -m comparison.harness`**
+
+```
+metric                  A templates   B cues   C shipped
+route_success              11 -> 11    30       30 -> 31
+answer_correct             10 -> 10    12       17 -> 18
+complete_evidence          11 -> 11    20       27 -> 28
+no_route_shape             35 -> 36     4       16
+```
+
+**Templates' own precision is unchanged at 10/11 = 91%**, and the dev 7/7 is
+unchanged — the two conditions F-031 set for keeping the fix, both pinned by
+tests. `python -m comparison.ablations` is byte-identical (arm B is untouched).
+
+Arm C **improved**: `rb_039` — *"Which faction won the war in which the Vault
+Chitin was unleashed?"* — was being matched by `victory_membership` and failing
+with `relation_unavailable`. Declining hands it to the cue tier, which answers
+**The Bleeding Crown** with complete evidence. The template had been *blocking*
+a correct answer, which is the second cost of routing a question you cannot
+answer and the one nobody was counting.
+
+`no_route_shape` for templates therefore moves **35 → 36**. That is the fourth
+move of this number and the first that is not a diagnosis fix; CLAUDE.md's
+standing rule to re-derive it rather than quote it from memory is now
+underwritten by four separate movements.
+
+**What this does NOT fix**
+
+The three-hop questions are still not answered correctly. Measured on
+`eval/multihop_3hop_draft.json`:
+
+- `3h_001` — **correct** (`House Morvain`), via the cue tier.
+- `3h_003` — `fallback_ambiguous`: the gold value is among six returned.
+- `3h_002`, F-031's own question — the cue tier walks `mentor_of` one hop and
+  stops, returning **Corvus Hollowmere the Pale**. Still wrong.
+
+So the confident wrong answer from a *template* is gone; a wrong answer from the
+tier that declares itself 40%-precision and shows its chain is what replaced it.
+That is an improvement in honesty and in detectability — a reader who asked
+"which war" and is handed a person's name sees the failure immediately, where
+"The War of Endless Vigil" looked exactly like an answer — but it is **not** a
+solution to three-hop routing, and must not be reported as one.
+
+**Cost**
+
+`route()` keeps its signature; the unique-cue map is built lazily and cached, so
+no call site changed. `route.py` imports two pure vocabulary helpers from
+`fallback.py` (`normalise_cue_word`, `question_tokens`) — tier 1 reaching into
+tier 2's module is not ideal, but they are shared vocabulary utilities rather
+than that tier's decision logic, and duplicating the stemmer would let the two
+drift.
+
+**On the timing.** F-031 set its own condition: fix this only after the report,
+the video and the team-roles item land, none of which have. That condition was
+overridden by explicit instruction. The protocol it specified was followed
+exactly — measure, fix, re-measure, revert if templates' precision or the dev
+7/7 moves — and neither moved.
+
+*Status: accepted. 379 tests, 3 of them new: the F-031 question declines, a
+shared cue word does not trigger the guard, and all seven dev questions still
+route.*
+
+## ADR-030 — Cross-collection entity reachability, measured
+
+**The question ADR-027 did not ask**
+
+ADR-027 measured **edges**: 255 of 261 edges between existing nodes are named
+by a codex, chronicle or ephemera passage. Nobody had measured the **node set**.
+
+`build.py` builds nodes from wiki infobox rows, so an entity that only the
+codex, chronicles or ephemera name has no node at all, and a question about it
+declines *by construction* rather than on evidence. That is a different and
+strictly prior boundary to the one ADR-027 measured, and it was undocumented.
+
+It also matters for ADR-027's own reasoning. That ADR justified not building a
+prose relation extractor partly on the grounds that "the 4 wrong answers name
+only wiki pages in `required_evidence`". `required_evidence` was itself derived
+from the wiki-built graph, so that argument cannot by itself prove prose adds
+nothing — it is partly circular. **The decision still stands; this measurement
+is what widens its base.**
+
+**Method**
+
+`eval/probes/entity_reachability.py`, read-only, modifying nothing:
+
+    python -m eval.probes.entity_reachability
+
+Three measurements, in ascending order of precision:
+
+1. **Corpus-wide name scan.** Over the 27,415 non-wiki paragraph and page
+   units, two extractors: `route.py`'s gazetteer (reused through
+   `corroborate.py`'s `scan_surfaces`, so the surface forms are byte-identical
+   to the ones the answer path recognises — ADR-027 made the same call for the
+   same reason), plus capitalised multi-word spans for names the gazetteer has
+   never heard of. Resolution is **exact only** — `EXACT`, `NORMALISED`,
+   `ALIAS`. A fuzzy near-miss counts as *unreachable*, because ADR-011 forbids
+   fuzzy resolution from picking a winner and a probe may not quietly do what
+   the product refuses to.
+2. **Declared subjects.** Every non-wiki document is named
+   `<doctype>_concerning_<subject>`, already parsed into
+   `EvidenceUnit.subject_slug`. The corpus is *declaring* who each document is
+   about, so this needs no extractor and carries no extraction noise.
+3. **Silent relation rows.** Infobox rows on a mapped relation field that
+   produced no edge, read from the graph's own public output (`Edge.document`,
+   `Edge.row`) against an independent re-parse of the page. This finds the
+   *cause*, not just the symptom.
+
+**MEASURED**
+
+```
+distinct candidate names      : 741
+  reach one of the 117 nodes  : 162  (21.9%)
+  reach no node               : 579  (78.1%)
+      ephemera   426     chronicles 121     codex 75
+
+declared subjects             : 79
+  reach a graph node          : 77   (97.5%)
+  reach no node               : 2    (2.5%)
+
+silent relation rows          : 26
+  naming an entity the graph does not hold : 1
+```
+
+**The 579 is not an entity count and must never be quoted as one**
+
+The brief for this work predicted the capitalised-span extractor would produce
+noise, and it does. Fifteen of the 579 were sampled (seed 20260906, fixed in the
+probe, so the sample is the same fifteen forever) and hand-checked against the
+documents that name them. **0 of the 15 is an entity the corpus treats as
+first-class.** All fifteen are one of:
+
+| What it actually is | Sample members |
+|---|---|
+| Document title or title fragment | `Articles of Falconry and Service Concerning Ignatz Cindervale`; `Decree of Ashen Silence Concerning House Morvain and Maelis Harrowick the Pale Let`; `Pale Coast Concerning Gloamreach` |
+| Section heading | `Conditions of Sale`; `Field Recognition`; `The Silent Accounting` (Volume IV's own subtitle) |
+| Form-field labels run together | `Mark Attestation` — a petition's signature block |
+| Two adjacent codex field values | `Hollowreach Housed` — `Forged at: Hollowreach` / `Housed in: Crookvale` |
+| Verb or adverb swept in before a name that *does* resolve | `Bring the Sceptre of Final Winter`; `Describe Gloamreach`; `Perhaps Korvath` |
+| Two names conjoined by "and" | `Ashreach and Embercrag Fortress` — both are nodes, separately |
+| A signature formula wrapping a name that resolves | `Mark of Malchior Cindervale the Flame-Touched` |
+| A bare definite-noun short form | `The Hold` — prose shorthand for a keep; no page, no infobox |
+| Prose fragment | `Storehouses Held Stores` |
+
+Every proper noun *inside* those spans that is an entity already has a node.
+The honest reading of 579 is therefore **an upper bound dominated by extraction
+noise**, and the hand-check puts the true rate at or near zero. An inflated
+number would be worse than a small true one; this one is small.
+
+**The number that survives: one**
+
+Of the 79 documents that declare their own subject, two reach no node, and one
+of the two is not a real gap.
+`interrogation_record_concerning_isolde_fellgard_the_unforgiv.txt` is the
+**corpus's own filename truncation** — `_the_unforgiv`, cut mid-word — and
+`isolde_fellgard_the_unforgiven` *is* a node, reached under its full name from
+`letter_concerning_isolde_fellgard_the_unforgiven.txt`. It belongs beside the
+clipped scan tables already in `limitations.md`, not here.
+
+That leaves **exactly one entity the corpus treats as first-class and the graph
+has no node for: `halvard_cindervale`.** He is named in 21 evidence units — 5 in
+the tier-1 codex Annals, 8 across three ephemera documents, and 8 in the wiki
+itself.
+
+**Why he has no node, which is the part worth having measured**
+
+This is not a corpus boundary. It is a defect on our side, and it is one row:
+
+```
+wiki/the_ashen_vanguard.md
+| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |
+```
+
+That is an infobox row on a mapped relation field, and it produces **no edges at
+all**. The cell carries no `[[links]]`, and `build.py`'s pass 1 resolves an
+unlinked cell only against entities that **own a wiki page** — the `known` map
+is built from page subjects. None of those three owns one, so the row resolves
+to nothing and is dropped without appearing in `unmapped_fields` (the *field* is
+mapped) or in `self_references` (it is not a self-reference).
+
+Compare `wiki/the_silent_choir.md`, whose `Members` row *is* linked and yields
+six `member_of` edges. The field name is not the problem; the linking is.
+
+The general statement is: **an unlinked infobox cell can only name an entity
+that already owns a wiki page.** Page-less entities — 22 of the 117 nodes exist
+only as link targets — are unreachable from unlinked cells. Corpus-wide this
+costs **one node and three edges**, and one node rather than three only because
+Voltaire Hollowmere and Orin Veyra are built from linked cells on *other* pages
+(`the_leaden_accord.md`, `fenspire.md`).
+
+Logged as **F-032**.
+
+**Decision: measure, disclose, do not fix**
+
+Three days from the deadline, with the report and the video unwritten, this goes
+into `docs/limitations.md` with a number attached and is not fixed. The
+reasoning is F-031's, and it was checked against F-030's counter-precedent
+rather than assumed:
+
+- **The blast radius is real and unproven.** A fix moves the graph to 118
+  entities and 264 edges. `tests/test_diagram.py` re-derives every number in
+  `docs/diagrams/architecture.svg` from the live corpus and goes red; CLAUDE.md,
+  README.md, `docs/architecture.md`, `configuration-example/README.md` and the
+  report outline all quote 117/261; and the frozen 49-question harness result
+  would need re-running to show no regression.
+- **It changes no measured answer.** Nothing in `answer_key.json`, in the frozen
+  55, or in the dev 1B seven traverses Halvard Cindervale.
+- **F-030's counter-precedent does not apply.** F-030 overturned a deferral
+  because `test_diagram.py` *proved* the ripple safe. Here the ripple runs
+  through routing and the harness, and no test proves it safe without a measured
+  sweep. Deferring an unproven fix on a short calendar is not the same as
+  deferring an inconvenient one.
+
+**The boundary is disclosed in the product, not only in the docs**
+
+`EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE` already exists for exactly this
+case, and Halvard Cindervale is already its canonical test fixture
+(`tests/test_declines.py`, `Q_OUTSIDE`). Verified live through the UI engine:
+
+```
+Which faction won the war that Halvard Cindervale was a member of?
+  -> outside_structured_coverage
+     codex     tier 1  codex/the_annals_of_the_ashen_era
+     ephemera  tier 4  contract_… .docx / contract_… .pdf / petition_… .scan.pdf
+     wiki      tier 2  wiki/fenthrone.md, wiki/the_ashen_vanguard.md
+```
+
+The rendered page says *"Present in the corpus, absent from the graph"*, names
+`src/graph/build.py` and *"wiki infobox rows only"* as the reason, and quotes
+the passages with their tiers. A user who asks about the one unreachable entity
+is told the truth about why, with citations they can open. That is the whole
+argument for measuring this rather than guessing at it.
+
+**One caveat on that, stated because it is not obvious.** The status only fires
+where an evidence-unit scan is available. `python -m src.query.engine` does not
+load evidence units and degrades the same question to `unresolved_entity`; the
+demo UI's `Engine` loads them at startup, which is what `test_declines.py` pins.
+Demo this from the UI, not from the bare CLI.
+
+**What this does to ADR-027's claim**
+
+It widens the base rather than overturning it. ADR-027 argued that the other
+three collections corroborate but cannot build; this measures the node set that
+argument depends on and finds the wiki bounds it almost exactly — 77 of 79
+declared subjects reachable, the 78th a filename truncation, the 79th a one-row
+defect of ours rather than a limit of the wiki. **The corpus does not carry a
+population of prose-only entities that a relation extractor would have found.**
+That is the evidence ADR-027 reasoned toward from `required_evidence` and could
+not, on its own, supply.
+
+*Status: accepted. 379 tests, 6 of them new (`tests/test_reachability.py`).
+Graph untouched at 117/261, so `tests/test_diagram.py` and the architecture SVG
+are unaffected and no eval sweep was re-run — no number moved.*

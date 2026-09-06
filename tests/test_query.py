@@ -425,6 +425,72 @@ def test_silence_is_not_a_conflict(graph):
 
 
 # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# F-031 / ADR-029: a template must consume the whole question
+# --------------------------------------------------------------------------
+
+
+def test_a_template_declines_a_longer_question_containing_its_shape(
+    graph, resolver, gazetteer
+):
+    """F-031: `victory_membership` matched the two-hop shape nested inside a
+    three-hop question, walked from the wrong entity, and answered confidently.
+
+    The correct answer is The War of Drowned Light by
+    `mentor_of -> member_of -> victor_of`; the template returned The War of
+    Endless Vigil, which is "which war did Hesper's OWN faction win".
+    """
+    from src.query.route import RouteMiss
+
+    question = (
+        "Which war was won by the faction that Hesper Wrenfield's mentor belongs to?"
+    )
+    result = route(question, graph, resolver, gazetteer)
+    assert isinstance(result, RouteMiss)
+    assert "mentor_of" in result.reason
+    assert "F-031" in result.reason
+
+
+def test_the_guard_ignores_cue_words_shared_across_relations(
+    graph, resolver, gazetteer
+):
+    """MEASURED (ADR-029): guarding on the whole cue vocabulary declines three
+    questions the templates answer correctly, because seven cue words are
+    shared and several are ordinary nouns - "place" alone cues forged_at,
+    housed_in and serves_at. Only a word naming exactly one relation counts."""
+    from src.query.route import RouteResult, unique_relation_cues
+
+    unique = unique_relation_cues()
+    for shared in ("plac", "conflict", "record", "major", "military"):
+        assert shared not in unique, f"{shared!r} names more than one relation"
+
+    # rb_041: contains "place" and means nothing by it.
+    result = route(
+        "Which faction rules the place where the Pale Stag of Omens makes its lair?",
+        graph,
+        resolver,
+        gazetteer,
+    )
+    assert isinstance(result, RouteResult)
+    assert result.template == "lair_dominion"
+
+
+def test_the_guard_leaves_every_dev_question_routed(graph, resolver, gazetteer):
+    """The gate F-031 set for its own fix: if the dev 7/7 moves at all, revert."""
+    import json
+
+    from src.query.route import RouteResult
+
+    key = json.load(open("eval/answer_key.json", encoding="utf-8"))["questions"]
+    dev_1b = [q for q in key if q["qid"].startswith("1b_")]
+    assert len(dev_1b) == 7
+    for entry in dev_1b:
+        result = route(entry["question"], graph, resolver, gazetteer)
+        assert isinstance(result, RouteResult), (
+            f"{entry['qid']} lost its template route: {getattr(result, 'reason', '')}"
+        )
+
+
 # End-to-end: the engine, all seven dev 1B questions
 # --------------------------------------------------------------------------
 

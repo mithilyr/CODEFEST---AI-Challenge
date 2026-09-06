@@ -1367,3 +1367,104 @@ land. Then: add the coverage check, and re-run
 If templates' 91% precision or the 7/7 dev result moves at all, revert — the
 right behaviour here is a decline, and buying it with a regression elsewhere is
 a bad trade.
+
+### FIXED 2026-09-06 (ADR-029) — condition overridden by instruction, protocol followed
+
+The deferral above was overridden by explicit instruction while the report, the
+video and the team-roles item were all still open. The protocol this entry
+specified was followed exactly, and both gates held: templates' precision is
+**10/11 = 91%, unchanged**, and the dev **7/7 is unchanged**. Ablations are
+byte-identical.
+
+The fix is a coverage guard: a template declines when the question names a
+relation its chain never walks. **The first version of it would have failed
+this entry's own gate** — guarding on the full cue vocabulary declines
+`rb_023`, `rb_025` and `rb_041`, all three currently correct, because 7 of 65
+cue words are shared across relations and several are ordinary nouns ("place"
+alone cues `forged_at`, `housed_in` and `serves_at`). Restricting the guard to
+the 58 words that name exactly one relation costs nothing and still catches
+this entry's question, because "mentor" names only `mentor_of`.
+
+**It also found a cost nobody was counting.** `rb_039` was being matched by
+`victory_membership` and failing with `relation_unavailable`; declining hands it
+to the cue tier, which answers it correctly with complete evidence. A template
+routing a question it cannot answer does not merely fail — it *blocks* a tier
+that would have succeeded. Arm C moved 17→18 correct, 27→28 complete evidence,
+and templates' `no_route_shape` 35→36.
+
+**What is still broken.** The three-hop questions are not answered. `3h_001` is
+correct via the cue tier and `3h_003` returns the gold among six values, but
+this entry's own question now returns **Corvus Hollowmere the Pale** — the cue
+tier walks `mentor_of` one hop and stops. The confident wrong answer from a
+*template* is gone; a wrong answer from a tier that declares 40% precision and
+shows its chain replaced it. Better, and not fixed. Three-hop routing remains
+open.
+
+## F-032 — An infobox row that names three people and builds nothing, because none of them has a page
+
+**Found:** 2026-09-06, by `eval/probes/entity_reachability.py` (ADR-030).
+**Status:** open, deliberately. Disclosed in `docs/limitations.md` with a number.
+
+`wiki/the_ashen_vanguard.md` carries this row in its infobox:
+
+```
+| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |
+```
+
+`Members` is a mapped relation field — `the_silent_choir.md`'s `Members` row
+builds six `member_of` edges from it. This one builds **zero**.
+
+**Why.** The cell has no `[[links]]`. `build.py` handles that case: pass 1
+collects every wiki page's subject name into `known`, and pass 2 resolves an
+unlinked cell against it by exact name (ADR-011). But `known` holds *page
+subjects only*, and none of these three owns a wiki page. So the row resolves
+to nothing.
+
+**Why nothing caught it.** It is invisible to all three of the builder's own
+alarms, each of which was written for a different failure:
+
+- not in `unmapped_fields` — the field *is* mapped;
+- not in `self_references` — the target is not the page subject;
+- not in `direction_overrides` — no direction was ever decided.
+
+The row simply falls out of the loop at `if not named: continue`. This is
+F-014's lesson again, one layer down: the graph is *silent* about the Vanguard's
+membership, and silence is not denial.
+
+**Cost, measured rather than estimated.** Three `member_of` edges, and **one
+node**. Not three: Voltaire Hollowmere and Orin Veyra exist anyway, built from
+linked cells on `the_leaden_accord.md` and `fenspire.md`. Halvard Cindervale is
+named in no other infobox, so he gets no node at all — making him the **only**
+entity in the corpus that declares itself first-class (three ephemera documents
+are titled `…_concerning_halvard_cindervale`, and the tier-1 codex Annals names
+him five times) and has no node. ADR-030's whole measurement lands on this one
+row.
+
+**The general rule this exposes**, which is worth more than the single case:
+**an unlinked infobox cell can only name an entity that already owns a wiki
+page.** 22 of the 117 nodes exist only as link targets; any of them named in
+plain text in a cell would be dropped the same way. It happens to bite once.
+
+**Why it is not fixed.** Full reasoning in ADR-030. Briefly: the fix moves the
+graph to 118/264, which reddens `tests/test_diagram.py`, invalidates the
+117/261 quoted in five documents, and would need `comparison.harness` re-run to
+prove no regression — three days out, with the report and video unwritten, for a
+defect that changes no measured answer. F-030 overturned a similar deferral, but
+only because `test_diagram.py` *proved* that ripple safe; nothing proves this one
+safe without a sweep.
+
+**Condition for fixing.** After the report and the video land. Then: extend
+pass 1's `known` map with link-target names as well as page subjects, and re-run
+`python -m eval.probes.entity_reachability`, `python -m comparison.harness` and
+`python -m eval.run_eval`. Expect 118 entities and 264 edges, and update the SVG,
+CLAUDE.md, README.md, `docs/architecture.md`, `configuration-example/README.md`
+and the report outline in the same commit. If any answer's correctness moves,
+stop and read why before keeping it.
+
+**Mitigation already in place, and it is not nothing.** The one entity this
+costs us is the canonical fixture for `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`
+(`tests/test_declines.py`, `Q_OUTSIDE`). A user asking about Halvard Cindervale
+in the demo UI is told he is present in the corpus and absent from the graph,
+told that the graph is built from wiki infobox rows only, pointed at
+`src/graph/build.py`, and given quoted passages from the codex, the ephemera and
+the wiki with their tiers. The defect is disclosed to the user, not just to us.

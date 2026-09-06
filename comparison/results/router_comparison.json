@@ -913,13 +913,13 @@
       {
         "rid": "rb_039",
         "group": "B_novel",
-        "status": "relation_unavailable",
+        "status": "no_template_match",
         "route_success": false,
-        "entity_resolution_success": true,
+        "entity_resolution_success": false,
         "answer_correct": false,
         "complete_evidence": false,
         "ambiguous": false,
-        "no_route_shape": false,
+        "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
@@ -928,7 +928,7 @@
         "documents": [],
         "relation_routes": [],
         "hops": null,
-        "note": null
+        "note": "victory_membership matches a 2-hop shape inside this question but never walks waged_at, which the question names; declining rather than answering a narrower question (F-031)"
       },
       {
         "rid": "rb_040",
@@ -1264,11 +1264,11 @@
     "summary": {
       "n": 55,
       "route_success": 17,
-      "entity_resolution_success": 19,
+      "entity_resolution_success": 18,
       "answer_correct": 16,
       "complete_evidence": 17,
       "ambiguous": 2,
-      "no_route_shape": 39,
+      "no_route_shape": 40,
       "wrong_route": 0,
       "unnecessary_depth": 0,
       "would_escalate": 0
@@ -4078,22 +4078,33 @@
       {
         "rid": "rb_039",
         "group": "B_novel",
-        "status": "relation_unavailable",
-        "route_success": false,
+        "status": "fallback_sufficient",
+        "route_success": true,
         "entity_resolution_success": true,
-        "answer_correct": false,
-        "complete_evidence": false,
+        "answer_correct": true,
+        "complete_evidence": true,
         "ambiguous": false,
         "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": false,
-        "values": [],
-        "documents": [],
-        "relation_routes": [],
-        "hops": null,
-        "note": null
+        "values": [
+          "The Bleeding Crown"
+        ],
+        "documents": [
+          "wiki/vault_chitin.md",
+          "wiki/the_bleeding_crown.md",
+          "wiki/the_war_of_endless_vigil.md"
+        ],
+        "relation_routes": [
+          [
+            "waged_at",
+            "victor_of"
+          ]
+        ],
+        "hops": 2,
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) victor_of, waged_at. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
       },
       {
         "rid": "rb_040",
@@ -4595,10 +4606,10 @@
     ],
     "summary": {
       "n": 55,
-      "route_success": 35,
+      "route_success": 36,
       "entity_resolution_success": 38,
-      "answer_correct": 22,
-      "complete_evidence": 33,
+      "answer_correct": 23,
+      "complete_evidence": 34,
       "ambiguous": 8,
       "no_route_shape": 19,
       "wrong_route": 0,
@@ -4637,11 +4648,11 @@
       "arm_a": {
         "n": 21,
         "route_success": 1,
-        "entity_resolution_success": 3,
+        "entity_resolution_success": 2,
         "answer_correct": 1,
         "complete_evidence": 1,
         "ambiguous": 0,
-        "no_route_shape": 18,
+        "no_route_shape": 19,
         "wrong_route": 0,
         "unnecessary_depth": 0,
         "would_escalate": 0

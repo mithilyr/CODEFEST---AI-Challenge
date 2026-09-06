@@ -72,12 +72,12 @@ at an empty result or an invented answer.
 
 | Tier | Module | Measured |
 |---|---|---|
-| 1 — templates | `route.py` | **7/7** dev 1B (ADR-017); matches no route shape on **35 of 49** independent questions (ADR-025) |
-| 2 — cue fallback | `fallback.py` | **17 correct / 27 complete evidence** on 49, vs 10 / 11 for templates alone (ADR-019, evidence count updated by ADR-024). 40% precision against templates' 91% |
+| 1 — templates | `route.py` | **7/7** dev 1B (ADR-017); matches no route shape on **36 of 49** independent questions (ADR-025, ADR-029) |
+| 2 — cue fallback | `fallback.py` | **18 correct / 28 complete evidence** on 49, vs 10 / 11 for templates alone (ADR-019, counts updated by ADR-024 and ADR-029). 40% precision against templates' 91% |
 | 3 — LLM plan | `planner.py` | Emits a validated *plan*, never an answer. **Off by default**; unmeasured on the frozen set |
 
-**Never quote the 7/7 without the 35/49 beside it.** 7/7 measures fit to the
-seven development questions; 35/49 measures routing capability on questions
+**Never quote the 7/7 without the 36/49 beside it.** 7/7 measures fit to the
+seven development questions; 36/49 measures routing capability on questions
 written independently and frozen before either router ran. Reporting the first
 alone would misrepresent the system.
 
@@ -147,7 +147,7 @@ python -m src.graph.build                       # 117 entities, 261 edges
 python -m eval.probes.corpus_shape              # 651 cells, 12 templates
 python -m eval.run_eval --checkpoint baseline   # Checkpoint 1 (needs the vector
                                                 #   index; see README)
-python -m comparison.harness                    # the 35/49 and 17/27 figures
+python -m comparison.harness                    # the 36/49 and 18/28 figures
 python -m pytest                                # the whole suite
 ```
 

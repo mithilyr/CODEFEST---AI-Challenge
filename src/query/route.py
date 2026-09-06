@@ -188,6 +188,86 @@ def _relic_trigger(lower: str) -> bool:
     return has_relic and has_place
 
 
+#: Cue words that name exactly one relation, cached per relation map. Built
+#: lazily so `route()` keeps its signature and every existing call site.
+_UNIQUE_CUES: dict[str, str] | None = None
+
+
+def unique_relation_cues() -> dict[str, str]:
+    """Cue word -> the single relation it names, for words that name only one.
+
+    WHY ONLY UNIQUE WORDS. The coverage guard below asks "does the question
+    mention a relation this template's chain never walks?". Asking it of the
+    *whole* cue vocabulary declines three questions the templates answer
+    correctly today (`rb_023`, `rb_025`, `rb_041`), because seven cue words are
+    shared across relations and several are ordinary nouns:
+
+        plac  -> forged_at, housed_in, serves_at     ("Place of ...")
+        conflict -> belligerent_in, waged_at
+        record   -> belligerent_in, wields           ("Later weapon record")
+        major, military, personnel, serv
+
+    "Which faction rules the place where the Pale Stag makes its lair?" contains
+    "place" and means nothing by it. A word shared across relations is not
+    evidence the question asks about any of them; a word naming exactly one is.
+    MEASURED: 58 of 65 cue words name exactly one relation, and restricting the
+    guard to those costs zero correct answers (ADR-029).
+    """
+    global _UNIQUE_CUES
+    if _UNIQUE_CUES is None:
+        from collections import defaultdict
+
+        from src.graph.build import load_relation_map
+        from src.query.fallback import relation_cues
+
+        owners: dict[str, set[str]] = defaultdict(set)
+        for relation, words in relation_cues(load_relation_map()).items():
+            for word in words:
+                owners[word].add(relation)
+        _UNIQUE_CUES = {w: next(iter(r)) for w, r in owners.items() if len(r) == 1}
+    return _UNIQUE_CUES
+
+
+def unconsumed_relations(question: str, chain: tuple[str, ...]) -> set[str]:
+    """Relations the question names unambiguously that `chain` never walks."""
+    from src.query.fallback import normalise_cue_word, question_tokens
+
+    unique = unique_relation_cues()
+    tokens = {normalise_cue_word(t) for t in question_tokens(question)}
+    named = {unique[t] for t in tokens if t in unique}
+    return named - set(chain)
+
+
+def _covers_the_question(result: "RouteResult", question: str) -> "RouteResult | RouteMiss":
+    """Decline when the matched template answers a narrower question than asked.
+
+    F-031: "Which war was won by the faction that Hesper Wrenfield's mentor
+    belongs to?" contains the two-hop shape `member_of -> victor_of` that
+    `victory_membership` is built for. The template matched, started from
+    Hesper, and confidently answered *"which war did Hesper's own faction
+    win"* - a different question, with a clean citation trail. The mentor hop
+    was never walked and nothing asked whether the template had consumed the
+    whole question.
+
+    This is ADR-017's `walk_relations` constraint one layer up: that guard
+    exists because the shortest path to the right endpoint took the wrong
+    relation. This one exists because the right *shape* answered the wrong
+    question. Declining hands the question to the next tier, which is the
+    correct outcome - a decline is a result (ADR-026), a confident wrong answer
+    is not.
+    """
+    missed = unconsumed_relations(question, result.chain)
+    if not missed:
+        return result
+    return RouteMiss(
+        question,
+        f"{result.template} matches a {len(result.chain)}-hop shape inside this "
+        f"question but never walks {', '.join(sorted(missed))}, which the "
+        "question names; declining rather than answering a narrower question "
+        "(F-031)",
+    )
+
+
 def route(
     question: str, graph: Graph, resolver: EntityResolver, gazetteer: list[tuple[str, str]]
 ) -> RouteResult | RouteMiss:
@@ -208,14 +288,14 @@ def route(
             conflict_mention = conflicts[0]
             others = [m for m in mentions if m is not conflict_mention]
             if others:
-                return RouteResult(
+                return _covers_the_question(RouteResult(
                     template="victor_connection",
                     start_key=conflict_mention.resolution.key,
                     chain=("victor_of", "member_of"),
                     cardinality="single",
                     goal_key=others[0].resolution.key,
                     check_conflict=True,
-                )
+                ), question)
         return RouteMiss(
             question,
             "victor_connection trigger fired but did not find exactly one "
@@ -225,24 +305,24 @@ def route(
     if _lair_trigger(lower):
         if not mentions:
             return RouteMiss(question, "lair_dominion trigger fired with no resolved entity")
-        return RouteResult(
+        return _covers_the_question(RouteResult(
             template="lair_dominion",
             start_key=mentions[0].resolution.key,
             chain=("lair_in", "ruled_by"),
             cardinality="single",
-        )
+        ), question)
 
     if _relic_trigger(lower):
         if not mentions:
             return RouteMiss(question, "relic_custody trigger fired with no resolved entity")
-        return RouteResult(
+        return _covers_the_question(RouteResult(
             template="relic_custody",
             start_key=mentions[0].resolution.key,
             chain=("wields", "housed_in"),
             cardinality="single",
             type_hint_word=noun,
             type_hint_entity_type=type_hint,
-        )
+        ), question)
 
     if _victory_membership_trigger(lower):
         if not mentions:
@@ -254,13 +334,13 @@ def route(
         else:
             chain = ("member_of", "victor_of")
             cardinality = "single"
-        return RouteResult(
+        return _covers_the_question(RouteResult(
             template="victory_membership",
             start_key=start.resolution.key,
             chain=chain,
             cardinality=cardinality,
             type_hint_word=noun,
             type_hint_entity_type=type_hint,
-        )
+        ), question)
 
     return RouteMiss(question, "no deterministic template's trigger phrase matched")
