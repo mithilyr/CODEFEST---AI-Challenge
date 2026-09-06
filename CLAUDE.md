@@ -77,7 +77,13 @@ reopening the regression. ADR-029's coverage guard then moved it to **36**:
 declined, which is the fourth move and the first one that *improved* an answer —
 arm C went 17→**18** correct and 27→**28** complete evidence, because the
 template had been blocking a correct cue-tier answer. No answer's correctness
-changed at the first three steps.)
+changed at the first three steps. Two vocabulary fixes then moved arm C again,
+without touching 36: ADR-031 added `belongs` as a `member_of` cue (18→19, 28→31)
+and ADR-033 made a unique cue word outrank a shared one (19→**21**, 31→**29**).
+**Complete evidence going down while correct went up is deliberate** — three
+questions had been earning it by walking chains the question never asked for,
+and ADR-033 explains why the lower number is the more honest one. Honest refusal
+reached **6 of 6**. Re-derived at HEAD on 6 Sep with F-032 committed.)
 
 Three tiers now exist (templates → cue fallback → LLM plan), each declining
 rather than guessing. **A decline is a result, and the UI renders it as one**

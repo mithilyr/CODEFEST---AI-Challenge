@@ -38,10 +38,18 @@ are done: `origin` is configured
       of those four as a misdiagnosis, F-026 - restores a *more correct*
       `relation_unavailable` for `ederon fellgards`, not a regression). The
       shipped tier's complete evidence moved 26 → **27** (ADR-024, one
-      question, `rb_044`) and stayed there through ADR-025. Re-verified
-      2026-09-02, all three sessions. Reproduce with
+      question, `rb_044`) and stayed there through ADR-025.
+      **Moved again 2026-09-06, and this time on real routing changes, not
+      diagnosis**: no-route-shape 35 → **36** (ADR-029's coverage guard
+      declines `rb_039`, which the cue tier then answers correctly), and the
+      shipped tier went 17 → 18 → 19 → **21 correct** and 27 → 28 → 31 → **29
+      complete evidence** across ADR-029, ADR-031 and ADR-033. Complete
+      evidence going *down* while correct went *up* is deliberate and
+      explained in ADR-033: three questions had been earning it by walking
+      chains the question never asked for. Honest refusal reached **6 of 6**.
+      Re-derived at `HEAD` 2026-09-06 with F-032's fix committed. Reproduce with
       `python -m comparison.harness` and `python -m comparison.ablations`;
-      never quote 35, 33 or 26 without checking which still holds.
+      never quote 35, 33, 26, 27 or 28 without checking which still holds.
 - [x] **Decide whether an LLM planner is warranted.** Done 2026-09-01
       (ADR-020). 19/49 answerable questions reached no route, which cleared
       the gate. Built as a third tier emitting a validated plan, never an
