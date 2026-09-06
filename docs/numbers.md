@@ -91,6 +91,14 @@ found 0 real entities (document titles, headings, prose fragments).
 | Cue tier precision | 40% (ADR-019), against templates' 91% | `python -m comparison.ablations` |
 | Three-hop set | **3 of 3** correct | `eval/multihop_3hop_draft.json` |
 
+**Never quote 3 of 3 without naming the tier.** All three three-hop questions
+are answered by the **cue fallback tier, not by a template** — no template
+routes a three-hop shape. That tier is measured at 40% precision against
+templates' 91%, so "three of three" on its own lets the weaker tier borrow the
+stronger one's credibility, which is the reason their statuses are kept distinct
+in the first place. The set is also three questions we wrote ourselves, not
+supplied ones, and is not two-person verified.
+
 **Never quote 7/7 without 36/49 beside it.** 7/7 measures fit to seven
 development questions; 36/49 measures routing capability on questions written
 independently and frozen before either router ran.

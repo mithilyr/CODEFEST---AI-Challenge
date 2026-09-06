@@ -1400,6 +1400,43 @@ tier walks `mentor_of` one hop and stops. The confident wrong answer from a
 shows its chain replaced it. Better, and not fixed. Three-hop routing remains
 open.
 
+### The paragraph above is superseded — three-hop routing closed the same day
+
+Left in place rather than edited, because it was true when written and the two
+steps that closed it are the interesting part.
+
+`ADR-031` and `ADR-033` finished what ADR-029 started, and the two remaining
+three-hop failures turned out to be **the same defect in opposite directions,
+neither of them in the traversal**:
+
+- `3h_002` — this entry's own question — was **under-cued**. The cue tier walked
+  `mentor_of` one hop and stopped, because nothing in its vocabulary carried it
+  onward (ADR-031).
+- `3h_003` was **over-cued**, returning six values as `fallback_ambiguous`,
+  until a cue word naming exactly one relation was made to outrank one naming
+  several (ADR-033).
+
+Re-derived at `f82e0f3`, all three now answer correctly with complete evidence:
+
+| | Answer | Chain | Status |
+|---|---|---|---|
+| `3h_001` | House Morvain | `wields -> housed_in -> ruled_by` | `fallback_sufficient` |
+| `3h_002` | The War of Drowned Light | `mentor_of -> member_of -> victor_of` | `fallback_sufficient` |
+| `3h_003` | The Ashen Vanguard | `wields -> forged_at -> ruled_by` | `fallback_sufficient` |
+
+**Report it with the qualifier.** All three are answered by the **cue tier, not
+by a template** — no template routes a three-hop shape. That tier is measured at
+40% precision against templates' 91% (ADR-019). "Three of three" without that
+sentence would let the weaker tier borrow the stronger one's credibility, which
+is the same reason their statuses are kept distinct in the first place.
+
+**What this entry cost, and what it bought.** It began as a confident wrong
+answer from a template. It ends with three three-hop questions answered, one
+template-blocking bug found on the way (`rb_039`, ADR-029), and a guard whose
+first version would have failed this entry's own gate. The deferral reasoning at
+the top was overridden by instruction — and the protocol it specified is what
+caught the first version before it shipped.
+
 ## F-032 — An infobox row that names three people and builds nothing, because none of them has a page
 
 **Found:** 2026-09-06, by `eval/probes/entity_reachability.py` (ADR-030).

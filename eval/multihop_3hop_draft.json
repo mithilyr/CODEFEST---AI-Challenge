@@ -7,11 +7,30 @@
     "verified_against": "src/graph/build.py at 117 entities / 261 edges. Every hop below was printed from the live graph with its document, field name, row index and raw cell - none of it was written from memory.",
     "measured_through_the_live_engine": {
       "on": "2026-09-06",
-      "score": "2 of 3 correct",
-      "3h_001": "CORRECT (House Morvain) via the cue-fallback tier, chain wields->housed_in->ruled_by, complete evidence across all 3 documents. No template matched, so the deterministic top tier did not route it.",
-      "3h_002": "WRONG. Answers 'The War of Endless Vigil'. The victory_membership template matched and routed member_of->victor_of from Hesper Wrenfield directly, skipping the mentor hop entirely - it answers 'which war did Hesper's OWN faction win', a different question. status=sufficient, so it is confidently wrong rather than declining. This is the failure mode walk_relations was built to prevent, reappearing at the routing tier: a template that fires on a two-hop shape it recognises inside a three-hop question.",
-      "3h_003": "CORRECT but ambiguous - The Ashen Vanguard appears among 6 values, status=fallback_ambiguous, 9 documents instead of 3. The cue tier found the right chain and did not narrow it.",
-      "what_this_means": "The graph answers all three (proved separately: single route, no two-hop shortcut). The query layer is what limits three-hop, and it limits it in three different ways - no template match, a template matching a sub-shape and confidently answering the wrong question, and a correct chain left unnarrowed. That is a more useful finding than a pass mark."
+      "at_commit": "f82e0f3",
+      "score": "3 of 3 correct, all with complete evidence",
+      "reproduce": "python -m src.query.engine \"<question>\" for each, or re-derive all three from this file's acceptable_paths",
+      "3h_001": "CORRECT (House Morvain). Tier cue_fallback, chain wields->housed_in->ruled_by, fallback_sufficient, 3 documents - complete evidence.",
+      "3h_002": "CORRECT (The War of Drowned Light). Tier cue_fallback, chain mentor_of->member_of->victor_of, fallback_sufficient, 2 documents - complete evidence. Hops one and two are both rows on Corvus Hollowmere the Pale's page, which is why two documents is complete here and not a shortfall.",
+      "3h_003": "CORRECT (The Ashen Vanguard). Tier cue_fallback, chain wields->forged_at->ruled_by, fallback_sufficient, 3 documents - complete evidence.",
+      "which_tier_answers_them": "All three are answered by the cue-based fallback tier, not by a template. No template routes a three-hop shape. That is worth stating plainly rather than reporting 3/3 unqualified: the tier that answers them is measured at 40% precision against templates' 91% (ADR-019), and it declares which chain it walked, which is why a wrong answer from it is visible rather than confident.",
+      "what_this_means": "The graph could always answer all three - single route, no two-hop shortcut, proved before any of this was measured. What changed is routing. The query layer was the constraint and three ADRs removed it."
+    },
+    "superseded_measurement": {
+      "note": "Kept, not deleted. This file recorded 2 of 3 for most of 6 Sep, and the failure it described was real. Erasing it would remove the evidence that the fix was driven by a measurement rather than by taste - the same rule ADR-028 applies to historical figures elsewhere.",
+      "was": {
+        "on": "2026-09-06",
+        "score": "2 of 3 correct",
+        "3h_001": "CORRECT (House Morvain) via the cue-fallback tier, chain wields->housed_in->ruled_by, complete evidence across all 3 documents. No template matched, so the deterministic top tier did not route it.",
+        "3h_002": "WRONG. Answers 'The War of Endless Vigil'. The victory_membership template matched and routed member_of->victor_of from Hesper Wrenfield directly, skipping the mentor hop entirely - it answers 'which war did Hesper's OWN faction win', a different question. status=sufficient, so it is confidently wrong rather than declining. This is the failure mode walk_relations was built to prevent, reappearing at the routing tier: a template that fires on a two-hop shape it recognises inside a three-hop question.",
+        "3h_003": "CORRECT but ambiguous - The Ashen Vanguard appears among 6 values, status=fallback_ambiguous, 9 documents instead of 3. The cue tier found the right chain and did not narrow it.",
+        "what_this_means": "The graph answers all three (proved separately: single route, no two-hop shortcut). The query layer is what limits three-hop, and it limits it in three different ways - no template match, a template matching a sub-shape and confidently answering the wrong question, and a correct chain left unnarrowed. That is a more useful finding than a pass mark."
+      },
+      "what_closed_it": [
+        "ADR-029 - a template must consume the whole question. Fixed F-031: victory_membership no longer matches a two-hop shape inside a three-hop question. The guard counts only the 58 of 65 cue words that name exactly one relation; guarding on the full vocabulary would have broken rb_023, rb_025 and rb_041, all three correct.",
+        "ADR-031 - 3h_002 was under-cued: its vocabulary did not let the cue tier walk past the first hop.",
+        "ADR-033 - 3h_003 was over-cued, the opposite direction, and returned six values as fallback_ambiguous until a cue naming one relation was made to outrank one naming several."
+      ]
     }
   },
   "questions": [
