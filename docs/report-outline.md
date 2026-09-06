@@ -241,9 +241,9 @@ four that carry the most signal:
   drafts this section, not one to make silently in the outline.
 
 **The cross-collection claim, stated precisely.** **259 of 265 edges (97.7%)**
-are independently named by a codex, chronicle or ephemera passage — 416
-attestations from the codex on 238 edges, 114 from the chronicles on 85, 25
-from the ephemera on 23. So an answer assembled from wiki infoboxes visibly
+are independently named by a codex, chronicle or ephemera passage — 421
+attestations from the codex on 242 edges, 115 from the chronicles on 86, 26
+from the ephemera on 24. So an answer assembled from wiki infoboxes visibly
 spans collections, with citations a judge can open.
 Source: ADR-027, ADR-028; `python -m src.graph.corroborate`.
 Two caveats that must travel with it, because both are the section's own rule:

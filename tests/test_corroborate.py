@@ -86,7 +86,7 @@ def test_attestations_come_only_from_the_other_collections(graph, index):
 
 
 def test_the_codex_is_the_dominant_attesting_collection(graph, index):
-    """MEASURED: codex 416 attestations, chronicles 114, ephemera 25. The codex
+    """MEASURED: codex 421 attestations, chronicles 115, ephemera 26. The codex
     restates infobox facts in prose; the novels mostly co-mention in passing."""
     counts = {}
     for edge in graph.edges:
