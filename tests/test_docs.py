@@ -61,6 +61,10 @@ LIVE_DOCS = (
     "README.md",
     "docs/architecture.md",
     "ai_usage/ai-usage-disclosure.md",
+    # The number sheet exists so the report can be checked against one file.
+    # A stale sheet is worse than no sheet - it would launder a wrong figure
+    # into every document that trusts it - so it is scanned like the rest.
+    "docs/numbers.md",
 )
 
 #: Documents whose figures are historical by design. Listed rather than merely
