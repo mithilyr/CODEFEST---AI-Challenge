@@ -12,6 +12,109 @@ all of them: **each stage resolves deterministically first, and escalates to a
 model only on an explicit, testable failure condition.** Nothing escalates
 because it "might do better".
 
+## The whole system, twice
+
+Two pictures, different jobs. `diagrams/architecture.svg` above is the
+**report artefact** — hand-authored, self-contained, no toolchain, no CDN
+(ADR-022), because it has to survive being embedded in a PDF and opened on a
+judge's machine. The two Mermaid diagrams below are the **in-repo reading
+aid**: they render in GitHub and in most editors, they diff as text, and they
+are where you look to answer "what calls what".
+
+**Every number in both pictures is re-derived from the live corpus by
+`tests/test_diagram.py`.** The Mermaid blocks are parsed out of this file and
+checked label by label, exactly as the SVG is. If a measurement moves and a
+picture does not, the suite goes red.
+
+### Build path — corpus to graph
+
+```mermaid
+flowchart TD
+    CORPUS["Ashen Era Archive — read-only, not committed<br/>341 files verified · wiki 150 · ephemera 145 · codex 18 · chronicles 4"]
+    INTEG["integrity.py — SHA-256 vs manifest<br/>run FIRST; an editor once rewrote 36 files (F-016)"]
+    LOAD["discover → deduplicate → assign authority → load<br/>dedup is collection-dependent (ADR-003)"]
+    UNITS[("317 canonical documents from 340 scanned<br/>30,553 EvidenceUnits<br/>each carries document id · locator · tier")]
+
+    CORPUS --> INTEG --> LOAD --> UNITS
+
+    UNITS -->|"wiki infobox rows ONLY"| BUILD
+    UNITS -->|"codex · chronicles · ephemera"| CORROB
+    UNITS -->|"comparison arm"| BASE
+
+    BUILD["graph/build.py — one infobox row at a time<br/>12 templates cover all 651 cells (ADR-010)<br/>exact-match resolution only (ADR-011)"]
+    GRAPH[("Graph — 118 entities, 265 edges<br/>15 relations · 0 unmapped field names<br/>a Python dict — no graph database")]
+    BUILD --> GRAPH
+
+    CORROB["graph/corroborate.py<br/>27,415 units scanned"]
+    CORROB -.->|"attaches, never modifies"| GRAPH
+    ATT["259 of 265 edges named outside the wiki<br/>co-mention is NOT proof — 'also attested in'"]
+    CORROB --> ATT
+
+    BASE["baseline/ — 3,392 chunks, a NumPy matmul<br/>Checkpoint 1: 1B 2/7, complete evidence 0/9"]
+
+    classDef store fill:#eef4fb,stroke:#4a6fa5
+    classDef arm fill:#f6f6f6,stroke:#999,stroke-dasharray:3 3
+    class UNITS,GRAPH store
+    class BASE arm
+```
+
+### Answer path — question to screen, declining at every tier
+
+Each tier runs **only** if the one before it declined. Nothing escalates
+because it might do better.
+
+```mermaid
+flowchart TD
+    Q["Question — free text"] --> RES
+    RES["resolve.py — exact → normalised → alias<br/>fuzzy yields CANDIDATES ONLY (ADR-011)"]
+
+    RES -->|"not in the corpus"| D1["UNRESOLVED_ENTITY<br/>AMBIGUOUS_ENTITY"]
+    RES -->|"in the corpus, no node"| D2["OUTSIDE_STRUCTURED_COVERAGE"]
+    RES -->|"resolved"| T1
+
+    T1{"Tier 1 — templates<br/>7/7 dev 1B · 91% precision"}
+    T1 -->|"matches a shape"| TRAV
+    T1 -->|"no route shape — 36 of 49"| T2
+
+    T2{"Tier 2 — cue router<br/>vocabulary from relations.yaml only"}
+    T2 -->|"a cue resolves"| TRAV
+    T2 -->|"no unique cue"| T3
+
+    T3{"Tier 3 — LLM plan<br/>OFF BY DEFAULT (F-025)"}
+    T3 -->|"a validated plan, never an answer"| TRAV
+    T3 -->|"declines"| D3["NO_TEMPLATE_MATCH"]
+
+    TRAV["traverse.py — bounded walk<br/>NO model in this path<br/>each hop cites document · field · row"]
+    TRAV --> EV{"15 named EvidenceStatus values"}
+
+    EV -->|"answered"| SUFF["SUFFICIENT · CONFLICTING_EVIDENCE"]
+    EV -->|"declined"| DECL["RELATION_UNAVAILABLE · NO_PATH"]
+
+    SUFF --> SYN["synthesis.py — rewords a verified chain<br/>NEVER selects evidence"]
+    DECL --> DIAG
+    D1 --> DIAG
+    D2 --> DIAG
+    D3 --> DIAG
+    DIAG["diagnostics.py — what WAS established, cited<br/>a decline renders as a result (ADR-026)"]
+
+    SYN --> UI["src/ui/ — stdlib http.server<br/>/graph draws all 118 entities, no CDN, no JS<br/>adds NO reasoning of its own"]
+    DIAG --> UI
+
+    classDef model fill:#fff4e6,stroke:#c8862a
+    classDef decline fill:#f7f7f7,stroke:#999,stroke-dasharray:3 3
+    classDef det fill:#eef7ee,stroke:#4a8a4a
+    class T3,SYN model
+    class D1,D2,D3,DECL,DIAG decline
+    class TRAV,T1,T2 det
+```
+
+**Legend.** Green is deterministic and always on. Amber touches a model and is
+**off by default**. Grey dashed is a decline — a named, cited result, not an
+error. The traversal that actually produces an answer is green: no model is
+called anywhere inside it.
+
+---
+
 ## 1. Corpus → evidence units
 
 `src/ingest/` — `python -m src.ingest.pipeline`
@@ -147,7 +250,7 @@ python -m src.graph.build                       # 118 entities, 265 edges
 python -m eval.probes.corpus_shape              # 651 cells, 12 templates
 python -m eval.run_eval --checkpoint baseline   # Checkpoint 1 (needs the vector
                                                 #   index; see README)
-python -m comparison.harness                    # the 36/49 and 18/28 figures
+python -m comparison.harness                    # the 36/49 and 21/29 figures
 python -m pytest                                # the whole suite
 ```
 

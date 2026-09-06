@@ -196,19 +196,22 @@ def test_diagram_states_the_robustness_number_beside_the_fit_number(diagram_text
     Quoting the fit number alone is the single most misleading thing this
     submission could do, so the diagram is not allowed to do it.
 
-    THE NUMBER ITSELF IS PINNED, NOT RE-DERIVED. Unlike the entity/edge counts
-    elsewhere in this file, "35 of 49" is not recomputed here from
-    `comparison.harness` - this test only checks the SVG's text against a
-    literal a human must remember to update, which is exactly the gap this
-    file's own docstring describes (ADR-019's 35 went stale to 33 while only
-    the summary metric was checked). It has *already* happened to this literal
-    once: 35 -> 33 (ADR-021) -> 35 again, for a different and correct reason
-    this time (ADR-025, F-026 fixed). Re-run `python -m comparison.harness`
-    before trusting this number in the report; this test only proves the
-    diagram and this string agree with each other, not that either is current.
+    THE NUMBER IS NOW RE-DERIVED, AND THE REASON IS THIS TEST'S OWN HISTORY.
+    It used to assert the literal "35 of 49" and carried a docstring explaining
+    that a human had to remember to update it. On 6 Sep that literal was found
+    to be *already wrong*: ADR-029 moved the figure to 36, the SVG still said
+    35, and the suite was green - the exact F-026 failure this file exists to
+    catch, reproduced inside the test written to warn about it. A comment
+    describing a gap does not close it.
+
+    It is now recomputed from the two committed artefacts: the frozen question
+    set says which questions are answerable, the harness result says which of
+    them matched no route shape. That proves the picture agrees with the last
+    harness run - not that the run is current. `python -m comparison.harness`
+    is still the thing to run before the report is final.
     """
     assert "7/7" in diagram_text
-    assert "35 of 49" in diagram_text
+    assert f"{_no_route_shape('arm_a')} of {_answerable()}" in diagram_text
 
 
 def test_diagram_does_not_claim_the_graph_answers_questions_by_itself(diagram_text):
@@ -220,3 +223,161 @@ def test_diagram_does_not_claim_the_graph_answers_questions_by_itself(diagram_te
     """
     graph_box = diagram_text.split("Graph — ")[1].split("Query")[0]
     assert "7/7" not in graph_box
+
+
+# --------------------------------------------------------------------------
+# Re-deriving the routing-robustness figure instead of remembering it
+# --------------------------------------------------------------------------
+#
+# This file's own docstring named the gap: "35 of 49" was a literal a human had
+# to remember to update, and the docstring said so while the literal was ALREADY
+# WRONG - the harness had said 36 since ADR-029 and the SVG still said 35, with
+# a green suite. That is exactly the F-026 failure this file exists to catch,
+# reproduced inside the test written to warn about it.
+#
+# So it is re-derived from the two committed artefacts: the frozen question set
+# supplies which questions are answerable, the harness result supplies which of
+# them matched no route shape. This proves the picture agrees with the last
+# harness run, not that the run is current - `python -m comparison.harness` is
+# still the thing to run before the report. But it can no longer be stale in a
+# direction nobody notices.
+
+ROBUSTNESS_SET = (
+    Path(__file__).resolve().parents[1]
+    / "eval" / "robustness" / "routing_robustness_v1.json"
+)
+HARNESS_RESULT = (
+    Path(__file__).resolve().parents[1]
+    / "comparison" / "results" / "router_comparison.json"
+)
+
+
+def _answerable_rids() -> set:
+    import json
+
+    payload = json.loads(ROBUSTNESS_SET.read_text(encoding="utf-8"))
+    questions = payload["questions"] if isinstance(payload, dict) else payload
+    return {q["rid"] for q in questions if q.get("expected_answerable", True)}
+
+
+def _answerable() -> int:
+    return len(_answerable_rids())
+
+
+def _no_route_shape(arm: str) -> int:
+    import json
+
+    rids = _answerable_rids()
+    rows = json.loads(HARNESS_RESULT.read_text(encoding="utf-8"))[arm]["per_question"]
+    return sum(1 for r in rows if r["rid"] in rids and r["no_route_shape"])
+
+
+# --------------------------------------------------------------------------
+# The Mermaid diagrams in docs/architecture.md
+# --------------------------------------------------------------------------
+#
+# WHY THESE EXIST ALONGSIDE THE SVG TESTS
+# ---------------------------------------
+# A second picture is a second place for a number to rot, and this file's whole
+# premise is that a diagram is the one artefact nobody re-runs. The Mermaid
+# blocks are therefore pinned exactly as the SVG is: parsed out of the Markdown,
+# flattened, and checked label by label against the live corpus.
+#
+# `assert_label` is reused deliberately - the same "bind each number to the
+# sentence it belongs to" rule, for the same reason. A number present *somewhere*
+# in a 60-line flowchart proves nothing about the box that should carry it.
+
+ARCHITECTURE = Path(__file__).resolve().parents[1] / "docs" / "architecture.md"
+
+
+@pytest.fixture(scope="module")
+def mermaid_text() -> str:
+    """Every ```mermaid block in architecture.md, flattened to one string.
+
+    `<br/>` becomes a space so a label split across lines still matches, the
+    same reason `diagram_text` flattens `<tspan>`.
+    """
+    raw = ARCHITECTURE.read_text(encoding="utf-8")
+    blocks = re.findall(r"```mermaid\n(.*?)```", raw, re.S)
+    assert blocks, "docs/architecture.md carries no mermaid diagram"
+    joined = " ".join(blocks).replace("<br/>", " ")
+    return re.sub(r"\s+", " ", joined)
+
+
+def test_both_mermaid_diagrams_are_present(mermaid_text):
+    """Build path and answer path. Losing one silently is the failure here."""
+    assert "flowchart TD" in mermaid_text
+    assert mermaid_text.count("flowchart TD") == 2
+
+
+def test_mermaid_ingestion_numbers_match_a_real_ingest(corpus_root, mermaid_text):
+    result = ingest_cached()
+    report = result.dedup_report
+
+    assert_label(mermaid_text, f"{len(read_manifest())} files verified")
+    assert_label(
+        mermaid_text,
+        f"{report.canonical_documents} canonical documents "
+        f"from {report.total_files} scanned",
+    )
+    assert_label(mermaid_text, f"{len(result.evidence):,} EvidenceUnits")
+
+
+def test_mermaid_graph_numbers_match_the_built_graph(graph, mermaid_text):
+    relations = {edge.relation for edge in graph.edges}
+    assert graph.unmapped_fields == {}
+    assert_label(
+        mermaid_text,
+        f"Graph — {len(graph.nodes)} entities, {len(graph.edges)} edges",
+    )
+    assert_label(mermaid_text, f"{len(relations)} relations · 0 unmapped field names")
+    # The UI box repeats the entity count; it must not drift from the graph box,
+    # which is how the 117/125 mutation slipped past the SVG tests once.
+    assert_label(mermaid_text, f"draws all {len(graph.nodes)} entities")
+
+
+def test_mermaid_corroboration_numbers_are_re_derived(graph, corpus_root, mermaid_text):
+    """The rows `docs/numbers.md` flags as its one unguarded weak spot.
+
+    That sheet says these went stale once already - 416/238 before F-032 added
+    four corroborated edges - and nothing caught it, because `test_docs.py`
+    deliberately skips the "N of M edges" shape to avoid false-positives on
+    historical prose. Re-deriving them here closes that gap for the diagram at
+    least, which is the copy a reader is most likely to quote from.
+    """
+    from src.graph.corroborate import build_index
+
+    result = ingest_cached()
+    index = build_index(graph, result.evidence)
+    corroborated = index.corroborated_edges(graph)
+
+    assert_label(mermaid_text, f"{index.units_scanned:,} units scanned")
+    assert_label(
+        mermaid_text,
+        f"{len(corroborated)} of {len(graph.edges)} edges named outside the wiki",
+    )
+
+
+def test_mermaid_status_count_matches_the_enum(mermaid_text):
+    """15 named outcomes. If someone adds a sixteenth, the picture must say so."""
+    from src.query.evidence import EvidenceStatus
+
+    assert_label(
+        mermaid_text, f"{len(list(EvidenceStatus))} named EvidenceStatus values"
+    )
+
+
+def test_mermaid_never_quotes_the_fit_number_alone(mermaid_text):
+    """CLAUDE.md's standing rule, enforced on the second picture too."""
+    assert "7/7" in mermaid_text
+    assert f"no route shape — {_no_route_shape('arm_a')} of {_answerable()}" in mermaid_text
+
+
+def test_mermaid_marks_the_traversal_as_model_free(mermaid_text):
+    """The load-bearing architectural claim of the whole submission.
+
+    If the traversal box ever stops saying this, the "deterministic-first"
+    argument has quietly become unsupported by its own diagram.
+    """
+    assert "NO model in this path" in mermaid_text
+    assert "OFF BY DEFAULT" in mermaid_text

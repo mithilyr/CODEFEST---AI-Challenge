@@ -1940,6 +1940,46 @@ changing weekly, revisit.
 *Status: accepted. 308 tests, 10 of them new. Diagram rendered and visually
 verified end-to-end; number pins verified by deliberate mutation.*
 
+**AMENDMENT (2026-09-06).** `docs/architecture.md` now also carries **two
+Mermaid flowcharts** — a build path and an answer path. The SVG stays exactly
+as this ADR decided: it is the artefact that goes in the PDF and must survive
+being opened offline on a judge's machine, which is what the no-toolchain,
+no-CDN, self-contained rule is for. The Mermaid blocks are the *in-repo reading
+aid*: they render on GitHub and in editors, they diff as text, and they answer
+"what calls what" in a way an SVG's coordinates cannot.
+
+This does not reopen the toolchain question. Nothing builds them — they are
+fenced code blocks in a Markdown file, rendered by whatever is already reading
+it, and if nothing renders them they degrade to readable text rather than to a
+broken image. No dependency was added and none can be.
+
+**Both pictures are pinned the same way.** `tests/test_diagram.py` parses the
+Mermaid out of the Markdown, flattens it, and re-derives every number in it
+from the live corpus — file count, canonical documents, evidence units,
+entities, edges, relations, unmapped fields, corroborated edges, and the
+`EvidenceStatus` count — using the same `assert_label` rule that binds a number
+to the sentence it belongs to. A second picture is a second place for a number
+to rot, and the answer to that is a second set of pins, not fewer pictures.
+
+**This amendment was written because the first picture was already stale.** The
+SVG said *"35 of 49"* while `comparison.harness` had said **36** since ADR-029,
+and the suite was green — because `test_diagram_states_the_robustness_number_
+beside_the_fit_number` asserted a literal string, and its own docstring
+explained at length that a human had to remember to update it. A comment
+describing a gap does not close it. That test now re-derives the figure from
+the frozen question set and the committed harness result, so the picture and
+the artefact cannot disagree silently. The literal is gone.
+
+Two limits worth stating rather than discovering later:
+
+- Re-deriving from `comparison/results/router_comparison.json` proves the
+  picture agrees with **the last harness run**, not that the run is current.
+  `python -m comparison.harness` before the report is final is still required,
+  and `docs/numbers.md` says so.
+- The corroboration figures were the sheet's one openly unguarded row. The
+  Mermaid copy of *"259 of 265"* is now re-derived; the table in
+  `docs/numbers.md` still is not.
+
 ## ADR-023 — When a cell's own verb contradicts the field name, the cell wins and the disagreement is counted
 
 **Problem**
