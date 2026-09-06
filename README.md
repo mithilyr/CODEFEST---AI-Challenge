@@ -30,9 +30,16 @@ reached neither required document** (recall 0.00), so the join never got a chanc
 to fail. Both questions it scored "correct" reached exactly one required document
 — of the three and two they respectively needed. Right answers by the wrong route.
 
-Raising `k` cannot manufacture a join. So the system is **graph-first with vector
-fallback**: parse the explicit relationships the corpus states structurally,
-traverse them deterministically, and keep every hop's evidence attached.
+Raising `k` cannot manufacture a join. So the system is **graph-first**: parse
+the explicit relationships the corpus states structurally, traverse them
+deterministically, and keep every hop's evidence attached.
+
+ADR-001 planned a *vector* fallback for questions the graph could not route.
+That is **not what shipped, and this line used to say otherwise.** The fallback
+that exists is deterministic cue routing (ADR-019), adopted because it was
+measured to recover more than the vector arm for a fraction of the machinery;
+the vector index remains as the Checkpoint 1 comparison arm and is not on the
+answer path. Nothing in `src/query/` or `src/ui/` imports `src/baseline/`.
 
 ---
 
@@ -71,20 +78,53 @@ cp .env.example .env
 ```
 
 Leave every key blank. The only line that matters is `CORPUS_PATH`, which already
-defaults to `data/Ashen_Era_Archive`. Now start the demo:
+defaults to `data/Ashen_Era_Archive`. Now start the demo — **from the repository
+root**, using the project's own interpreter:
 
 ```bash
-python -m src.ui.server
+.venv\Scripts\python.exe -m src.ui.server
 ```
 
-It prints the graph size, confirms `model tiers: off - fully deterministic`, and
-serves on **http://127.0.0.1:8000**. Three surfaces:
+Startup takes about six seconds (ingest 5.0s, graph 0.2s, cross-collection
+attestation 1.2s). It prints the graph size, confirms
+`model tiers: off - fully deterministic`, and serves on
+**http://127.0.0.1:8000**. Four surfaces:
 
 | URL | What it shows |
 |---|---|
-| `/` | The seven development 1B questions, each a link |
+| `/` | The seven development 1B questions, an entity/relation catalogue, and the reindex control |
 | `/ask?q=...` | One answer, with every hop's source document, row and authority tier |
 | `/graph` | All 118 entities as one static SVG — no CDN, no JavaScript |
+| `/reload` | Re-reads the corpus from disk and reports what changed (see below) |
+
+#### If `python -m src.ui.server` fails
+
+```
+No module named 'src'
+```
+
+means one of two things, and both are worth checking before anything else:
+
+- **You are not in the repository root.** `src/` sits beside `README.md`. Run
+  `cd` into the directory containing this file first.
+- **`python` is not this project's interpreter.** On a machine with several
+  Python installations, a bare `python` can resolve to an unrelated virtual
+  environment that has none of these dependencies. Writing
+  `.venv\Scripts\python.exe` explicitly, as above, removes the ambiguity
+  whether or not you ran `activate`.
+
+#### Picking up a document added while the server is running
+
+The graph is read from disk at startup and held, so a file added to the corpus
+afterwards is invisible until something rebuilds. Click **Reindex corpus** on
+the front page (or `POST /reload`). It re-reads the corpus and reports the
+before/after entity, edge and evidence-unit counts, plus any infobox field name
+the corpus uses that `config/relations.yaml` does not map — that last one is a
+relation the graph is not reading, and the fix is a line of config, not code.
+
+There is deliberately no file watcher: a rebuild is about six seconds, and an
+explicit control that shows you what changed is easier to trust, and to
+explain, than a background thread (ADR-036).
 
 To answer one question without the browser:
 
@@ -115,7 +155,7 @@ buys.
 
 ```bash
 python -m src.ingest.integrity   # is your corpus the corpus we measured against?
-python -m pytest                 # 345 tests
+python -m pytest                 # 421 tests
 python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
 python -m src.graph.build        # 118 entities, 265 edges, 15 relations
 ```
@@ -204,7 +244,7 @@ comparison/            the router comparison and guard ablations behind ADR-019
 config/                authority.yaml, relations.yaml, corpus_manifest.sha256
 configuration-example/ annotated copies of the above, readable without the tree
 docs/                  ADRs, failure log, limitations, architecture, diagram, TODO
-tests/                 345 tests
+tests/                 421 tests
 ai_usage/              exported AI collaboration transcripts (deliverable §4.1)
 ocr_cache/             the 17 scan transcripts, committed so OCR needs no key
 data/                  where the corpus goes; gitignored, ships empty
@@ -230,7 +270,7 @@ python -m src.ingest.integrity                   # verify corpus against the man
 python -m src.ingest.pipeline                    # ingest, print summary
 python -m src.ingest.ocr                         # transcribe scans (17/17 from cache)
 python -m src.graph.build                        # build graph, print coverage
-python -m pytest                                 # 345 tests
+python -m pytest                                 # 421 tests
 
 # Answering
 python -m src.ui.server                          # the demo, http://127.0.0.1:8000
@@ -239,7 +279,7 @@ python -m src.query.engine "<question>"          # one question end-to-end
 
 # Reproducing the measurements
 python -m eval.probes.corpus_shape               # every ADR-009..013 number
-python -m comparison.harness                     # ADR-019's router comparison (36/49, 21/29)
+python -m comparison.harness                     # ADR-019's router comparison (36/49, 22/31)
 python -m comparison.ablations                   # ADR-019's guard ablations
 python -m eval.completeness                      # is the answer key narrower than the corpus?
 python -m eval.verify_key                        # regenerate the answer-key review pack

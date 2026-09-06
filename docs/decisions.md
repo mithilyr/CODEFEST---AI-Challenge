@@ -58,7 +58,33 @@ Three measured checkpoints on identical questions: vector-only, graph-only, then
 graph+fallback. If the fallback does not measurably recover questions the graph
 misses, it gets deleted rather than kept for symmetry.
 
-*Status: accepted, unvalidated — checkpoints pending.*
+*Status: SUPERSEDED IN PART. The graph-first half shipped. The vector fallback
+did not.*
+
+**What actually happened, recorded here rather than by editing the decision
+above.** The checkpoints this ADR asked for were run. Checkpoint 1 measured the
+vector arm at **1B 2/7 correct, 0/9 complete evidence** — not one question
+retrieved every document its answer needs. The graph then answered 7/7 of the
+dev 1B questions with complete evidence.
+
+The fallback question was reopened on measurement, not preference. ADR-019
+measured the four templates against 49 independently authored questions frozen
+before either router ran, found **36 of 49 matched no route shape**, and
+compared two candidate fallbacks. A **deterministic cue router** was adopted;
+the vector arm was not. This ADR's own deletion clause — "if the fallback does
+not measurably recover questions the graph misses, it gets deleted rather than
+kept for symmetry" — is what settled it.
+
+So the shipped answer path is **templates → deterministic cue fallback → an
+opt-in LLM planner** (ADR-020). `src/baseline/` remains as the Checkpoint 1
+comparison arm and is imported by `eval/run_eval.py` alone; nothing in
+`src/query/` or `src/ui/` references it.
+
+This status line said "accepted, unvalidated — checkpoints pending" until
+6 Sep, long after the checkpoints had run, and `README.md` described the system
+as "graph-first with vector fallback" for as long. Both were wrong and both are
+corrected. The decision is left standing as written, per the project's rule that
+an assumption overturned by measurement stays visible in the record.
 
 ---
 

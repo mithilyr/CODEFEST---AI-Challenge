@@ -250,7 +250,7 @@ python -m src.graph.build                       # 118 entities, 265 edges
 python -m eval.probes.corpus_shape              # 651 cells, 12 templates
 python -m eval.run_eval --checkpoint baseline   # Checkpoint 1 (needs the vector
                                                 #   index; see README)
-python -m comparison.harness                    # the 36/49 and 21/29 figures
+python -m comparison.harness                    # the 36/49 and 22/31 figures
 python -m pytest                                # the whole suite
 ```
 
