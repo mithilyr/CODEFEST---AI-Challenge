@@ -193,16 +193,28 @@ shape nested inside it, walks from the wrong start entity, and answers
 **confidently and wrongly** — `sufficient`, one value, a clean citation trail.
 Every acceptable path in `answer_key.json` is two hops, so the dev set cannot
 expose this by construction. That is the sharpest illustration in the repo of
-this section's own opening claim, and unlike F-026 and F-027 it is **open**.
-Source: F-031; reproduce with
-`python -m src.query.engine "Which war was won by the faction that Hesper Wrenfield's mentor belongs to?"`.
+this section's own opening claim.
+
+**Fixed 6 Sep (ADR-029), and the fix is the better story.** A template now
+declines when the question names a relation its chain never walks. The first
+version of that guard was measured before being wired in and would have cost
+three correct answers, because seven cue words are shared across relations and
+"place" is one of them — so the shipped rule counts only words naming exactly
+one relation. It also exposed a cost nobody was counting: `rb_039`'s template
+had been *blocking* a correct cue-tier answer, so declining gained one.
+Templates' 91% precision and the dev 7/7 both held, which were F-031's own
+conditions for keeping the fix.
+Source: F-031, ADR-029; `python -m comparison.harness`.
+
+**If this section needs an OPEN defect, use the planner's unmeasured status
+(gap 6) or F-015's single-reviewer key — not this one.** F-026, F-027 and F-031
+are all closed now, and claiming otherwise is the same overclaiming this section
+exists to prevent.
 
 > **Do not soften this into "lightly reviewed" or omit the 0 of 9.** A judge who
 > opens `eval/answer_key.json` sees `0 confirmed` in the first block of the
 > file. Volunteering it is worth more than the 7/7 it qualifies; being caught
-> holding it back costs the 7/7 *and* the credibility of every other number. `python -m eval.completeness` reports 0 recall
-risks and 1 dispute needing a human (`1c_000`). Say this plainly — a team that
-labels its own numbers provisional reads as more credible, not less.
+> holding it back costs the 7/7 *and* the credibility of every other number.
 
 **Failed approaches — pick four from `docs/failures.md` (F-001…F-030).** The
 four that carry the most signal:

@@ -163,8 +163,8 @@ never at an empty result and never at an invented answer.
 | 2 — cue fallback | `fallback.py` | **21 correct / 29 complete evidence** of 49, against templates-alone's 10 / 11 (ADR-019; counts updated by ADR-024, ADR-029, ADR-031, ADR-033) — at 40% precision against templates' 91% |
 | 3 — LLM plan | `planner.py` | Emits a validated *plan*, never an answer. **Off by default**, and deliberately unmeasured on the frozen set |
 
-**Never quote the 7/7 without the 35/49 beside it.** 7/7 measures fit to seven
-development questions; 35/49 measures routing capability on questions written
+**Never quote the 7/7 without the 36/49 beside it.** 7/7 measures fit to seven
+development questions; 36/49 measures routing capability on questions written
 independently and frozen before either router ran. Reporting the first alone
 would misrepresent the system. Reproduce both with `python -m comparison.harness`.
 
