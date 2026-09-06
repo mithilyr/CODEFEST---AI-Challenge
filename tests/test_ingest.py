@@ -336,7 +336,17 @@ def test_stray_ingested_file_is_flagged_as_unsafe(mini_corpus: Path):
     assert report.extra_ingested == ["wiki/The Iron-Ring Cartel.md"]
     assert not report.is_clean
     assert not report.is_safe_to_ingest
-    assert "CORPUS DRIFT" in report.summary()
+
+    # The safety verdict above is what this test is for and it is unchanged.
+    # The WORDING changed in ADR-036: an added file now reads as "corpus has
+    # grown", because added and modified are different situations and used to
+    # print the same accusation. A judge handing the system a document was told
+    # their file was drift. `CORPUS DRIFT` is now reserved for missing or
+    # modified files - the actual F-016 shape.
+    summary = report.summary()
+    assert "corpus has grown" in summary
+    assert "CORPUS DRIFT" not in summary
+    assert "not comparable with earlier checkpoints" in summary
 
 
 def test_stray_ignored_file_is_drift_but_not_unsafe(mini_corpus: Path):
@@ -431,3 +441,21 @@ def test_ashen_vanguard_victor_claim_is_not_on_a_victor_field(corpus_root: Path)
 
     assert not [f for f, _ in rows if "victor" in f.lower()]
     assert ("Outcome", "Victor of The Accord of Mournthrone") in rows
+
+
+def test_modified_file_still_reads_as_drift(mini_corpus: Path):
+    """CORPUS DRIFT is reserved for the F-016 shape, and still fires for it.
+
+    ADR-036 softened the message for *added* files. A file the manifest knows
+    about whose bytes changed is the case F-016 actually records - an editor
+    rewrote 36 files - and it must keep saying so, or the reword would have
+    traded one silent failure for another.
+    """
+    expected = manifest_from_dir(mini_corpus)
+    target = next((mini_corpus / "wiki").glob("*.md"))
+    target.write_text("rewritten by something helpful\n", encoding="utf-8")
+
+    report = verify(mini_corpus, expected)
+    assert report.modified
+    assert not report.is_safe_to_ingest
+    assert "CORPUS DRIFT" in report.summary()

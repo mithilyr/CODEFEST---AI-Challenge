@@ -960,7 +960,28 @@ def page_index(catalogue: dict | None = None) -> str:
         _search_form()
         + _entity_datalist(catalogue)
         + _examples_block()
+        + _reload_block()
         + _catalogue_block(catalogue),
+    )
+
+
+def _reload_block() -> str:
+    """The corpus-reload control.
+
+    The graph is built once at startup, so a document added to the corpus while
+    the server runs is invisible until something rebuilds. A file watcher would
+    hide that; this shows it. The rebuild is ~6s on the full corpus, and the
+    result page prints the before/after counts rather than saying "done".
+    """
+    return (
+        "<section><h2>Corpus</h2>"
+        '<form action="/reload" method="post" style="margin:0">'
+        '<button type="submit">Reindex corpus</button>'
+        "</form>"
+        "<p class='gloss'>The graph is read from disk at startup and held. Add or "
+        "change a document in the corpus and reindex to pick it up - about six "
+        "seconds for the full archive. The next page reports what changed.</p>"
+        "</section>"
     )
 
 
@@ -1001,6 +1022,75 @@ def page_answer(view: dict) -> str:
         + _examples_block()
     )
     return _shell(f"{view['question'][:60]} - Ashen Era", body)
+
+
+def _delta(before: int, after: int) -> str:
+    """`118 -> 119 (+1)`, or `118 (unchanged)`. The point of the page is the +1."""
+    if after == before:
+        return f"{before:,} <span class='muted'>(unchanged)</span>"
+    sign = "+" if after > before else ""
+    return f"{before:,} &rarr; <strong>{after:,}</strong> ({sign}{after - before:,})"
+
+
+def page_reload(report: dict) -> str:
+    """What a corpus reload changed. Surface 11.
+
+    Exists because a running server holds the graph it built at startup, so a
+    document added to the corpus is invisible until something rebuilds. This is
+    that something, and the page shows the before/after counts rather than
+    reporting success, because "it reloaded" is a claim and "118 -> 119
+    entities" is evidence.
+    """
+    before, after = report["before"], report["after"]
+    unmapped = report.get("unmapped_fields") or {}
+
+    rows = "".join(
+        f"<tr><td>{label}</td><td class='mono'>{_delta(before[key], after[key])}</td></tr>"
+        for label, key in (
+            ("Evidence units", "units"),
+            ("Entities", "entities"),
+            ("Edges", "edges"),
+        )
+    )
+
+    unchanged = all(before[k] == after[k] for k in ("units", "entities", "edges"))
+    gloss = (
+        "<p class='gloss'>Nothing changed. The corpus on disk is the one already "
+        "loaded.</p>"
+        if unchanged
+        else "<p class='gloss'>The corpus on disk differed from the one loaded, "
+        "and the graph was rebuilt from it.</p>"
+    )
+
+    # An unmapped field is a relation the corpus expresses under a name nobody
+    # mapped - an edge that silently never exists. Surfaced here because a
+    # reload is exactly when new vocabulary arrives, and the fix is a line of
+    # `config/relations.yaml`, not code.
+    if unmapped:
+        items = "".join(
+            f"<li><span class='mono'>{_e(name)}</span> &times;{count}</li>"
+            for name, count in sorted(unmapped.items())
+        )
+        gloss += (
+            "<p class='gloss'><strong>Field names this corpus uses that "
+            "<code>config/relations.yaml</code> does not map</strong> - each is a "
+            "relation the graph is not reading. Add it to that file and reload; "
+            "no code change.</p>"
+            f"<ul>{items}</ul>"
+        )
+
+    body = (
+        _search_form()
+        + "<section><h2>Corpus reloaded</h2>"
+        + f"<p class='muted'>Re-read from disk in "
+        f"{report['elapsed_seconds']:.1f}s.</p>"
+        + f"<table>{rows}</table>"
+        + gloss
+        + "<p class='gloss'><a href='/'>Ask a question</a> against the reloaded "
+        "corpus.</p></section>"
+        + _examples_block()
+    )
+    return _shell("Corpus reloaded - Ashen Era", body)
 
 
 def page_error(message: str) -> str:

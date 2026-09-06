@@ -3474,3 +3474,104 @@ result above is exactly what happens when one assumption of ours goes unmet.
 
 *Status: accepted. 400 tests. The graph, the harness and the eval are unmoved;
 this ADR changes what happens to a corpus we have not seen, not to this one.*
+
+## ADR-036 — A corpus reload is a button, the cache has a fingerprint, and an added file is not drift
+
+**The question**
+
+The final round requires adapting to requirements announced on the day. If a
+judge drops a document into the corpus, does the system pick it up? Measured
+rather than assumed, and the answer had three parts, two of them defects.
+
+**MEASURED before changing anything**
+
+```
+new documents, rebuilt      2 wiki + 1 codex file: 7 -> 8 nodes, 12 -> 15 edges,
+                            and a two-hop question routed through both new files
+                            and answered with per-hop citations
+running server              does NOT pick them up - Engine.__init__ builds once,
+                            no watcher, no reload, no mtime check
+full cold rebuild           6.3s on the real corpus
+                            (ingest 5.0s, graph 0.2s, corroboration 1.2s)
+```
+
+**Decision 1: a reload endpoint, not a file watcher**
+
+`POST /reload` (and `GET /reload`, because a judge may reach it from the address
+bar and a 405 in that moment reads as broken) rebuilds into locals and swaps
+under a lock, so a failed reload leaves the previous corpus serving rather than
+a half-built one. `Engine._lock` exists because the server is a
+`ThreadingHTTPServer` and a question must not traverse a half-swapped graph.
+
+A watcher was rejected: it is a race condition to debug and a background thread
+to explain, three days from a deadline, and 6.3s is inside the time it takes to
+ask "does it pick that up?". **Explicit beats magical when a judge is watching**
+— they can see the machine do the work rather than trust that it did.
+
+The result page prints before/after counts rather than reporting success:
+"it reloaded" is a claim, "7 → 8 entities" is evidence. It also surfaces
+`unmapped_fields`, because a reload is exactly when new vocabulary arrives and
+the fix is a line of `config/relations.yaml`, not code.
+
+**Verified end to end**
+
+```
+startup    7 entities, 12 edges
+ask        "To which vault must one journey to examine the relic long borne by
+            Sabine Trawley?"  ->  unresolved_entity
+           [a file is added to wiki/]
+reload     0.05s   7 -> 8 entities, 12 -> 13 edges, 16 -> 18 units
+ask        same question  ->  sufficient, "Kestrel Vault"
+```
+
+**Decision 2: the ingestion cache gets a fingerprint**
+
+`ingest_cached()` returned `.cache/corpus.v1.json` whenever the file existed —
+no mtime, no hash, no fingerprint. **It was correct only by luck**, and the luck
+was verified: fresh and cached ingests were byte-identical on 6 Sep, same 30,553
+units, same ids, zero text differences.
+
+The luck runs out the moment a document is added — the very scenario above.
+`tests/test_diagram.py` asserts file counts, evidence-unit counts and
+corroboration counts *through that function*, and all three change when a
+document is added. A stale cache would have kept the suite that exists to stop
+the architecture diagram going stale green, while asserting pre-drop numbers.
+Same failure class as ADR-035's folder-name literal: correct by luck, silent
+when the luck runs out.
+
+`corpus_fingerprint()` hashes every file's path, size and mtime; a mismatch
+rebuilds. Path/size/mtime rather than contents because hashing 123 MB on every
+launch would cost more than the 5s ingest the cache exists to avoid;
+`python -m src.ingest.integrity` remains the content check, as a deliberate
+separate step.
+
+**Decision 3: an added file is not drift**
+
+The integrity checker printed the same message for a missing file, a modified
+file and an added one:
+
+> CORPUS DRIFT: ingestion would read files that are not the shipped archive.
+
+So the system's first response to a judge's own document was to report it as
+drift. The check is unchanged; what it says about the added-files case is not.
+`CORPUS DRIFT` is now reserved for **missing or modified** files — the actual
+F-016 shape, where an editor rewrote 36 files. Added files report "corpus has
+grown … reindex to include them", and still say the measurements are no longer
+comparable, because they are not.
+
+`tests/test_ingest.py` pins both halves: added files must not say CORPUS DRIFT,
+modified files must.
+
+**Cost**
+
+421 tests, 11 of them new. `comparison.harness` byte-identical. No graph
+counts moved, so `tests/test_diagram.py` and the architecture SVG are unaffected.
+
+**What this does not claim**
+
+The system still does not update *automatically*, and the report should say so
+in those words. It updates in about six seconds when asked, and it now tells you
+what changed when you ask. A new scanned PDF still needs OCR under Gemini's
+~20/day per-model cap, and no button fixes that.
+
+*Status: accepted.*

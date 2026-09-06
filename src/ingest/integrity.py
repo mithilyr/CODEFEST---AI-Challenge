@@ -123,11 +123,27 @@ class IntegrityReport:
             lines.append(
                 "corpus differs, but only in files ingestion does not read."
             )
+        elif not (self.missing or self.modified):
+            # Added files only. This is somebody handing the system a document,
+            # which is a normal thing to do and the case the final round poses -
+            # not the F-016 failure, where the shipped archive changed underneath
+            # us. Both used to print the same accusation, so the system's first
+            # response to a judge's own file was to report it as drift. The check
+            # is unchanged; only what it says about this case is.
+            lines.append(
+                f"corpus has grown: {len(self.extra_ingested)} document(s) added "
+                "that ingestion will read. This is expected when documents are "
+                "supplied deliberately - reindex to include them. Measurements "
+                "taken now are not comparable with earlier checkpoints, because "
+                "the corpus is no longer the one those numbers were derived from."
+            )
         else:
             lines.append(
-                "CORPUS DRIFT: ingestion would read files that are not the "
-                "shipped archive. Measurements taken now are not comparable "
-                "with earlier checkpoints. See docs/failures.md F-016."
+                "CORPUS DRIFT: files ingestion reads are missing or modified "
+                "against the shipped archive. Measurements taken now are not "
+                "comparable with earlier checkpoints, and this is the shape of "
+                "F-016 - an editor rewrote 36 files and left a phantom document "
+                "behind. See docs/failures.md."
             )
         return "\n".join(lines)
 

@@ -624,3 +624,78 @@ def test_colouring_cannot_go_stale_when_a_status_is_added():
     """
     assert render._status_class("some_future_answerable_status", True) == "warn"
     assert render._status_class("some_future_decline", False) == "bad"
+
+
+# --------------------------------------------------------------------------
+# Corpus reload (ADR-036)
+# --------------------------------------------------------------------------
+
+
+def test_reload_page_shows_the_delta_not_just_success():
+    """"It reloaded" is a claim; "7 -> 8 entities" is evidence.
+
+    The page exists because a running server holds the graph it built at
+    startup, so a document added to the corpus is invisible until something
+    rebuilds. Reporting success would tell an operator nothing about whether
+    the file was actually read.
+    """
+    from src.ui.render import page_reload
+
+    html = page_reload(
+        {
+            "elapsed_seconds": 6.3,
+            "before": {"entities": 118, "edges": 265, "units": 30553},
+            "after": {"entities": 119, "edges": 268, "units": 30571},
+            "unmapped_fields": {},
+        }
+    )
+
+    assert "119" in html and "118" in html, "both sides of the delta must show"
+    assert "+1" in html, "the change itself must be legible"
+    assert "6.3s" in html
+
+
+def test_reload_page_says_so_when_nothing_changed():
+    """A no-op reload must not read as though it found something."""
+    from src.ui.render import page_reload
+
+    counts = {"entities": 118, "edges": 265, "units": 30553}
+    html = page_reload(
+        {"elapsed_seconds": 6.1, "before": counts, "after": dict(counts),
+         "unmapped_fields": {}}
+    )
+
+    assert "unchanged" in html.lower()
+    assert "Nothing changed" in html
+
+
+def test_reload_page_surfaces_unmapped_field_names():
+    """A reload is exactly when new vocabulary arrives.
+
+    An unmapped field is a relation the corpus states and the graph never
+    builds. It is reported here, with the fix named, because that fix is a line
+    of config/relations.yaml rather than a code change.
+    """
+    from src.ui.render import page_reload
+
+    html = page_reload(
+        {
+            "elapsed_seconds": 6.2,
+            "before": {"entities": 118, "edges": 265, "units": 30553},
+            "after": {"entities": 119, "edges": 265, "units": 30571},
+            "unmapped_fields": {"Custodian of": 3, "Sworn to": 1},
+        }
+    )
+
+    assert "Custodian of" in html
+    assert "Sworn to" in html
+    assert "relations.yaml" in html
+
+
+def test_the_front_page_offers_a_reindex_control():
+    """The gap is disclosed in the product, not only in the docs."""
+    from src.ui.render import page_index
+
+    html = page_index()
+    assert 'action="/reload"' in html
+    assert "Reindex" in html

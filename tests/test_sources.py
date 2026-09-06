@@ -149,3 +149,44 @@ def test_pointing_sources_at_the_new_folder_builds_the_graph(synthetic_corpus):
     assert any(
         e.source == "perrin_vale" and e.relation == "member_of" for e in graph.edges
     )
+
+
+# --------------------------------------------------------------------------
+# Cache invalidation (ADR-036)
+# --------------------------------------------------------------------------
+
+
+def test_adding_a_document_invalidates_the_ingestion_cache(synthetic_corpus):
+    """`ingest_cached` used to return the cache whenever the file existed.
+
+    MEASURED: it was correct only by luck - ingestion output happened not to
+    have changed since the cache was written (verified byte-identical, 30,553
+    units, zero text differences). The luck runs out the moment a document is
+    added, which is exactly what the final round poses, and
+    `tests/test_diagram.py` asserts file counts, unit counts and corroboration
+    counts *through this function*. A stale cache would have kept that suite
+    green while asserting pre-drop numbers.
+    """
+    from src.ingest.pipeline import corpus_fingerprint, ingest_cached
+
+    before_fp = corpus_fingerprint()
+    before = ingest_cached()
+
+    (synthetic_corpus / "specs" / "late_arrival.txt").write_text(
+        "Perrin Vale serves at Kestrel Vault.\n", encoding="utf-8"
+    )
+
+    after_fp = corpus_fingerprint()
+    after = ingest_cached()
+
+    assert before_fp != after_fp, "a new file must change the fingerprint"
+    assert len(after.evidence) > len(before.evidence), (
+        "the cache must be rebuilt, not served, once the corpus has changed"
+    )
+
+
+def test_the_fingerprint_is_stable_when_nothing_changes(synthetic_corpus):
+    """Otherwise the cache never hits and it may as well not exist."""
+    from src.ingest.pipeline import corpus_fingerprint
+
+    assert corpus_fingerprint() == corpus_fingerprint()

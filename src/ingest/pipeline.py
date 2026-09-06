@@ -14,6 +14,7 @@ few seconds, and a judge running the app should not pay that on every launch.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 from dataclasses import asdict, dataclass
@@ -182,16 +183,54 @@ def cache_path() -> Path:
     return get_settings().cache_dir / f"corpus.v{CACHE_VERSION}.json"
 
 
+def corpus_fingerprint() -> str:
+    """A hash of every corpus file's path, size and mtime.
+
+    WHY THIS EXISTS (ADR-036). `ingest_cached` used to return the cache whenever
+    the file existed - no mtime check, no hash, no fingerprint. It was correct
+    only by luck: ingestion output had not changed since the cache was written,
+    verified byte-identical on 6 Sep (30,553 units, same ids, zero text
+    differences).
+
+    The luck runs out the moment a document is added, which is exactly the
+    scenario the final round poses. `tests/test_diagram.py` asserts file counts,
+    evidence-unit counts and corroboration counts *through this function*, and
+    all three change when a document is added - so a stale cache would have kept
+    the suite green while asserting pre-drop numbers. The suite that exists to
+    stop the architecture diagram going stale would have been the thing going
+    stale, silently.
+
+    Path, size and mtime rather than file contents: hashing 123 MB on every
+    launch would cost more than the 5s ingest the cache exists to avoid, and a
+    corpus edit that preserves all three is not a case this project needs to
+    survive. `python -m src.ingest.integrity` is the content check, and it is a
+    separate deliberate step.
+    """
+    corpus = get_settings().require_corpus()
+    digest = hashlib.sha256()
+    for path in sorted(p for p in corpus.rglob("*") if p.is_file()):
+        stat = path.stat()
+        rel = path.relative_to(corpus).as_posix()
+        digest.update(f"{rel}\0{stat.st_size}\0{int(stat.st_mtime)}\0".encode())
+    return digest.hexdigest()
+
+
 def ingest_cached(force: bool = False) -> IngestionResult:
-    """Ingest, reusing a cached result when one is available.
+    """Ingest, reusing a cached result only when the corpus has not changed.
 
     Args:
-        force: Rebuild even if a cache exists.
+        force: Rebuild even if a valid cache exists.
     """
     path = cache_path()
+    fingerprint = corpus_fingerprint()
 
     if not force and path.is_file():
         payload = json.loads(path.read_text(encoding="utf-8"))
+        if payload.get("fingerprint") != fingerprint:
+            # The corpus moved under the cache. Rebuilding is 5s; serving the
+            # old answer is a wrong number with a citation attached, which is
+            # the failure this project exists to prevent.
+            return _write_cache(path, ingest(), fingerprint)
         return IngestionResult(
             documents=[],  # Not needed by cache consumers; rebuild with force=True.
             evidence=[EvidenceUnit(**unit) for unit in payload["evidence"]],
@@ -202,11 +241,16 @@ def ingest_cached(force: bool = False) -> IngestionResult:
             scans_skipped=payload.get("scans_skipped", 0),
         )
 
-    result = ingest()
+    return _write_cache(path, ingest(), fingerprint)
+
+
+def _write_cache(path: Path, result: IngestionResult, fingerprint: str) -> IngestionResult:
+    """Persist an ingestion result under the fingerprint it was produced from."""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(
             {
+                "fingerprint": fingerprint,
                 "evidence": [asdict(unit) for unit in result.evidence],
                 "dedup_report": asdict(result.dedup_report),
                 "failures": [list(f) for f in result.failures],
