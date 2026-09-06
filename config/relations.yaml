@@ -36,6 +36,15 @@ relations:
       forward: [Member of, Membership, Affiliation, Allegiance]
       reverse: [Members, Member, Known members, Personnel, Known participant,
                 Notable fighter, Serving figure, Castellan]
+    # Every field name above is a *record-keeping* noun. None is how a person
+    # asks the question: "the faction X belongs to" cues nothing at all, which
+    # is why 3h_002's middle hop was never considered (ADR-031).
+    # NOT "house": it stems to `hous`, which is housed_in's cue. Adding it would
+    # make that word shared, and a shared word is dropped from
+    # `unique_relation_cues()` - so it would silently weaken ADR-029's coverage
+    # guard as a side effect of extending vocabulary. Check collisions before
+    # adding any cue.
+    cues: [belongs]
 
   ruled_by:
     inverse: rules

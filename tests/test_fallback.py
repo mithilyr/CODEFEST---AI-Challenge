@@ -157,6 +157,42 @@ def test_a_path_covering_more_relations_beats_a_shorter_one():
 # --------------------------------------------------------------------------
 
 
+def test_belongs_cues_membership_so_a_three_hop_chain_is_considered(cues):
+    """ADR-031. MEASURED: every `member_of` field name is a record-keeping noun
+    (`Members`, `Affiliation`, `Personnel`), and none is how a person asks.
+    "the faction that X belongs to" cued nothing, so 3h_002's middle hop was
+    never a candidate and the tier stopped one hop in."""
+    assert "belong" in cues["member_of"]
+    question = (
+        "Which war was won by the faction that Hesper Wrenfield's mentor belongs to?"
+    )
+    assert cued_relations(cues, question) >= {"mentor_of", "member_of", "victor_of"}
+
+
+def test_an_answer_type_noun_is_not_a_membership_cue(cues):
+    """MEASURED and reverted once: adding `faction`, `group` and `organisation`
+    alongside `belongs` cost a correct answer in BOTH arms - templates 10 -> 9,
+    shipped 18 -> 16 - because "Which faction rules the place where the Pale
+    Stag makes its lair?" uses "faction" as the ANSWER TYPE, not as a relation.
+    Under ADR-029's coverage guard a new unique cue makes templates decline
+    more, so vocabulary and the guard interact. Only the relational word ships."""
+    for answer_type_noun in ("faction", "group", "organisation", "organization"):
+        assert answer_type_noun not in cues["member_of"], (
+            f"{answer_type_noun!r} is an answer-type noun; see ADR-031"
+        )
+
+
+def test_a_new_cue_must_not_collide_with_an_existing_relations_stem(cues):
+    """`house` stems to `hous`, which is housed_in's cue. Adding it to
+    member_of would make that word shared, and a shared word is dropped from
+    `unique_relation_cues()` - silently weakening ADR-029's coverage guard as a
+    side effect of extending vocabulary."""
+    from src.query.route import unique_relation_cues
+
+    assert unique_relation_cues().get("hous") == "housed_in"
+    assert "hous" not in cues["member_of"]
+
+
 def test_a_declared_cue_extends_the_vocabulary_from_config(cues):
     """MEASURED (ADR-024): rb_044 asks for "the apprentice of X". mentor_of's
     name and its inverse both stem to "mentor", so the role noun cued nothing

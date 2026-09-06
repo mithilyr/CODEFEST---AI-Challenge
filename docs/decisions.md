@@ -2848,3 +2848,111 @@ not, on its own, supply.
 *Status: accepted. 379 tests, 6 of them new (`tests/test_reachability.py`).
 Graph untouched at 117/261, so `tests/test_diagram.py` and the architecture SVG
 are unaffected and no eval sweep was re-run — no number moved.*
+
+
+## ADR-031 — A relation's question vocabulary is not its field names, and an answer-type noun is not a cue
+
+**Problem**
+
+`3h_002` — *"Which war was won by the faction that Hesper Wrenfield's mentor
+belongs to?"* — was answered **Corvus Hollowmere the Pale**, a person, to a
+question asking for a war. Measured cause, and it is not depth and not evidence:
+
+```
+gold chain    mentor_of -> member_of -> victor_of
+exists in graph                       1 path
+cued by the question   mentor_of, victor_of      MISSING: member_of
+```
+
+The chain is in the graph. `member_of`'s entire cue vocabulary comes from its
+field names — `Members`, `Membership`, `Affiliation`, `Allegiance`, `Personnel`,
+`Castellan` — and every one is a **record-keeping noun**. None is how a person
+asks. "the faction that X **belongs to**" cued nothing, so the middle hop was
+never a candidate and the tier walked one hop and stopped.
+
+This is ADR-024's gap in a second relation. It was predicted there: *"any
+relation whose name, inverse and field names share a stem has the same blind
+spot, and the frozen set cannot detect it."*
+
+**Decision**
+
+`member_of` declares `cues: [belongs]`. One word.
+
+**What we tried first, and what it cost**
+
+`cues: [belongs, faction, group, organisation, organization]` — the obvious
+version, all the words a person might use for a faction. **Measured, and
+reverted:**
+
+```
+                    baseline    all five    [belongs] only
+arm A answer_correct     10          9           10
+arm A no_route_shape     36         37           36
+arm C answer_correct     18         16           19
+arm C ambiguous           6         11            8
+```
+
+It cost a correct answer in **both** arms. The cause is that `faction`, `group`
+and `organisation` are **answer-type nouns**, not relation cues. *"Which faction
+rules the place where the Pale Stag makes its lair?"* names a faction as the
+thing it wants back, not as a relation to traverse — and under ADR-029's
+coverage guard a newly-unique cue word makes templates **decline more**, so
+`rb_041` stopped routing and lost an answer it had been getting right.
+
+`belongs` is the discriminating word because it is relational in a way the
+nouns are not: it can only describe a tie between two entities.
+
+**The interaction worth writing down**
+
+ADR-024 lets a relation declare cue words. ADR-029's guard counts only words
+naming **exactly one** relation. Those two features are coupled in both
+directions, and neither ADR said so:
+
+- Adding a word that **collides** with an existing cue makes it shared, which
+  drops it from `unique_relation_cues()` and **weakens** the coverage guard.
+  `house` stems to `hous`, which is `housed_in`'s cue — it was a candidate here
+  and was rejected for exactly this reason.
+- Adding a word that is **unique** strengthens the guard, making templates
+  decline on questions that merely contain it. That is what cost `rb_041`.
+
+**So check collisions before adding any cue**, and re-run the harness rather
+than reasoning about it. Three tests pin this: the shipped cue, the rejected
+answer-type nouns, and `hous` still belonging to `housed_in` alone.
+
+**MEASURED, isolated**
+
+`config/relations.yaml` was the only file toggled between the two runs, so the
+delta is the cue and nothing else:
+
+```
+                     baseline   with [belongs]
+arm A  answer_correct    10          10     unchanged - 91% precision held
+arm A  no_route_shape    36          36     unchanged
+arm B                30/12/20    30/12/20   unchanged
+arm C  answer_correct    18          19     +1
+arm C  complete_evidence 28          31     +3
+arm C  ambiguous          6           8     +2   <- the cost
+```
+
+`comparison.ablations` is byte-identical. `3h_002` now answers **The War of
+Drowned Light** correctly; `3h_001` is unchanged and correct; `3h_003` is
+unchanged at six values.
+
+**A caveat on the absolute figures.** These runs were taken while F-032's fix
+was in progress in the working tree, so the graph underneath them was 118
+entities / 265 edges rather than the committed 117 / 261. The *delta* is valid —
+only `relations.yaml` moved between the two runs — but **re-derive the
+absolutes with `python -m comparison.harness` once F-032 lands**, per CLAUDE.md's
+standing rule for exactly this number.
+
+**What is still not fixed**
+
+`3h_003` still returns six values as `fallback_ambiguous`. Its problem is the
+opposite one: it is **over**-cued, because `plac` matches "place" and pulls in
+`housed_in` and `serves_at` — the contamination ADR-029 documented. Two of the
+three three-hop questions now answer correctly, and the third is a chain-
+selection problem that lives where arm B's 40% precision lives. Not attempted
+here.
+
+*Status: accepted. 3 new tests. The +2 ambiguous is a real cost and is recorded
+as one, not netted away against the +1 correct.*
