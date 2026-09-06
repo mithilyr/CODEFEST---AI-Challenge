@@ -158,7 +158,7 @@ def test_a_path_covering_more_relations_beats_a_shorter_one():
 
 
 def test_a_unique_cue_word_outranks_a_shared_one(cues):
-    """ADR-032. `plac` is shared by forged_at, housed_in and serves_at, so the
+    """ADR-033. `plac` is shared by forged_at, housed_in and serves_at, so the
     ordinary noun "place" cued all three. 3h_003 named five relations where its
     gold chain has three, and returned six values as `fallback_ambiguous`."""
     question = (
@@ -188,7 +188,7 @@ def test_every_three_hop_question_routes_to_its_gold_chain(cues):
     """The three-hop set exists because every acceptable path in the answer key
     is two hops (F-031). All three chains were always in the graph; only the
     vocabulary was wrong - under-cued for 3h_002 (ADR-031), over-cued for
-    3h_003 (ADR-032)."""
+    3h_003 (ADR-033)."""
     import json
 
     questions = json.load(

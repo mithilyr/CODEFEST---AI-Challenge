@@ -2849,7 +2849,7 @@ not, on its own, supply.
 Graph untouched at 117/261, so `tests/test_diagram.py` and the architecture SVG
 are unaffected and no eval sweep was re-run — no number moved.*
 
-**AMENDMENT (same day, ADR-032).** The decision above — measure, disclose, do
+**AMENDMENT (same day, ADR-033).** The decision above — measure, disclose, do
 not fix — was overturned on instruction, and the sweep it asked for was run:
 `comparison.harness` and `comparison.ablations` byte-identical, `eval.run_eval`
 scores identical, dev 1B 7/7 intact. The graph is now **118 entities, 265
@@ -2863,7 +2863,7 @@ Two things in this ADR should be read as of its date rather than as current:
   `OUTSIDE_STRUCTURED_COVERAGE` **was true and is now true of something else.**
   Halvard Cindervale has a node, so he is no longer that status's example. It
   now fires on the 12 wikilink targets that have no node — all of them events,
-  offices or documents rather than entities. ADR-032 records the measurement.
+  offices or documents rather than entities. ADR-033 records the measurement.
 
 What this ADR got right and is worth keeping: the method, the hand-check that
 refused to inflate 579 into an entity count, and the identification of the
@@ -2979,6 +2979,11 @@ here.
 as one, not netted away against the +1 correct.*
 
 ## ADR-032 — The name lexicon reads wikilinks, so an unlinked cell can name a page-less entity
+
+*Numbered 033, not 032, and placed before ADR-032 in this file: two sessions
+appended concurrently on 6 Sep and both reached for 032. This one was written
+first and renumbered rather than displacing the other, so file order and number
+order disagree here. Nothing else does.*
 
 **Problem**
 
@@ -3116,7 +3121,7 @@ entry, rewritten from "one entity has no node" to the completeness claim and the
 place where it is the correct boundary.*
 
 
-## ADR-032 — A cue word that names one relation outranks one that names several; a shared word is a fallback, not a veto
+## ADR-033 — A cue word that names one relation outranks one that names several; a shared word is a fallback, not a veto
 
 **Problem**
 

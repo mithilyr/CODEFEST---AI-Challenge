@@ -166,7 +166,7 @@ def cued_relations(cues: dict[str, set[str]], question: str) -> set[str]:
     "Place of service" all reduce to it, so the ordinary noun *place* cues
     `forged_at`, `housed_in` and `serves_at` at once.
 
-    MEASURED (ADR-032): 3h_003 - "Which faction rules the place where the relic
+    MEASURED (ADR-033): 3h_003 - "Which faction rules the place where the relic
     wielded by Halvard Vane the Grave-Sworn was forged?" - cued five relations
     where its gold chain has three, and returned six values as
     `fallback_ambiguous`. "wielded", "forged" and "rules" each name exactly one
