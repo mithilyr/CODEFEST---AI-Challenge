@@ -225,6 +225,38 @@ def test_confirmed_requires_two_reviewers():
     assert key["1c_003"].verification.status == "draft", "1C was not human-reviewed"
 
 
+def test_the_key_states_its_own_verification_state_and_the_summary_is_true():
+    """`_about.verification_state` is the first thing a judge reads. It must be
+    re-derived from the entries, not remembered.
+
+    Same guard as `tests/test_diagram.py`: a summary a human maintains by hand
+    drifts from the thing it summarises, and a stale one here would be a false
+    claim about review integrity - the worst kind this file can carry.
+    """
+    raw = load_raw()
+    summary = raw["_about"]["verification_state"]
+    entries = raw["questions"]
+
+    counts = {}
+    for entry in entries:
+        status = entry["verification"]["status"]
+        counts[status] = counts.get(status, 0) + 1
+
+    assert len(entries) == 9
+    assert counts.get("confirmed", 0) == 0
+    assert f"0 of {len(entries)} entries confirmed" in summary
+    assert f"{counts['single_review']} single_review" in summary
+    assert f"{counts['draft']} draft" in summary
+
+    reviewers = {
+        name
+        for entry in entries
+        for name in entry["verification"].get("reviewers") or []
+    }
+    assert len(reviewers) == 1, "the summary says one reviewer; check it still is"
+    assert next(iter(reviewers)) in summary
+
+
 def test_an_ai_recheck_never_advances_verification_status():
     """The 2026-09-06 pass re-derived all nine answers from the primary corpus
     and agreed with every one. It still does not count: it was not a second

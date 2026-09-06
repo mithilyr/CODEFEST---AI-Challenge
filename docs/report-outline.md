@@ -162,10 +162,45 @@ Source: `python -m eval.run_eval --checkpoint baseline`; ADR-016.
 Caveat that must appear: 7/7 complete evidence is **evidence coverage, not
 answer correctness**, and ADR-016 says so itself.
 
-**Every number is PROVISIONAL until the key is two-person verified.**
-Source: `eval/results/baseline_latest.md` prints this banner itself. Measured
-2026-09-06: **7 single_review, 2 draft, 0 confirmed** — `1b_006`'s
-`unresolved` was settled on evidence (F-028). `python -m eval.completeness` reports 0 recall
+**Every number is PROVISIONAL until the key is two-person verified.** Decided
+2026-09-06: no second human reviewer is available before the deadline, so
+nothing has been relabelled. **Write this paragraph, close to verbatim, and put
+it near the 7/7 rather than in a footnote:**
+
+> The answer key these numbers are scored against is single-reviewer.
+> Measured: 0 of 9 entries confirmed — 7 reviewed once by one team member on
+> 29 August, 2 (both 1C) never human-reviewed at all. Recall is independently
+> corroborated: `eval/completeness.py` enumerates the corpus in every
+> direction and reports 0 recall defects across all nine, with one open
+> semantic dispute on `1c_000`. What that check cannot do is judge precision —
+> whether a recorded answer is the *right* one — and that is exactly what a
+> second reviewer is for. So **7/7 on the dev questions is a self-graded
+> result on a key this team authored**, and the honest externally-facing
+> number is the 49-question comparison the team froze before either router
+> ran: templates match no route shape on 35 of them. We know this distinction
+> matters because we have already been caught by it: one careful reviewer
+> reported 2 valid answers for `1b_006` where the corpus has 14 (F-015), and
+> the fourteen were found by enumeration, not by a person.
+
+Source: `eval/answer_key.json` `_about.verification_state`, re-derived from the
+entries by a test so it cannot go stale; `python -m eval.completeness`;
+`python -m eval.run_eval --checkpoint baseline`, which prints
+*"PROVISIONAL: 9/9 key entries are unverified"* itself; F-015 and its amendment.
+
+**And the key is not the only reason 7/7 needs qualifying.** F-031, found 6 Sep:
+on a *three*-hop question the `victory_membership` template matches the two-hop
+shape nested inside it, walks from the wrong start entity, and answers
+**confidently and wrongly** — `sufficient`, one value, a clean citation trail.
+Every acceptable path in `answer_key.json` is two hops, so the dev set cannot
+expose this by construction. That is the sharpest illustration in the repo of
+this section's own opening claim, and unlike F-026 and F-027 it is **open**.
+Source: F-031; reproduce with
+`python -m src.query.engine "Which war was won by the faction that Hesper Wrenfield's mentor belongs to?"`.
+
+> **Do not soften this into "lightly reviewed" or omit the 0 of 9.** A judge who
+> opens `eval/answer_key.json` sees `0 confirmed` in the first block of the
+> file. Volunteering it is worth more than the 7/7 it qualifies; being caught
+> holding it back costs the 7/7 *and* the credibility of every other number. `python -m eval.completeness` reports 0 recall
 risks and 1 dispute needing a human (`1c_000`). Say this plainly — a team that
 labels its own numbers provisional reads as more credible, not less.
 
