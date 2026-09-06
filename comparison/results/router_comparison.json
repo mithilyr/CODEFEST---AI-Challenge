@@ -2941,22 +2941,32 @@
       {
         "rid": "rb_005",
         "group": "A_paraphrase",
-        "status": "no_template_match",
-        "route_success": false,
-        "entity_resolution_success": false,
+        "status": "fallback_sufficient",
+        "route_success": true,
+        "entity_resolution_success": true,
         "answer_correct": false,
         "complete_evidence": false,
         "ambiguous": false,
-        "no_route_shape": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": false,
-        "values": [],
-        "documents": [],
-        "relation_routes": [],
-        "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "values": [
+          "Corvus Hollowmere the Pale"
+        ],
+        "documents": [
+          "wiki/isolde_mournvale.md",
+          "wiki/corvus_hollowmere_the_pale.md"
+        ],
+        "relation_routes": [
+          [
+            "member_of",
+            "concealed_tie_to"
+          ]
+        ],
+        "hops": 2,
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) concealed_tie_to, member_of. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
       },
       {
         "rid": "rb_006",
@@ -3204,22 +3214,37 @@
       {
         "rid": "rb_013",
         "group": "A_paraphrase",
-        "status": "no_template_match",
-        "route_success": false,
-        "entity_resolution_success": false,
+        "status": "fallback_ambiguous",
+        "route_success": true,
+        "entity_resolution_success": true,
         "answer_correct": false,
-        "complete_evidence": false,
-        "ambiguous": false,
-        "no_route_shape": true,
+        "complete_evidence": true,
+        "ambiguous": true,
+        "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": false,
-        "values": [],
-        "documents": [],
-        "relation_routes": [],
-        "hops": null,
-        "note": "no deterministic template's trigger phrase matched"
+        "values": [
+          "The Winter Reckoning",
+          "The Leaden Accord",
+          "The Purge of Blackport"
+        ],
+        "documents": [
+          "wiki/ederon_fellgard.md",
+          "wiki/the_iron_ring_cartel.md",
+          "wiki/the_winter_reckoning.md",
+          "wiki/the_leaden_accord.md",
+          "wiki/the_purge_of_blackport.md"
+        ],
+        "relation_routes": [
+          [
+            "member_of",
+            "victor_of"
+          ]
+        ],
+        "hops": 2,
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) member_of, victor_of. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
       },
       {
         "rid": "rb_014",
@@ -3605,30 +3630,29 @@
         "status": "fallback_sufficient",
         "route_success": true,
         "entity_resolution_success": true,
-        "answer_correct": false,
-        "complete_evidence": false,
+        "answer_correct": true,
+        "complete_evidence": true,
         "ambiguous": false,
         "no_route_shape": false,
         "wrong_route": false,
-        "unnecessary_depth": true,
+        "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": false,
         "values": [
-          "Crookgate Keep"
+          "The Bleeding Crown"
         ],
         "documents": [
           "wiki/gravemaw_wyrm.md",
-          "wiki/chalice_of_ashdeep.md"
+          "wiki/marrowwell_abbey.md"
         ],
         "relation_routes": [
           [
             "lair_in",
-            "forged_at",
-            "housed_in"
+            "ruled_by"
           ]
         ],
-        "hops": 3,
-        "note": "No template matched. Answered by cue-based fallback routing on relation(s) forged_at, housed_in, lair_in, ruled_by, serves_at. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
+        "hops": 2,
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) lair_in, ruled_by. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
       },
       {
         "rid": "rb_022",
@@ -4227,114 +4251,33 @@
       {
         "rid": "rb_044",
         "group": "B_novel",
-        "status": "fallback_ambiguous",
+        "status": "fallback_sufficient",
         "route_success": true,
         "entity_resolution_success": true,
         "answer_correct": false,
-        "complete_evidence": true,
-        "ambiguous": true,
+        "complete_evidence": false,
+        "ambiguous": false,
         "no_route_shape": false,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": false,
         "values": [
-          "Thessaly Coldwater",
-          "Isolde Nightbrook",
-          "Maelis Wrenfield",
-          "Brannoc Palefroth",
-          "Ederon Coldwater",
-          "Ederon Fellgard",
-          "Morwenna Vosgard",
-          "Ashreach",
-          "Blackford",
-          "Crookgate Keep",
-          "Fenthrone",
-          "Marrowwell Abbey",
-          "Mournwatch",
-          "The Ashen Vanguard"
+          "Ignatz Marrowgate"
         ],
         "documents": [
-          "wiki/ignatz_ashgrove_the_oathless.md",
-          "wiki/crookvale.md",
-          "wiki/gloamreach.md",
-          "wiki/isolde_nightbrook.md",
-          "wiki/maelis_wrenfield.md",
-          "wiki/greyfell_citadel.md",
-          "wiki/ederon_coldwater.md",
-          "wiki/ederon_fellgard.md",
-          "wiki/ironfell_citadel.md",
-          "wiki/morwenna_vosgard.md",
-          "wiki/ignatz_marrowgate.md",
-          "wiki/ashreach.md",
-          "wiki/blackford.md",
-          "wiki/crookgate_keep.md",
-          "wiki/fenthrone.md",
-          "wiki/marrowwell_abbey.md",
-          "wiki/mournwatch.md",
-          "wiki/cindermere_hold.md"
+          "wiki/ignatz_ashgrove_the_oathless.md"
         ],
         "relation_routes": [
           [
-            "member_of",
-            "ruled_by",
-            "serves_at"
-          ],
-          [
-            "mentor_of",
-            "member_of",
-            "ruled_by"
-          ],
-          [
-            "mentor_of",
-            "serves_at",
-            "ruled_by"
+            "mentor_of"
           ]
         ],
-        "hops": 3,
-        "note": "No template matched. Answered by cue-based fallback routing on relation(s) member_of, mentor_of, ruled_by, serves_at. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
+        "hops": 1,
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) mentor_of, ruled_by. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
       },
       {
         "rid": "rb_045",
-        "group": "B_novel",
-        "status": "fallback_ambiguous",
-        "route_success": true,
-        "entity_resolution_success": true,
-        "answer_correct": false,
-        "complete_evidence": true,
-        "ambiguous": true,
-        "no_route_shape": false,
-        "wrong_route": false,
-        "unnecessary_depth": true,
-        "would_escalate": null,
-        "gold_route_underivable": false,
-        "values": [
-          "Ignatz Fellgard",
-          "Caedmon Hollowmere"
-        ],
-        "documents": [
-          "wiki/caedmon_fellgard.md",
-          "wiki/hollowreach.md",
-          "wiki/thorncairn.md",
-          "wiki/caedmon_hollowmere.md"
-        ],
-        "relation_routes": [
-          [
-            "member_of",
-            "ruled_by",
-            "serves_at"
-          ],
-          [
-            "serves_at",
-            "ruled_by",
-            "member_of"
-          ]
-        ],
-        "hops": 3,
-        "note": "No template matched. Answered by cue-based fallback routing on relation(s) member_of, ruled_by, serves_at. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
-      },
-      {
-        "rid": "rb_046",
         "group": "B_novel",
         "status": "no_template_match",
         "route_success": false,
@@ -4354,56 +4297,63 @@
         "note": "no deterministic template's trigger phrase matched"
       },
       {
-        "rid": "rb_047",
+        "rid": "rb_046",
         "group": "B_novel",
-        "status": "fallback_ambiguous",
+        "status": "fallback_sufficient",
         "route_success": true,
         "entity_resolution_success": true,
-        "answer_correct": false,
+        "answer_correct": true,
         "complete_evidence": true,
-        "ambiguous": true,
+        "ambiguous": false,
         "no_route_shape": false,
         "wrong_route": false,
-        "unnecessary_depth": true,
+        "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": false,
         "values": [
-          "Hollowreach",
-          "Vault Chitin",
-          "Crookvale",
-          "Vharencrag Fortress",
-          "The Ashen Vanguard",
-          "House Morvain",
-          "The Silent Choir"
+          "Ironfell Citadel"
         ],
         "documents": [
-          "wiki/the_bleeding_crown.md",
-          "wiki/the_war_of_endless_vigil.md",
-          "wiki/vault_chitin.md",
-          "wiki/the_accord_of_mournthrone.md",
-          "wiki/house_morvain.md",
-          "wiki/the_silent_choir.md"
+          "wiki/ederon_coldwater.md",
+          "wiki/house_morvain.md"
         ],
         "relation_routes": [
           [
-            "belligerent_in",
-            "waged_at"
-          ],
-          [
-            "victor_of",
-            "waged_at"
-          ],
-          [
-            "belligerent_in",
-            "victor_of"
-          ],
-          [
-            "victor_of",
-            "belligerent_in"
+            "member_of",
+            "in_region"
           ]
         ],
         "hops": 2,
-        "note": "No template matched. Answered by cue-based fallback routing on relation(s) belligerent_in, victor_of, waged_at, wields. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) in_region, member_of. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
+      },
+      {
+        "rid": "rb_047",
+        "group": "B_novel",
+        "status": "fallback_sufficient",
+        "route_success": true,
+        "entity_resolution_success": true,
+        "answer_correct": true,
+        "complete_evidence": true,
+        "ambiguous": false,
+        "no_route_shape": false,
+        "wrong_route": false,
+        "unnecessary_depth": false,
+        "would_escalate": null,
+        "gold_route_underivable": false,
+        "values": [
+          "The War of Endless Vigil"
+        ],
+        "documents": [
+          "wiki/the_bleeding_crown.md",
+          "wiki/the_war_of_endless_vigil.md"
+        ],
+        "relation_routes": [
+          [
+            "victor_of"
+          ]
+        ],
+        "hops": 1,
+        "note": "No template matched. Answered by cue-based fallback routing on relation(s) victor_of. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
       },
       {
         "rid": "rb_048",
@@ -4544,44 +4494,22 @@
       {
         "rid": "rb_054",
         "group": "C_unanswerable",
-        "status": "fallback_ambiguous",
-        "route_success": false,
-        "entity_resolution_success": false,
-        "answer_correct": false,
+        "status": "no_template_match",
+        "route_success": true,
+        "entity_resolution_success": true,
+        "answer_correct": true,
         "complete_evidence": true,
-        "ambiguous": true,
-        "no_route_shape": false,
+        "ambiguous": false,
+        "no_route_shape": true,
         "wrong_route": false,
         "unnecessary_depth": false,
         "would_escalate": null,
         "gold_route_underivable": true,
-        "values": [
-          "Hollowreach",
-          "The Bleeding Crown",
-          "Vault Chitin",
-          "Ashfall Colossus",
-          "The Iron-Ring Cartel"
-        ],
-        "documents": [
-          "wiki/house_morvain.md",
-          "wiki/the_war_of_endless_vigil.md",
-          "wiki/the_bleeding_crown.md",
-          "wiki/vault_chitin.md",
-          "wiki/ashfall_colossus.md",
-          "wiki/the_purge_of_blackport.md"
-        ],
-        "relation_routes": [
-          [
-            "belligerent_in",
-            "waged_at"
-          ],
-          [
-            "belligerent_in",
-            "victor_of"
-          ]
-        ],
-        "hops": 2,
-        "note": "No template matched. Answered by cue-based fallback routing on relation(s) belligerent_in, housed_in, victor_of, waged_at. This tier is measured at lower precision than template routing (ADR-019) - check the evidence trail."
+        "values": [],
+        "documents": [],
+        "relation_routes": [],
+        "hops": null,
+        "note": "no deterministic template's trigger phrase matched"
       },
       {
         "rid": "rb_055",
@@ -4606,14 +4534,14 @@
     ],
     "summary": {
       "n": 55,
-      "route_success": 36,
-      "entity_resolution_success": 38,
-      "answer_correct": 23,
-      "complete_evidence": 34,
-      "ambiguous": 8,
-      "no_route_shape": 19,
+      "route_success": 39,
+      "entity_resolution_success": 41,
+      "answer_correct": 27,
+      "complete_evidence": 35,
+      "ambiguous": 5,
+      "no_route_shape": 18,
       "wrong_route": 0,
-      "unnecessary_depth": 3,
+      "unnecessary_depth": 0,
       "would_escalate": 0
     }
   },

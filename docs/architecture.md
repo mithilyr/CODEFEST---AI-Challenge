@@ -73,7 +73,7 @@ at an empty result or an invented answer.
 | Tier | Module | Measured |
 |---|---|---|
 | 1 — templates | `route.py` | **7/7** dev 1B (ADR-017); matches no route shape on **36 of 49** independent questions (ADR-025, ADR-029) |
-| 2 — cue fallback | `fallback.py` | **18 correct / 28 complete evidence** on 49, vs 10 / 11 for templates alone (ADR-019, counts updated by ADR-024 and ADR-029). 40% precision against templates' 91% |
+| 2 — cue fallback | `fallback.py` | **21 correct / 29 complete evidence** on 49, vs 10 / 11 for templates alone (ADR-019, counts updated by ADR-024, ADR-029 and ADR-033). 40% precision against templates' 91% |
 | 3 — LLM plan | `planner.py` | Emits a validated *plan*, never an answer. **Off by default**; unmeasured on the frozen set |
 
 **Never quote the 7/7 without the 36/49 beside it.** 7/7 measures fit to the

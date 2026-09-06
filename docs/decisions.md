@@ -3120,7 +3120,7 @@ counts pinned in `test_diagram.py`, `test_corroborate.py`, `test_declines.py`
 and `test_reachability.py`. `tests/test_diagram.py` went red on the stale SVG the
 moment the count moved, which is the design working.
 
-*Status: accepted. 383 tests, 1 of them new. `docs/limitations.md` keeps the
+*Status: accepted. 386 tests, 1 of them new here. `docs/limitations.md` keeps the
 entry, rewritten from "one entity has no node" to the completeness claim and the
 12 concepts that remain outside — the boundary did not disappear, it moved to a
 place where it is the correct boundary.*

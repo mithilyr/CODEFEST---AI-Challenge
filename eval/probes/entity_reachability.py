@@ -2,12 +2,18 @@
 
     python -m eval.probes.entity_reachability
 
-ADR-027 measured *edges*: 255 of 261 edges between existing nodes are named by a
-non-wiki passage. It never measured the **node set**. `build.py` builds nodes
+ADR-027 measured *edges*: 255 of 261 edges between existing nodes were named by
+a non-wiki passage. It never measured the **node set**. `build.py` builds nodes
 from wiki infobox rows, so an entity that only the codex, chronicles or ephemera
-name has no node at all, and a question about it declines by construction rather
-than on evidence. That boundary is real and was undocumented; this probe puts a
-number on it. ADR-030 records the result.
+name would have no node at all, and a question about it would decline by
+construction rather than on evidence.
+
+This probe measures that. ADR-030 ran it and found **one** such entity, plus the
+one-row cause; ADR-032 fixed the cause, and the number is now **zero** - 79 of
+79 declared subjects reach a node, and no infobox row on a mapped relation field
+names an entity the graph does not hold. The probe stays because zero is a
+number that has to be re-derived to stay true, not because the question is
+still open. (Edges are now 259 of 265, still 97.7% - quote the current pair.)
 
 Read-only. It imports the graph builder, the ingest pass and `route.py`'s
 gazetteer so that the surface forms measured here are byte-identical to the ones
