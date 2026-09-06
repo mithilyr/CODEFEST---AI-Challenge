@@ -239,7 +239,7 @@ python -m src.query.engine "<question>"          # one question end-to-end
 
 # Reproducing the measurements
 python -m eval.probes.corpus_shape               # every ADR-009..013 number
-python -m comparison.harness                     # ADR-019's router comparison (35/49, 17/27)
+python -m comparison.harness                     # ADR-019's router comparison (36/49, 21/29)
 python -m comparison.ablations                   # ADR-019's guard ablations
 python -m eval.completeness                      # is the answer key narrower than the corpus?
 python -m eval.verify_key                        # regenerate the answer-key review pack
