@@ -2849,6 +2849,27 @@ not, on its own, supply.
 Graph untouched at 117/261, so `tests/test_diagram.py` and the architecture SVG
 are unaffected and no eval sweep was re-run — no number moved.*
 
+**AMENDMENT (same day, ADR-032).** The decision above — measure, disclose, do
+not fix — was overturned on instruction, and the sweep it asked for was run:
+`comparison.harness` and `comparison.ablations` byte-identical, `eval.run_eval`
+scores identical, dev 1B 7/7 intact. The graph is now **118 entities, 265
+edges** and the reachability number is **0 of 79**, not 1.
+
+Two things in this ADR should be read as of its date rather than as current:
+
+- The 579 unreachable spans are **578**, and the 77-of-79 is **79 of 79**. The
+  hand-check is unaffected — the same fifteen names, still 0 genuine entities.
+- The claim that the boundary is "disclosed in the product" via
+  `OUTSIDE_STRUCTURED_COVERAGE` **was true and is now true of something else.**
+  Halvard Cindervale has a node, so he is no longer that status's example. It
+  now fires on the 12 wikilink targets that have no node — all of them events,
+  offices or documents rather than entities. ADR-032 records the measurement.
+
+What this ADR got right and is worth keeping: the method, the hand-check that
+refused to inflate 579 into an entity count, and the identification of the
+*cause* rather than only the symptom. The fix was one row's worth of lexicon,
+and it was findable only because the node set had been measured.*
+
 
 ## ADR-031 — A relation's question vocabulary is not its field names, and an answer-type noun is not a cue
 
@@ -2956,3 +2977,232 @@ here.
 
 *Status: accepted. 3 new tests. The +2 ambiguous is a real cost and is recorded
 as one, not netted away against the +1 correct.*
+
+## ADR-032 — The name lexicon reads wikilinks, so an unlinked cell can name a page-less entity
+
+**Problem**
+
+F-032, measured by ADR-030. `build.py` resolves an unlinked infobox cell against
+a lexicon of **page subjects only**, so a cell naming an entity that owns no wiki
+page resolves to nothing. It is silent: the field *is* mapped, so
+`unmapped_fields` never sees it; the target is not the page's subject, so
+`self_references` never sees it. The row falls out of the loop at
+`if not named: continue`.
+
+Corpus-wide it bit twice, and one of the two cost an entity outright:
+
+```
+wiki/the_ashen_vanguard.md              | Members   | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra
+wiki/aldous_wrenfield_the_last_warden.md | Mentor of | Thessaly Coldwater
+```
+
+Halvard Cindervale is named in 21 evidence units — 5 in the tier-1 codex Annals,
+8 across three ephemera documents titled after him, 8 in the wiki — and had **no
+node**.
+
+**The fix F-032 proposed does not work, which is why it was measured first**
+
+F-032's own condition said "extend pass 1's `known` map with link-target names".
+Measured: Halvard Cindervale is a `[[wikilink]]` target in **prose only**
+(`fenthrone.md`, `the_ashen_vanguard.md`) and appears in **no infobox cell** as a
+link. Adding infobox link targets alone puts Voltaire and Orin in the lexicon and
+still not Halvard — and `_resolve_unlinked` is all-or-nothing, so the `Members`
+row would still resolve to nothing and **the change would have done nothing at
+all.** Writing the fix as specified and re-running the sweep would have produced
+a green suite, an unchanged graph, and a closed failure-log entry that fixed
+nothing.
+
+**Decision**
+
+The lexicon reads **every `[[wikilink]]` target on a wiki page, prose included**,
+after page subjects so their spelling wins.
+
+The line this does not cross is the one ADR-027 drew. **A wikilink is markup, not
+prose.** It is the wiki declaring that a string names an entity, and this reads
+it for *names* and nothing else. Every edge still comes from an infobox row;
+`_resolve_unlinked` is unchanged and still demands a literal template, an exact
+canonical-key match on the whole cell part, and all parts resolving or none.
+This is not the prose relation extractor ADR-027 measured and rejected, and the
+four recovered edges are the evidence: they came from rows the corpus had
+already written, not from sentences we parsed for relations.
+
+**MEASURED**
+
+```
+                          before      after
+entities                     117        118
+  page-backed                 95         95
+  edge-only                   22         23
+edges                        261        265
+  member_of                   54         57
+  mentor_of                    8          9
+rows whose resolution changes            2   (measured before writing the fix)
+```
+
+`python -m eval.probes.entity_reachability`:
+
+```
+declared subjects            79         79
+  reach a graph node         77         79
+silent rows naming an entity the graph does not hold
+                              1          0
+```
+
+**Proof it is safe, which is the whole reason this was allowed**
+
+F-032 and ADR-030 both said this stays deferred until a sweep proves the ripple
+safe. The sweep was run before and after, on the same tree:
+
+| Gate | Result |
+|---|---|
+| `python -m comparison.harness` | **byte-identical** |
+| `python -m comparison.ablations` | **byte-identical** |
+| `python -m eval.run_eval --checkpoint baseline` | scores identical (1B 2/7, 1C 2/2, 4/9) |
+| dev 1B 7/7 (`tests/test_query.py`) | holds |
+| `python -m src.graph.corroborate` | 255/261 → **259/265**, still 97.7% |
+
+**All four new edges are corroborated.** That is the strongest single line here:
+edges recovered by widening a name lexicon are not more speculative than the ones
+already in the graph — the codex, chronicles and ephemera name both ends of every
+one of them. `tests/test_corroborate.py` asserts it rather than leaving it as a
+remark, so a future widening that invents edges the archive never mentions will
+drop that figure and be seen.
+
+**One answer moved, and it moved the right way.** *"Which war was won by the
+organization that included Halvard Cindervale as one of its members?"* went from
+`outside_structured_coverage` to `sufficient`. Pinned in `tests/test_query.py`;
+it is the only user-visible gain and it should not be able to regress silently.
+
+**What this costs: the canonical example of a decline**
+
+Halvard Cindervale was `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`'s test
+fixture (`Q_OUTSIDE`), and he is not an example of it any more. That is worth
+stating rather than quietly re-pointing, because it changes what the status
+*means* in the demo: there is no longer a **person** the graph fails to hold.
+
+Measured what is left: 12 of the wiki's 119 distinct `[[wikilink]]` targets have
+no node, and **none of them is an entity of a kind the graph types** —
+`Sundering`, `Ley-ruins`, `Ashen Era` (events and periods); `Court Chronicler`,
+`Quartermaster`, `Choir Novice`, `Sapper` (in-world offices); `Annals`, `Codex`
+(the documents themselves); `Mournthrone`, `Sunder-Kings`, `Annals/Codex`.
+
+`Q_OUTSIDE` is now *"Which faction won the war that Court Chronicler was a member
+of?"* — an office the wiki wikilinks, named in all four collections, tier 1
+through 4, including `codex/the_annals_of_the_ashen_era`, which is the document
+the existing assertion already checked for. Every other assertion in that test
+passes unchanged. **The status is more honest than it was**: it now fires only on
+things the graph legitimately does not model, never on something it dropped.
+
+**Why this was fixed now, having been deferred twice**
+
+ADR-030 deferred it, and correctly: the deferral test this repo has settled on is
+*"does a proof exist that the ripple is safe?"* — F-030 was overturned because
+`test_diagram.py` supplied one, F-031 because ADR-029 ran the sweep. Neither
+existed for F-032 at the time. This ADR is what supplies it. The instruction to
+fix was explicit; the protocol F-032 named was followed exactly, including
+measuring the proposed fix first and discovering it was wrong.
+
+**Ripple, all of it in this commit.** `docs/diagrams/architecture.svg`,
+CLAUDE.md, README.md, `docs/architecture.md`,
+`configuration-example/README.md`, `ai_usage/ai-usage-disclosure.md`,
+`docs/report-outline.md`, `docs/limitations.md`, `tests/conftest.py`, and the
+counts pinned in `test_diagram.py`, `test_corroborate.py`, `test_declines.py`
+and `test_reachability.py`. `tests/test_diagram.py` went red on the stale SVG the
+moment the count moved, which is the design working.
+
+*Status: accepted. 380 tests, 1 of them new. `docs/limitations.md` keeps the
+entry, rewritten from "one entity has no node" to the completeness claim and the
+12 concepts that remain outside — the boundary did not disappear, it moved to a
+place where it is the correct boundary.*
+
+
+## ADR-032 — A cue word that names one relation outranks one that names several; a shared word is a fallback, not a veto
+
+**Problem**
+
+`3h_003` — *"Which faction rules the place where the relic wielded by Halvard
+Vane the Grave-Sworn was forged?"* — returned **six values** as
+`fallback_ambiguous`. Its gold chain is three relations; the question cued
+**five**:
+
+```
+gold chain             wields -> forged_at -> ruled_by      exists, 1 path
+cued                   forged_at, housed_in, ruled_by, serves_at, wields
+```
+
+`housed_in` and `serves_at` are spurious, and both arrive from the same word.
+`Place of forging`, `Place of housing` and `Place of service` all reduce to the
+stem `plac`, so the ordinary noun **place** cues three relations at once. This
+is the vocabulary contamination ADR-029 documented, reaching chain *selection*
+rather than the coverage guard.
+
+**Decision**
+
+In `cued_relations`, a relation named by a **unique** cue word (one naming
+exactly one relation) is preferred. Shared words are consulted only when no
+unique word names anything.
+
+`unique or named` — one line. The `or` is the whole design.
+
+**Why a fallback and not a filter**
+
+Dropping shared words outright was measured first and is wrong. It changes 15 of
+55 frozen questions and reads **three of them down to no cue at all**, because a
+shared word is the only one they carry:
+
+```
+rb_003  "...What place holds it?"                    plac only
+rb_040  "Who prevailed in the conflict where..."     conflict only
+rb_055  "Which faction does the Marsh Revenant serve?"  serv only
+```
+
+Where unique words name nothing, the shared ones are all the evidence there is.
+A test pins both `rb_003` and `rb_055` keeping their full cue sets.
+
+**MEASURED** — `src/query/fallback.py` was the only file toggled between runs:
+
+```
+                       before    after
+arm A  answer_correct     10       10     unchanged - templates untouched
+arm A  no_route_shape      36       36     unchanged
+arm B                  30/12/20  30/12/20  unchanged (its own cue router)
+arm C  answer_correct      19       21     +2
+arm C  complete_evidence   31       29     -2
+arm C  ambiguous            8        4     halved
+arm C  unnecessary_depth    4        0     eliminated
+honest refusal (of 6)       5        6     +1
+```
+
+`comparison.ablations` is byte-identical.
+
+**All three three-hop questions now answer correctly.** `3h_003` returns **The
+Ashen Vanguard**, a single value, where it returned six.
+
+**The -2 complete evidence is real and is not netted away**
+
+Per question, nothing lost correctness. Three gained it (`rb_021` gaining
+complete evidence with it, `rb_047`, and `rb_054` — an *unanswerable* question
+that now declines instead of guessing, which is why honest refusal reached 6 of
+6). Three lost complete evidence only: `rb_005`, `rb_044`, `rb_045`.
+
+Those three were earning it by **breadth**. Walking five cued chains touches more
+documents than walking three, and some of the extra ones happened to be
+required. Narrowing to the relations the question actually names loses that
+accidental coverage. `answer_key.json`'s own convention already calls this out —
+*"a right answer reached without the required evidence is a retrieval failure"* —
+and the mirror holds: required evidence reached by walking chains the question
+never asked for is not retrieval either. The lower number is the more honest one.
+
+**Where this leaves the three-hop set**
+
+Both three-hop failures were vocabulary, in opposite directions: `3h_002`
+under-cued (ADR-031), `3h_003` over-cued (here). Neither needed a prose
+extractor, a corpus change, or the LLM planner — the chains were in the graph
+the whole time, each with exactly one path. That is worth stating in the report
+next to the planner's own status, because it is evidence about where this
+system's remaining errors actually live.
+
+*Status: accepted. 386 tests, 3 new. Absolute figures were measured while
+F-032's fix was uncommitted in the working tree (graph 118/265); the deltas are
+isolated to this file, but re-derive the absolutes with
+`python -m comparison.harness` once that lands.*

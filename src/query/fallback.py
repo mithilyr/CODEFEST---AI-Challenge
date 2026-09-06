@@ -158,9 +158,40 @@ def relation_cues(relations: RelationMap) -> dict[str, set[str]]:
 
 
 def cued_relations(cues: dict[str, set[str]], question: str) -> set[str]:
-    """Every relation with at least one cue word present in the question."""
+    """Relations the question cues, preferring words that name only one.
+
+    A word that names exactly one relation is evidence the question asks about
+    that relation. A word shared across several is not: 7 of 65 cue words are
+    shared, and the worst is `plac` - "Place of forging", "Place of housing" and
+    "Place of service" all reduce to it, so the ordinary noun *place* cues
+    `forged_at`, `housed_in` and `serves_at` at once.
+
+    MEASURED (ADR-032): 3h_003 - "Which faction rules the place where the relic
+    wielded by Halvard Vane the Grave-Sworn was forged?" - cued five relations
+    where its gold chain has three, and returned six values as
+    `fallback_ambiguous`. "wielded", "forged" and "rules" each name exactly one
+    relation and together are the whole chain; "place" contributed the two
+    spurious ones.
+
+    So shared words are a **fallback, not a veto**. Dropping them outright reads
+    three frozen questions down to no cue at all (`rb_003`, `rb_040`, `rb_055`),
+    whose only cue word *is* a shared one - `rb_003` asks where something is
+    kept using the word "place" and nothing else. Where unique words name
+    nothing, the shared ones are all the evidence there is and are used.
+    """
     tokens = {normalise_cue_word(t) for t in question_tokens(question)}
-    return {relation for relation, words in cues.items() if tokens & words}
+    named = {relation for relation, words in cues.items() if tokens & words}
+
+    owners: dict[str, set[str]] = defaultdict(set)
+    for relation, words in cues.items():
+        for word in words:
+            owners[word].add(relation)
+    unique = {
+        next(iter(owners[t]))
+        for t in tokens
+        if t in owners and len(owners[t]) == 1
+    }
+    return unique or named
 
 
 @dataclass(frozen=True)

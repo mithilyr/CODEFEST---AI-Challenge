@@ -157,6 +157,54 @@ def test_a_path_covering_more_relations_beats_a_shorter_one():
 # --------------------------------------------------------------------------
 
 
+def test_a_unique_cue_word_outranks_a_shared_one(cues):
+    """ADR-032. `plac` is shared by forged_at, housed_in and serves_at, so the
+    ordinary noun "place" cued all three. 3h_003 named five relations where its
+    gold chain has three, and returned six values as `fallback_ambiguous`."""
+    question = (
+        "Which faction rules the place where the relic wielded by "
+        "Halvard Vane the Grave-Sworn was forged?"
+    )
+    assert cued_relations(cues, question) == {"wields", "forged_at", "ruled_by"}
+
+
+def test_a_shared_cue_word_is_a_fallback_not_a_veto(cues):
+    """MEASURED and the reason this is not a simple filter: dropping shared
+    words outright reads three frozen questions down to NO cue at all
+    (rb_003, rb_040, rb_055), because a shared word is the only one they carry.
+    Where unique words name nothing, the shared ones are all the evidence there
+    is."""
+    rb_003 = (
+        "The Cinder-Wrought Aegis has been in Cerys Sablewood the Ashen's hands "
+        "since 356 AS. What place holds it?"
+    )
+    assert cued_relations(cues, rb_003) == {"forged_at", "housed_in", "serves_at"}
+
+    rb_055 = "Which faction does the Marsh Revenant serve?"
+    assert cued_relations(cues, rb_055) == {"member_of", "serves_at"}
+
+
+def test_every_three_hop_question_routes_to_its_gold_chain(cues):
+    """The three-hop set exists because every acceptable path in the answer key
+    is two hops (F-031). All three chains were always in the graph; only the
+    vocabulary was wrong - under-cued for 3h_002 (ADR-031), over-cued for
+    3h_003 (ADR-032)."""
+    import json
+
+    questions = json.load(
+        open("eval/multihop_3hop_draft.json", encoding="utf-8")
+    )["questions"]
+    for entry in questions:
+        gold = {
+            hop["relation"]
+            for path in entry["acceptable_paths"]
+            for hop in path["hops"]
+        }
+        assert cued_relations(cues, entry["question"]) >= gold, (
+            f"{entry['qid']} does not cue its own gold chain"
+        )
+
+
 def test_belongs_cues_membership_so_a_three_hop_chain_is_considered(cues):
     """ADR-031. MEASURED: every `member_of` field name is a record-keeping noun
     (`Members`, `Affiliation`, `Personnel`), and none is how a person asks.
