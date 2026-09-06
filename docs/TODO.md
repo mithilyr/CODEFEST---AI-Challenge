@@ -100,13 +100,29 @@ are done: `origin` is configured
 - [x] Rotate all API keys — done **5 Sep**, before the log export, not 8 Sep as
       planned. Do not rotate again unless a *new* key reaches a transcript.
 - [x] Export AI chat logs to `ai_usage/` as work happens — 12 exported; rerun before submission (see above).
-- [ ] Write the ≤5-page PDF report. Include F-031 — it is the only measured
-      case of the engine answering *confidently wrong* rather than declining,
-      and §6's "honest analysis of failures" is where it scores.
-- [ ] STRETCH, only after the report, video and team-roles items land: fix
-      F-031 (a template consuming a two-hop shape inside a three-hop question).
-      Gate: `comparison.harness` and `eval.run_eval` before and after; revert if
-      templates' 91% precision or the 7/7 dev result moves at all.
+- [ ] Write the ≤5-page PDF report. Numbers come from `docs/numbers.md`, which
+      is re-derived in one pass and guarded by `tests/test_docs.py` — do not
+      quote a figure from memory or from an ADR. Include F-031, but tell it as
+      **found and fixed the same day** (ADR-029), which reads better than the
+      open version: the first guard was measured before being wired in and
+      would have cost three correct answers. If §4 needs a defect that is still
+      **open**, use the planner's unmeasured status or the single-reviewer key
+      (F-015) — F-026, F-027 and F-031 are all closed.
+- [x] Fix F-031 (a template consuming a two-hop shape inside a three-hop
+      question). Done 6 Sep, ADR-029, **ahead of its own condition** — the
+      entry said to wait for the report, video and team-roles items, and that
+      was overridden by instruction. The gate it set was met exactly: templates'
+      precision held at 10/11 = 91% and the dev 7/7 held. It also gained an
+      answer nobody expected — `rb_039`'s template had been *blocking* a correct
+      cue-tier result, so declining let the next tier through.
+- [x] Fix both three-hop failures. Done 6 Sep. Neither needed the LLM planner,
+      a prose extractor or a corpus change: all three gold chains were already
+      in the graph with exactly one path each, and both failures were cue
+      vocabulary in opposite directions — `3h_002` under-cued (ADR-031,
+      `belongs`), `3h_003` over-cued (ADR-033, a unique cue word outranks a
+      shared one). **3 of 3 now correct.** That is worth a sentence in the
+      report next to the planner's status: it is evidence about where this
+      system's remaining errors actually live.
 - [ ] Record the ≤10-minute video, ≥3–4 min unedited live demo, **against a
       warm cache** (never a cold one).
 
