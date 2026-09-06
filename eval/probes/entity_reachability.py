@@ -9,9 +9,11 @@ name would have no node at all, and a question about it would decline by
 construction rather than on evidence.
 
 This probe measures that. ADR-030 ran it and found **one** such entity, plus the
-one-row cause; ADR-032 fixed the cause, and the number is now **zero** - 79 of
-79 declared subjects reach a node, and no infobox row on a mapped relation field
-names an entity the graph does not hold. The probe stays because zero is a
+one-row cause; ADR-032 fixed the cause, and the number of genuine gaps is now
+**zero**: 78 of 79 declared subjects reach a node, and the 79th is a corpus
+filename truncated mid-word whose entity *does* have a node under its full name.
+No infobox row on a mapped relation field names an entity the graph does not
+hold. Report it as 78-and-why; "79 of 79" would be an overclaim. The probe stays because zero is a
 number that has to be re-derived to stay true, not because the question is
 still open. (Edges are now 259 of 265, still 97.7% - quote the current pair.)
 
@@ -330,7 +332,10 @@ def report(result, graph) -> str:
     for slug, document in missing:
         lines.append(f"        {slug:40} {document}")
     lines.append(
-        "    (ADR-030 adjudicates these two by hand; one is a truncated filename.)"
+        "    (hand-adjudicated in ADR-030: a remaining slug here is the corpus's own"
+    )
+    lines.append(
+        "     filename truncated mid-word, not an entity the graph is missing.)"
     )
 
     silent = silent_relation_rows(graph)

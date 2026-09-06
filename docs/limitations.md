@@ -64,10 +64,13 @@ construction rather than on evidence. **Measured** —
 
 Of the **79** non-wiki documents that declare their own subject in the filename
 (`<doctype>_concerning_<subject>`, the archive stating who each document is
-about), **79 reach a graph node.** The single remaining unresolved slug is a
-corpus filename truncated mid-word, and the entity it names has a node under its
-full name (see the corpus-defects section above). **Zero** infobox rows on a
-mapped relation field name an entity the graph does not hold.
+about), **78 reach a graph node.** The 79th is a corpus filename truncated
+mid-word, and the entity it names *does* have a node, reached under its full
+name from the untruncated sibling document (see the corpus-defects section
+above) - so the count of genuine gaps is **zero**, and the honest way to say it
+is "78 of 79, and the 79th is a truncated filename" rather than "79 of 79".
+**Zero** infobox rows on a mapped relation field name an entity the graph does
+not hold.
 
 It was **1 of 79** when first measured. `wiki/the_ashen_vanguard.md` writes
 `| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |` with no
@@ -100,7 +103,7 @@ no node. **That 578 is not an entity count.** Fifteen were sampled and
 hand-checked against their documents and **0 of the 15 is a genuine entity** —
 they are document titles, section headings, form-field labels, adjacent codex
 field values, and verbs or conjunctions swept in beside names that do resolve.
-Quote the 0 of 79, never the 578.
+Quote the 0 gaps of 79, never the 578.
 
 ### OCR output is model-dependent
 

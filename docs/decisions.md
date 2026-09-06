@@ -2853,11 +2853,14 @@ are unaffected and no eval sweep was re-run — no number moved.*
 not fix — was overturned on instruction, and the sweep it asked for was run:
 `comparison.harness` and `comparison.ablations` byte-identical, `eval.run_eval`
 scores identical, dev 1B 7/7 intact. The graph is now **118 entities, 265
-edges** and the reachability number is **0 of 79**, not 1.
+edges** and the reachability number is **0 genuine gaps of 79**, not 1.
 
 Two things in this ADR should be read as of its date rather than as current:
 
-- The 579 unreachable spans are **578**, and the 77-of-79 is **79 of 79**. The
+- The 579 unreachable spans are **578**, and the 77-of-79 is **78 of 79** -
+  the 79th being the truncated filename, which was never a gap, so the count of
+  genuine gaps is **zero**. Say 78 of 79 and then say why; "79 of 79" would be
+  an overclaim of exactly the kind this ADR's own hand-check refused. The
   hand-check is unaffected — the same fifteen names, still 0 genuine entities.
 - The claim that the boundary is "disclosed in the product" via
   `OUTSIDE_STRUCTURED_COVERAGE` **was true and is now true of something else.**

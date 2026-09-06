@@ -249,8 +249,10 @@ Two caveats that must travel with it, because both are the section's own rule:
 infobox rows, so an entity only the prose named would have no node at all, and a
 question about it would decline by construction. **Measured (ADR-030, ADR-032):**
 of the **79** non-wiki documents that declare their own subject in the filename,
-**79 reach a graph node**, and **zero** infobox rows on a mapped relation field
-name an entity the graph does not hold.
+**78 reach a graph node** — the 79th is a corpus filename truncated mid-word
+whose entity has a node under its full name, so **zero** are genuine gaps — and
+**zero** infobox rows on a mapped relation field name an entity the graph does
+not hold. Say it as 78-and-why, never as "79 of 79".
 Source: `python -m eval.probes.entity_reachability`; ADR-030; ADR-032; F-032.
 
 Three things must travel with that number, in this order:
@@ -285,7 +287,7 @@ Three things must travel with that number, in this order:
 741 distinct capitalised names outside the wiki, 578 of which reach no node. A
 hand-check of 15 found **0 genuine entities** — document titles, section
 headings, form labels, and verbs swept in beside names that do resolve. The
-honest number is 0 of 79. Quoting 578 would be exactly the overclaim this
+honest number is 0 gaps of 79. Quoting 578 would be exactly the overclaim this
 section exists to avoid.
 
 This also repairs a soft spot in ADR-027's reasoning, and saying so is worth a
