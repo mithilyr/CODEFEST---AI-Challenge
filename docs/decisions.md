@@ -2785,8 +2785,11 @@ Logged as **F-032**.
 
 Three days from the deadline, with the report and the video unwritten, this goes
 into `docs/limitations.md` with a number attached and is not fixed. The
-reasoning is F-031's, and it was checked against F-030's counter-precedent
-rather than assumed:
+reasoning is F-031's, checked against F-030's counter-precedent rather than
+assumed. **F-031 was itself fixed later the same day (ADR-029), its deferral
+condition overridden by instruction** — so the precedent is being cited for its
+*test*, not for its outcome. The test is whether a proof exists that the ripple
+is safe:
 
 - **The blast radius is real and unproven.** A fix moves the graph to 118
   entities and 264 edges. `tests/test_diagram.py` re-derives every number in
@@ -2796,11 +2799,14 @@ rather than assumed:
   would need re-running to show no regression.
 - **It changes no measured answer.** Nothing in `answer_key.json`, in the frozen
   55, or in the dev 1B seven traverses Halvard Cindervale.
-- **F-030's counter-precedent does not apply.** F-030 overturned a deferral
-  because `test_diagram.py` *proved* the ripple safe. Here the ripple runs
-  through routing and the harness, and no test proves it safe without a measured
-  sweep. Deferring an unproven fix on a short calendar is not the same as
-  deferring an inconvenient one.
+- **No test proves this ripple safe.** F-030 overturned its own deferral
+  because `test_diagram.py` *proved* the ripple safe, and ADR-029 overrode
+  F-031's because a measured before-and-after sweep proved that one. Neither is
+  available here without re-running `comparison.harness` and `eval.run_eval`,
+  which is the cost, not the fix. Deferring an unproven change on a short
+  calendar is not the same as deferring an inconvenient one — and if somebody
+  wants it fixed, the route is the same one ADR-029 took: run the sweep first,
+  and revert if any answer's correctness moves.
 
 **The boundary is disclosed in the product, not only in the docs**
 

@@ -1449,9 +1449,14 @@ plain text in a cell would be dropped the same way. It happens to bite once.
 graph to 118/264, which reddens `tests/test_diagram.py`, invalidates the
 117/261 quoted in five documents, and would need `comparison.harness` re-run to
 prove no regression — three days out, with the report and video unwritten, for a
-defect that changes no measured answer. F-030 overturned a similar deferral, but
-only because `test_diagram.py` *proved* that ripple safe; nothing proves this one
-safe without a sweep.
+defect that changes no measured answer.
+
+Both of this repo's deferrals-then-fixes were overturned the same day they were
+logged: F-030 because `test_diagram.py` *proved* its ripple safe, F-031 because
+ADR-029 ran the before-and-after sweep that proved its. **Neither proof exists
+here yet**, and producing one is the whole cost. This entry is therefore open on
+the same terms as those two were, not on stronger ones — if somebody has the
+hour, run the sweep and fix it.
 
 **Condition for fixing.** After the report and the video land. Then: extend
 pass 1's `known` map with link-target names as well as page subjects, and re-run
