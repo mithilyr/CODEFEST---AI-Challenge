@@ -48,6 +48,10 @@ DEFAULT_CAP = 3
 #: Collections whose units may corroborate. The wiki is excluded on purpose:
 #: the edge was parsed from a wiki page, so a wiki paragraph restating it is
 #: the same source agreeing with itself, not independent attestation.
+#: Kept as the default for callers that pass no relation map, and as the value
+#: `tests/test_corroborate.py` asserts against for the shipped corpus. The live
+#: value comes from `sources.corroborates` in config/relations.yaml (ADR-035);
+#: this literal is what that key ships as, not a second source of truth.
 CORROBORATING_COLLECTIONS = frozenset({"chronicles", "codex", "ephemera"})
 
 
@@ -128,13 +132,24 @@ def build_index(
     *,
     cap: int = DEFAULT_CAP,
     resolver: EntityResolver | None = None,
+    collections: frozenset[str] | None = None,
 ) -> CorroborationIndex:
-    """Attach non-wiki passages to the pairs of entities the graph connects.
+    """Attach non-building passages to the pairs of entities the graph connects.
 
     One pass over the corroborating units, not one pass per edge: the pairs a
     unit can attest are exactly the pairs among the entities it names, so the
     work is proportional to the corpus rather than to corpus x edges.
+
+    Args:
+        collections: Which collections may attest. Read from
+            `sources.corroborates` in config/relations.yaml when omitted
+            (ADR-035), so a corpus with differently named folders needs a
+            config edit rather than a code edit.
     """
+    if collections is None:
+        from src.graph.build import load_relation_map
+
+        collections = load_relation_map().corroborates or CORROBORATING_COLLECTIONS
     pattern, surface_to_key, ambiguous = scan_surfaces(graph, resolver)
     wanted = {
         frozenset((e.source, e.target)) for e in graph.edges if e.source != e.target
@@ -143,7 +158,7 @@ def build_index(
     found: dict[frozenset, list[Attestation]] = defaultdict(list)
     scanned = 0
     for unit in evidence:
-        if unit.collection not in CORROBORATING_COLLECTIONS:
+        if unit.collection not in collections:
             continue
         if unit.kind not in ("paragraph", "page"):
             continue

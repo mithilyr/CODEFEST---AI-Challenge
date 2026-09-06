@@ -3381,3 +3381,96 @@ legitimate cue that routes `rb_011`, re-run the sweep and expect 23.
 *Status: accepted. 395 tests. Two existing tests updated, both pinning facts
 that legitimately changed: "military" now names one relation, and rb_055's cue
 set narrowed to `{serves_at}` while still answering correctly.*
+
+## ADR-035 — Which folders build the graph is config, not code
+
+**The failure this fixes, measured before it was fixed**
+
+The final round requires adapting the solution to requirements announced on the
+day, so "can this read a corpus we did not build?" was tested rather than
+assumed. A synthetic replacement archive — new entities, same conventions —
+ingested and built a graph with **zero code changes**, and answered 2 of 3
+two-hop questions correctly with full evidence chains. The one miss was
+`no_template_match`, consistent with the 35-of-49 no-route-shape figure.
+
+Then the same corpus with its folders renamed to `manuals/`, `specs/`, `logs/`:
+
+```
+INGEST: 10 docs, 18 units   collections seen: {manuals: 16, specs: 1, logs: 1}
+GRAPH:  0 nodes, 0 edges
+```
+
+Ingestion was perfect. Every file was read, every collection assigned correctly.
+`build.py` filtered on the literal string `"wiki"`, so nothing matched and the
+graph came out empty — **silently**. `corroborate.py` held the same problem in a
+frozenset of three literal names.
+
+That is the worst failure shape this project recognises. Not a wrong answer, not
+a decline: a system that reads every file, answers nothing, and reports no
+problem. A corpus with different folder names and a corpus with no infoboxes at
+all were indistinguishable from the outside.
+
+**Decision**
+
+`sources.builds` and `sources.corroborates` in `config/relations.yaml`, beside
+the field-name vocabulary that is already there. ADR-005's reason, unchanged: a
+collection name is a claim about the corpus, not a fact about the code, and a
+judge should be able to disagree with one line without touching Python.
+
+Two guards come with it, because a config key that can be wrong silently is no
+better than a literal that was:
+
+- **A collection may not be in both lists.** An edge parsed from a page is not
+  corroborated by that same page (ADR-027). Raised, not resolved — either
+  resolution would be a guess at what the editor meant.
+- **A build that matches no collection raises, naming what the corpus has.**
+  The person reading that error is holding a corpus they did not create and has
+  no reason to guess that a folder name is the problem, so the message says so:
+
+```
+No evidence in any building collection ['wiki']. The corpus has:
+['logs', 'manuals', 'specs']. Set `sources.builds` in config/relations.yaml
+to the collection that carries infoboxes.
+```
+
+**MEASURED after the change**
+
+```
+renamed corpus, config untouched   -> raises, naming manuals/specs/logs
+renamed corpus, two-line config edit -> 7 nodes, 12 edges
+shipped corpus                     -> 118 nodes, 265 edges, unchanged
+comparison.harness                 -> byte-identical to before the change
+```
+
+400 tests, 5 of them new (`tests/test_sources.py`). Graph counts unchanged, so
+`tests/test_diagram.py` and the architecture SVG are unaffected.
+
+**What this does and does not buy**
+
+It buys one thing precisely: a corpus whose folders are named differently is now
+a config edit rather than a code edit, and a corpus that cannot build says why.
+
+It does **not** make the system corpus-independent, and the report must not
+claim that. Three constraints remain, all still real:
+
+- The parser takes the **first pipe table** on a page as the infobox. A wiki
+  using YAML frontmatter or HTML tables still builds zero edges.
+- Node type comes from the **image filename taxonomy**
+  (`plate_<NN>_<category>_<subject>.png`).
+- New scanned PDFs need fresh OCR, and Gemini's free tier is ~20 requests/day
+  **per model** — a daily cap backoff cannot recover from.
+
+The honest claim is "the relation vocabulary and the source collections are
+both config", not "it adapts to anything".
+
+**One caveat on the evidence, stated because it is easy to overclaim**
+
+The synthetic corpus was written by us, so it used our conventions — a wiki-like
+folder of pipe-table infoboxes. It demonstrates that no entity name, document
+name or corpus fact is compiled into the logic (verified separately: every
+corpus-specific proper noun in `src/` is in a docstring). It does **not**
+demonstrate that an arbitrary third-party corpus works, and the folder-rename
+result above is exactly what happens when one assumption of ours goes unmet.
+
+*Status: accepted. 400 tests. The graph, the harness and the eval are unmoved;
+this ADR changes what happens to a corpus we have not seen, not to this one.*

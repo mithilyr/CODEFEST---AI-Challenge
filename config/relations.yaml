@@ -29,6 +29,29 @@
 # individual character pages, with zero overlap. Reading only one direction loses
 # half the edges, and 1b_006 needs all fourteen.
 
+# Which corpus collections play which role. A "collection" is the top-level
+# folder name under the corpus root, assigned by src/ingest/metadata.py.
+#
+# These were literals in Python until ADR-035 - `if unit.collection == "wiki":`
+# in build.py and a frozenset in corroborate.py. MEASURED: renaming the corpus
+# folders to `manuals/`, `specs/` and `logs/` ingested 10 documents and 18
+# evidence units correctly and then built a graph of **0 nodes and 0 edges**,
+# silently, because no unit's collection was the string "wiki". The system read
+# every file and answered nothing.
+#
+# They live here for ADR-005's reason, the same one the field names above live
+# here for: it is a claim about the corpus, not a fact about the code, and a
+# judge should be able to disagree with one line without touching Python.
+#
+# builds:       collections whose infobox rows construct nodes and edges.
+# corroborates: collections that may attest an edge but never build one
+#               (ADR-027). A collection must not appear in both: a page
+#               corroborating an edge parsed from itself is one source agreeing
+#               with itself.
+sources:
+  builds: [wiki]
+  corroborates: [chronicles, codex, ephemera]
+
 relations:
   member_of:
     inverse: has_member

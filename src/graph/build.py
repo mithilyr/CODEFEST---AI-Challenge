@@ -70,6 +70,16 @@ class RelationMap:
     #: these are not field names and no corpus row is keyed on them.
     question_cues: dict[str, list[str]]
 
+    #: Collections whose infobox rows build nodes and edges, from `sources.builds`.
+    #: A literal `"wiki"` in this module until ADR-035. MEASURED: renaming the
+    #: corpus folders built 0 nodes and 0 edges from a corpus that ingested
+    #: perfectly - the failure was silent, because a collection name that matches
+    #: nothing is indistinguishable from a collection with no infoboxes.
+    builds: frozenset[str] = frozenset({"wiki"})
+
+    #: Collections that may attest an edge but never build one (ADR-027).
+    corroborates: frozenset[str] = frozenset({"chronicles", "codex", "ephemera"})
+
     def lookup(self, field_name: str) -> tuple[str, str] | None:
         """Return (relation, "forward"|"reverse"), or None if not a relation."""
         if field_name in self.forward:
@@ -128,6 +138,20 @@ def load_relation_map(path: Path = RELATIONS_PATH) -> RelationMap:
         for name in fields.get("reverse") or []:
             reverse[name] = relation
 
+    sources = raw.get("sources") or {}
+    builds = frozenset(sources.get("builds") or ["wiki"])
+    corroborates = frozenset(sources.get("corroborates") or [])
+    overlap = builds & corroborates
+    if overlap:
+        # A collection cannot both build an edge and corroborate it: the edge was
+        # parsed from that collection, so a passage in it restating the edge is
+        # one source agreeing with itself (ADR-027). Raised rather than resolved,
+        # because either answer would be a guess at what the editor meant.
+        raise ValueError(
+            f"config/relations.yaml: {sorted(overlap)} listed under both "
+            "sources.builds and sources.corroborates"
+        )
+
     return RelationMap(
         forward=forward,
         reverse=reverse,
@@ -135,6 +159,8 @@ def load_relation_map(path: Path = RELATIONS_PATH) -> RelationMap:
         attributes=frozenset(raw.get("attributes") or []),
         verbs={name.lower(): relation for name, relation in forward.items()},
         question_cues=question_cues,
+        builds=builds,
+        corroborates=corroborates,
     )
 
 
@@ -205,8 +231,20 @@ def build_graph(
 
     by_doc: dict[str, list] = {}
     for unit in result.evidence:
-        if unit.collection == "wiki":
+        if unit.collection in relations.builds:
             by_doc.setdefault(unit.canonical_doc_id, []).append(unit)
+
+    # A corpus whose folders are named something else is not a corpus with no
+    # infoboxes, and the two must not look alike. Until ADR-035 they did: the
+    # filter was `== "wiki"`, so renaming the folders built 0 nodes and 0 edges
+    # from a corpus that ingested perfectly, and said nothing about why.
+    if not by_doc and result.evidence:
+        seen = sorted({unit.collection for unit in result.evidence})
+        raise ValueError(
+            f"No evidence in any building collection {sorted(relations.builds)}. "
+            f"The corpus has: {seen}. Set `sources.builds` in "
+            "config/relations.yaml to the collection that carries infoboxes."
+        )
 
     # Pass 1: the name lexicon that pass 2 resolves a plain-text cell against.
     # `the_ashen_vanguard.md` writes its three `Belligerent` rows as unlinked
