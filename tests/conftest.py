@@ -3,7 +3,7 @@
 WHY THESE ARE SESSION-SCOPED
 ------------------------------
 `build_graph()` costs about 14 seconds. Seven test modules each declared their
-own module-scoped `graph` fixture, so the suite built the same 117-entity graph
+own module-scoped `graph` fixture, so the suite built the same 118-entity graph
 seven times and spent roughly two minutes doing it - measured with
 `pytest --durations`, where nine of the twelve slowest entries were fixture
 *setup* rather than any test's own work.
@@ -37,7 +37,7 @@ def corpus_root():
 
 @pytest.fixture(scope="session")
 def graph(corpus_root):
-    """The built knowledge graph: 117 entities, 261 edges. Built once."""
+    """The built knowledge graph: 118 entities, 265 edges. Built once."""
     return build_graph()
 
 

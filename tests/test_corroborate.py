@@ -38,16 +38,22 @@ def index(graph, ingested):
 
 
 def test_most_edges_are_attested_outside_the_wiki(graph, index):
-    """MEASURED: 255 of 261 edges are named by a non-wiki passage.
+    """MEASURED: 259 of 265 edges are named by a non-wiki passage.
 
-    Was 255 of 267 when ADR-027 was written. The numerator did not move: the
-    six self-loops F-030 recorded are no longer built at all (ADR-028), so the
+    Was 255 of 267 when ADR-027 was written, then 255 of 261: the six
+    self-loops F-030 recorded are no longer built at all (ADR-028), so the
     denominator dropped to the edges that connect two distinct entities - which
     is the population this measurement was always about.
+
+    ADR-031 then added four edges (F-032), and **all four are corroborated** -
+    259 of 265, still 97.7%. That is worth an assertion rather than a comment:
+    edges recovered by widening the name lexicon are not more speculative than
+    the ones already there, and if a future widening adds edges the rest of the
+    archive never mentions, this number drops and says so.
     """
     corroborated = index.corroborated_edges(graph)
-    assert len(corroborated) == 255
-    assert len(graph.edges) == 261
+    assert len(corroborated) == 259
+    assert len(graph.edges) == 265
 
 
 def test_the_graph_holds_no_self_loops(graph):
@@ -193,4 +199,4 @@ def test_corroboration_never_adds_or_alters_an_edge(graph, ingested):
     build_index(graph, ingested.evidence)
     after = [(e.source, e.relation, e.target) for e in graph.edges]
     assert before == after
-    assert len(build_graph().edges) == 261
+    assert len(build_graph().edges) == 265

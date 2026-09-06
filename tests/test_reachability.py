@@ -2,16 +2,20 @@
 
 WHY THIS FILE EXISTS
 --------------------
-ADR-030 puts a number in `docs/limitations.md` and in the report: **one** entity
-the corpus treats as first-class has no node in the graph, and the row that
-should have built it is `wiki/the_ashen_vanguard.md`'s `Members`. That is a
-limitation we chose to disclose rather than fix three days from the deadline,
-which makes it exactly the kind of claim that rots quietly - F-026 again, where
-prose said 35 and the artefact said 33 for three days.
+ADR-030 measured one entity the corpus treats as first-class with no node in the
+graph, and named the row that should have built it:
+`wiki/the_ashen_vanguard.md`'s unlinked `Members`. ADR-032 then fixed it, and
+the number is now **zero** - every one of the 79 documents that declares its own
+subject reaches a node, and no infobox row on a mapped relation field names an
+entity the graph does not hold.
 
-So it is pinned. If somebody fixes the unlinked-cell resolution, these tests go
-red and say so, rather than the report continuing to disclose a limitation the
-system no longer has.
+Zero is a harder number to keep than one. It holds only while the name lexicon
+includes `[[wikilink]]` targets as well as page subjects, and nothing else in
+the suite would notice that narrowing - the graph would just get quietly smaller
+and the report would keep claiming a completeness it no longer had. That is
+F-026's failure exactly: prose said 35 while the artefact said 33 for three
+days. So the zero is pinned here, from both directions - the symptom (nothing
+unreachable) and the cause (no silent rows).
 
 These assert on the probe's *functions*, not on its printed text: the printed
 report is for a human, and pinning its formatting would make it painful to
@@ -37,51 +41,47 @@ def test_the_declared_subject_count_is_stable(evidence, graph):
     assert len(reached) + len(missing) == 79
 
 
-def test_exactly_two_declared_subjects_reach_no_node(evidence, graph):
-    """And ADR-030 adjudicated them: one real gap, one truncated filename.
+def test_the_only_unreached_subject_is_a_truncated_corpus_filename(evidence, graph):
+    """The one remaining miss is not a gap in the graph.
 
-    `isolde_fellgard_the_unforgiv` is the corpus's own filename truncation -
-    `interrogation_record_concerning_isolde_fellgard_the_unforgiv.txt` - and the
-    entity it names *does* have a node, reached under its full name. Only
-    `halvard_cindervale` is genuinely absent.
+    `interrogation_record_concerning_isolde_fellgard_the_unforgiv.txt` is cut
+    mid-word in the corpus itself, and the entity it names *does* have a node,
+    reached under her full name from the untruncated sibling document. Exact
+    matching (ADR-011) is what makes the slug fail rather than being fuzzily
+    attached to the right person, which is the correct trade.
     """
     _, missing = probe.declared_subjects(evidence, graph)
-    assert [slug for slug, _ in missing] == [
-        "halvard_cindervale",
-        "isolde_fellgard_the_unforgiv",
-    ]
+    assert [slug for slug, _ in missing] == ["isolde_fellgard_the_unforgiv"]
     assert "isolde_fellgard_the_unforgiven" in graph.nodes
-    assert "halvard_cindervale" not in graph.nodes
+    assert "halvard_cindervale" in graph.nodes, "ADR-032 built him; see F-032"
 
 
-def test_one_infobox_row_names_an_entity_the_graph_does_not_hold(graph):
-    """The cause, not just the symptom.
+def test_no_infobox_row_names_an_entity_the_graph_does_not_hold(graph):
+    """The cause, pinned at zero.
 
-    `| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |` carries
-    no `[[links]]`, and an unlinked cell can only resolve against entities that
-    own a wiki page. None of those three does, so the row yields no edge - and
-    Halvard, unlike the other two, is named in no other infobox, so he gets no
-    node at all.
+    A row here would mean the builder read a cell, recognised the field as a
+    relation, and dropped the names in it anyway - which is invisible to
+    `unmapped_fields` (the field IS mapped) and to `self_references` (the target
+    is not the subject). That is how F-032 hid for a week.
     """
     silent = probe.silent_relation_rows(graph)
-    naming = [(doc, field, lost) for doc, field, _, lost in silent if lost]
-    assert naming == [
-        ("wiki/the_ashen_vanguard.md", "Members", ["Halvard Cindervale"])
-    ]
+    assert [(doc, field, lost) for doc, field, _, lost in silent if lost] == []
 
 
-def test_the_other_two_members_are_nodes_by_another_route(graph):
-    """So the row costs one node and three edges, not three nodes.
+def test_the_vanguard_members_row_builds_all_three_edges(graph):
+    """The row F-032 was about, now producing what it says.
 
-    Stated because the honest number depends on it: Voltaire and Orin exist
-    because *other* pages name them in linked cells.
+    Voltaire and Orin had nodes anyway, from linked cells on other pages, so the
+    row was worth one node and three edges rather than three of each. Asserting
+    all three edges rather than just Halvard's node keeps that distinction
+    honest.
     """
-    assert "voltaire_hollowmere" in graph.nodes
-    assert "orin_veyra" in graph.nodes
-    assert not any(
-        e.document == "wiki/the_ashen_vanguard.md" and e.field_name == "Members"
+    members = {
+        e.source
         for e in graph.edges
-    )
+        if e.document == "wiki/the_ashen_vanguard.md" and e.field_name == "Members"
+    }
+    assert members == {"halvard_cindervale", "voltaire_hollowmere", "orin_veyra"}
 
 
 def test_span_normalisation_strips_inflections_not_names(graph):

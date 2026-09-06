@@ -616,13 +616,18 @@ def test_explicit_abstention_via_the_engine(tmp_path):
 
 
 def test_outside_structured_coverage_vs_unresolved_entity(graph, evidence_units):
-    """Halvard Cindervale is real (codex + ephemera) but has no wiki page -
-    the graph's honest limit (ADR-016). A garbled name that appears nowhere in
-    the corpus at all must be classified differently.
+    """Something real but outside the graph, versus a name that is nowhere.
+
+    The fixture used to be Halvard Cindervale. It is not any more, and the
+    reason is the point of ADR-032: he had no node because of a defect (F-032),
+    not because the corpus put him beyond the graph's reach. `Court Chronicler`
+    is the honest article - an in-world office the wiki itself wikilinks, named
+    in all four collections, and not one of the six categories a node is typed
+    with. The graph legitimately does not hold it.
     """
     real_but_uncovered = answer_question(
-        "Which war was won by the organization that included Halvard "
-        "Cindervale as one of its members?",
+        "Which war was won by the organization that included Court "
+        "Chronicler as one of its members?",
         graph,
         evidence_units=evidence_units,
     )
@@ -635,6 +640,25 @@ def test_outside_structured_coverage_vs_unresolved_entity(graph, evidence_units)
         evidence_units=evidence_units,
     )
     assert truly_unknown.status == EvidenceStatus.UNRESOLVED_ENTITY
+
+
+def test_the_vanguard_membership_row_now_answers(graph, evidence_units):
+    """ADR-032's user-visible gain, pinned.
+
+    `| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |` on
+    `the_ashen_vanguard.md` is unlinked, and until ADR-032 it built nothing, so
+    this question declined with `outside_structured_coverage`. It now answers.
+    If somebody narrows the name lexicon again, this goes red before the
+    reachability probe does.
+    """
+    answer = answer_question(
+        "Which war was won by the organization that included Halvard "
+        "Cindervale as one of its members?",
+        graph,
+        evidence_units=evidence_units,
+    )
+    assert answer.status == EvidenceStatus.SUFFICIENT
+    assert "halvard_cindervale" in graph.nodes
 
 
 def test_no_template_match_is_logged_not_guessed(graph):

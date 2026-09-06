@@ -94,7 +94,7 @@ Two subtleties the file's own comments explain at length:
 Edit the real file under `config/`, then:
 
 ```bash
-python -m src.graph.build          # 117 entities, 261 edges, 15 relations
+python -m src.graph.build          # 118 entities, 265 edges, 15 relations
 python -m eval.probes.corpus_shape # the corpus measurements the files rest on
 python -m pytest                   # 320 tests
 ```

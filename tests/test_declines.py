@@ -45,7 +45,15 @@ Q_TEMPLATE_MISS = (
 )
 Q_TYPO = "Which relic has Cerys Sablewode the Ashen wielded since 356 AS?"
 Q_UNKNOWN = "Which faction ultimately won the war of which Xanthor Nevermore is a member?"
-Q_OUTSIDE = "Which faction won the war that Halvard Cindervale was a member of?"
+# Was "Halvard Cindervale" until ADR-031. He was the perfect fixture for the
+# wrong reason: he had no node because of a defect (F-032), not because the
+# corpus put him out of reach, and fixing that gave him one. The replacement is
+# an entity the graph legitimately does not hold - "Court Chronicler" is an
+# in-world office the wiki itself wikilinks, named across all four collections
+# and typed by none of the six node categories. That the only remaining
+# examples of this status are offices and concepts rather than people is
+# ADR-031's result, not a weakening of the test.
+Q_OUTSIDE = "Which faction won the war that Court Chronicler was a member of?"
 Q_NO_PATH = (
     "In what way is Ederon Fellgard connected to the victors of the "
     "War of Drowned Light?"
@@ -251,7 +259,7 @@ def test_outside_coverage_names_the_collections_and_quotes_them(views):
     """The status that is purely a boundary, so it must be the best cited."""
     view = views[Q_OUTSIDE]
     presence = view["diagnostics"]["presence"]
-    assert presence, "Halvard Cindervale appears in the corpus 21 times"
+    assert presence, "Court Chronicler appears in the corpus 26 times"
 
     collections = {p["collection"] for p in presence}
     assert {"codex", "ephemera", "wiki"} <= collections
@@ -276,9 +284,9 @@ def test_outside_coverage_is_unreachable_without_evidence_units(graph):
 
     `answer_question` can only tell OUTSIDE_STRUCTURED_COVERAGE from
     UNRESOLVED_ENTITY by scanning evidence units, and `src/ui/server.py` did
-    not pass them - so the demo reported a person documented 21 times across
-    three collections as a name the corpus does not contain. `Engine` now loads
-    them at startup.
+    not pass them - so the demo reported something documented 26 times across
+    all four collections as a name the corpus does not contain. `Engine` now
+    loads them at startup.
     """
     without = answer_question(Q_OUTSIDE, graph, evidence_units=None, use_fallback=False)
     assert without.status == EvidenceStatus.UNRESOLVED_ENTITY, (
@@ -370,8 +378,8 @@ def test_relation_unavailable_shows_the_relations_the_entity_does_have(
 
 def test_catalogue_lists_every_entity_and_relation(graph):
     catalogue = build_catalogue(graph, load_relation_map())
-    assert catalogue["counts"]["entities"] == len(graph.nodes) == 117
-    assert catalogue["counts"]["edges"] == len(graph.edges) == 261
+    assert catalogue["counts"]["entities"] == len(graph.nodes) == 118
+    assert catalogue["counts"]["edges"] == len(graph.edges) == 265
     assert catalogue["counts"]["relations"] == 15
     assert sum(r["edges"] for r in catalogue["relations"]) == len(graph.edges)
     for relation in catalogue["relations"]:
@@ -385,12 +393,12 @@ def test_index_page_offers_autocomplete_and_a_browsable_list(graph):
     # Native autocomplete, no JavaScript and no dependency.
     assert '<datalist id="entities">' in html
     assert 'list="entities"' in html
-    assert html.count("<option ") == 117
+    assert html.count("<option ") == 118
 
     assert "What you can ask about" in html
     assert "The relations it can follow" in html
     # Every entity is a working entry point, not just a name on a list.
-    assert html.count('href="/ask?q=Who%20is%20') == 117
+    assert html.count('href="/ask?q=Who%20is%20') == 118
     assert "<script" not in html
 
 

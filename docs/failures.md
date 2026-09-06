@@ -1473,3 +1473,45 @@ in the demo UI is told he is present in the corpus and absent from the graph,
 told that the graph is built from wiki infobox rows only, pointed at
 `src/graph/build.py`, and given quoted passages from the codex, the ephemera and
 the wiki with their tiers. The defect is disclosed to the user, not just to us.
+
+### FIXED 2026-09-06 (ADR-032) — and the fix this entry proposed was the wrong one
+
+Fixed on instruction, three days out, with the sweep run before and after.
+`comparison.harness` and `comparison.ablations` are byte-identical,
+`eval.run_eval` scores are identical, and the dev 1B 7/7 gate holds. The graph
+is **118 entities, 265 edges**; every ripple listed in the condition below moved
+in the same commit.
+
+**The condition above named the wrong fix, and measuring first is the only
+reason that was caught.** It said: *extend pass 1's `known` map with link-target
+names*. Halvard Cindervale is a `[[wikilink]]` target in **prose only** —
+`fenthrone.md` and `the_ashen_vanguard.md` — and appears as a link in **no
+infobox cell anywhere**. Registering infobox link targets puts Voltaire and Orin
+in the lexicon and still not Halvard, and `_resolve_unlinked` is all-or-nothing,
+so the `Members` row would still have resolved to nothing.
+
+Writing the fix as this entry specified would have produced a green suite, an
+unchanged graph of 117/261, and a failure-log entry marked FIXED that fixed
+nothing. It was caught by measuring the proposed change before writing it —
+the same discipline that found the defect. **A condition-for-fixing is a
+hypothesis, not a work order.**
+
+The lexicon therefore reads every `[[wikilink]]` target on a wiki page, prose
+included. That is names learned from markup, never relations read from prose:
+every edge still comes from an infobox row, and `_resolve_unlinked` is unchanged.
+Measured to change exactly two rows corpus-wide — this one, and
+`aldous_wrenfield_the_last_warden.md`'s `| Mentor of | Thessaly Coldwater |`,
+which had been silently dropping a `mentor_of` edge for the same reason.
+
+**All four recovered edges are corroborated** — 259 of 265, still 97.7%. Edges
+recovered from a widened lexicon are not more speculative than the ones already
+there.
+
+**What it cost.** This entity was the canonical fixture for
+`EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`, and is not an example of it any
+more. 12 of the wiki's 119 wikilink targets still have no node, and none is an
+entity of a kind the graph types — events (`Sundering`, `Ley-ruins`), offices
+(`Court Chronicler`, `Quartermaster`), the documents themselves (`Annals`,
+`Codex`). The fixture moved to `Court Chronicler`. The status now fires only on
+things the graph legitimately does not model, never on something it dropped,
+which is a better boundary than the one it had.

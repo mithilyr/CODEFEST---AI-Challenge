@@ -88,7 +88,7 @@ Depicted: `ingest → OCR → evidence units → graph build → query tiers
 → synthesis → UI`, with the three routing tiers drawn as a decision chain and
 the two LLM entry points marked as *off by default*.
 
-**Claim: 117 entities, 261 edges, 15 relations, 0 unmapped field names.**
+**Claim: 118 entities, 265 edges, 15 relations, 0 unmapped field names.**
 Source: `python -m src.graph.build`.
 
 **Claim: three tiers, each declining rather than guessing.**
@@ -119,8 +119,8 @@ in the order they most reward reading:
 
 1. **Deterministic-first, LLM as a counted fallback** — ADR-002. The LLM tiers
    are *off by default*; F-025 is why (a well-formed plan, confidently wrong).
-2. **No graph database / no vector DB / no agent framework** — 117 entities and
-   261 edges is a Python dict; 3,392 chunks is a NumPy matmul. The binding
+2. **No graph database / no vector DB / no agent framework** — 118 entities and
+   265 edges is a Python dict; 3,392 chunks is a NumPy matmul. The binding
    reason is not performance, it is that every member must defend every part
    (challenge doc §4.1).
 3. **The infobox parser keys on table position, not headings or field names** —
@@ -228,7 +228,7 @@ four that carry the most signal:
   Not substituted in here — that trade is an editorial call for whoever
   drafts this section, not one to make silently in the outline.
 
-**The cross-collection claim, stated precisely.** **255 of 261 edges (97.7%)**
+**The cross-collection claim, stated precisely.** **259 of 265 edges (97.7%)**
 are independently named by a codex, chronicle or ephemera passage — 416
 attestations from the codex on 238 edges, 114 from the chronicles on 85, 25
 from the ephemera on 23. So an answer assembled from wiki infoboxes visibly
@@ -244,46 +244,57 @@ Two caveats that must travel with it, because both are the section's own rule:
   paragraphs, carries the restatements. Worth one sentence — it is the most
   counter-intuitive measurement in the repo.
 
-**The node set, measured — the boundary the corroboration figure does not
-cover.** 255/261 measures edges *between entities the graph already holds*. The
-graph's nodes come from wiki infobox rows, so an entity only the prose names has
-no node and a question about it declines by construction. **Measured 6 Sep
-(ADR-030):** of the **79** non-wiki documents that declare their own subject in
-the filename, **77 reach a graph node**. Of the two that do not, one is a corpus
-filename truncated mid-word, leaving **exactly one entity the corpus treats as
-first-class with no node — Halvard Cindervale**, named in 21 evidence units
-across the codex, the ephemera and the wiki.
-Source: `python -m eval.probes.entity_reachability`; ADR-030; F-032.
+**The node set, measured — and it is complete.** 259/265 measures edges
+*between entities the graph already holds*. The graph's nodes come from wiki
+infobox rows, so an entity only the prose named would have no node at all, and a
+question about it would decline by construction. **Measured (ADR-030, ADR-032):**
+of the **79** non-wiki documents that declare their own subject in the filename,
+**79 reach a graph node**, and **zero** infobox rows on a mapped relation field
+name an entity the graph does not hold.
+Source: `python -m eval.probes.entity_reachability`; ADR-030; ADR-032; F-032.
 
 Three things must travel with that number, in this order:
 
-- **The cause is ours, and it is one row.** `wiki/the_ashen_vanguard.md` writes
-  `| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |` with no
-  `[[links]]`, and an unlinked infobox cell can only resolve against entities
-  that already own a wiki page. It is a defect (F-032), not a limit of the
-  corpus, and it is disclosed rather than fixed: the fix moves the graph to
-  118/264, reddens `tests/test_diagram.py`, invalidates the 117/261 quoted in
-  five documents, and changes no measured answer three days out.
-- **The user is told, not just the reader of this report.** The question returns
-  `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`, and the demo renders *"Present
-  in the corpus, absent from the graph"* with the reason, the file that imposes
-  it, and quoted codex/ephemera/wiki passages with tiers. This is the strongest
-  live demo of the decline machinery in the repo — **show it from the UI**, not
-  from `python -m src.query.engine`, which lacks the evidence-unit scan the
-  status needs and degrades to `unresolved_entity`.
-- **Do not quote the 579.** The probe's second, noisier extractor finds 741
-  distinct capitalised names outside the wiki, 579 of which reach no node. A
-  hand-check of 15 found **0 genuine entities** — document titles, section
-  headings, form labels, and verbs swept in beside names that do resolve. The
-  honest number is 1 of 79. Quoting 579 would be exactly the overclaim this
-  section exists to avoid.
+- **It was 1 of 79 when first measured, and the cause was ours.**
+  `wiki/the_ashen_vanguard.md` writes `| Members | Halvard Cindervale; Voltaire
+  Hollowmere; Orin Veyra |` with no `[[links]]`, and the builder's name lexicon
+  held page subjects only — so the row built nothing and Halvard Cindervale,
+  named in 21 evidence units, got no node (F-032). The lexicon now also holds
+  every `[[wikilink]]` target: **names learned from markup, never relations read
+  from prose.** Every edge still comes from an infobox row. Measured to change
+  exactly two rows corpus-wide, 117/261 → 118/265, all four new edges
+  corroborated. **Tell it as found-then-fixed** — a measurement that found a
+  defect nothing else in the suite could see is a stronger story than a number
+  that was always clean.
+- **The fix was gated, not assumed.** F-032 set its own condition and it was
+  met: `comparison.harness` and `comparison.ablations` are byte-identical before
+  and after, `eval.run_eval` scores are identical, and the dev 1B 7/7 gate in
+  `tests/test_query.py` holds. The one thing that *did* move is a gain: the
+  question that used to decline now answers, pinned by a test.
+- **What is still outside the graph, said plainly.** 12 of the wiki's 119
+  `[[wikilink]]` targets have no node, and none is an entity of a kind the graph
+  types — `Sundering` and `Ley-ruins` are events, `Court Chronicler` and
+  `Quartermaster` are offices, `Annals` and `Codex` are documents. Those return
+  `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`, rendered as *"Present in the
+  corpus, absent from the graph"* with the reason, the file that imposes it, and
+  quoted passages with tiers. **Demo it from the UI**, not from
+  `python -m src.query.engine`, which lacks the evidence-unit scan the status
+  needs and degrades to `unresolved_entity`.
 
-This is also what repairs a soft spot in ADR-027's reasoning, and saying so is
-worth a sentence: ADR-027 declined to build a prose relation extractor partly
-because the wrong answers named only wiki pages in `required_evidence` — which
-was itself derived from the wiki-built graph, so the argument was partly
-circular. This measurement supplies the non-circular half: **the corpus does not
-carry a population of prose-only entities an extractor would have found.**
+**Do not quote the 578.** The probe's second, deliberately noisy extractor finds
+741 distinct capitalised names outside the wiki, 578 of which reach no node. A
+hand-check of 15 found **0 genuine entities** — document titles, section
+headings, form labels, and verbs swept in beside names that do resolve. The
+honest number is 0 of 79. Quoting 578 would be exactly the overclaim this
+section exists to avoid.
+
+This also repairs a soft spot in ADR-027's reasoning, and saying so is worth a
+sentence: ADR-027 declined to build a prose relation extractor partly because
+the wrong answers named only wiki pages in `required_evidence` — which was
+itself derived from the wiki-built graph, so the argument was partly circular.
+This measurement supplies the non-circular half: **the corpus does not carry a
+population of prose-only entities an extractor would have found.** The four
+edges recovered came from a name lexicon, not from reading prose for relations.
 
 **A refusal worth reporting as a result.** We did not wire the corroborating
 passages into the conflict detector. `_DENIAL_RE` matches 5 units across the

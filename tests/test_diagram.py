@@ -135,7 +135,7 @@ def test_ingestion_numbers_match_a_real_ingest(corpus_root, diagram_text):
 
 
 def test_graph_numbers_match_the_built_graph(graph, diagram_text):
-    """117 entities and 261 edges - the figures the no-graph-database argument rests on."""
+    """118 entities and 265 edges - the figures the no-graph-database argument rests on."""
     assert_label(
         diagram_text,
         f"Graph — {len(graph.nodes)} entities, {len(graph.edges)} edges",

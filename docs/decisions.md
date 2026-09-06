@@ -2849,7 +2849,7 @@ not, on its own, supply.
 Graph untouched at 117/261, so `tests/test_diagram.py` and the architecture SVG
 are unaffected and no eval sweep was re-run — no number moved.*
 
-**AMENDMENT (same day, ADR-033).** The decision above — measure, disclose, do
+**AMENDMENT (same day, ADR-032).** The decision above — measure, disclose, do
 not fix — was overturned on instruction, and the sweep it asked for was run:
 `comparison.harness` and `comparison.ablations` byte-identical, `eval.run_eval`
 scores identical, dev 1B 7/7 intact. The graph is now **118 entities, 265
@@ -2863,7 +2863,7 @@ Two things in this ADR should be read as of its date rather than as current:
   `OUTSIDE_STRUCTURED_COVERAGE` **was true and is now true of something else.**
   Halvard Cindervale has a node, so he is no longer that status's example. It
   now fires on the 12 wikilink targets that have no node — all of them events,
-  offices or documents rather than entities. ADR-033 records the measurement.
+  offices or documents rather than entities. ADR-032 records the measurement.
 
 What this ADR got right and is worth keeping: the method, the hand-check that
 refused to inflate 579 into an entity count, and the identification of the
@@ -2980,10 +2980,9 @@ as one, not netted away against the +1 correct.*
 
 ## ADR-032 — The name lexicon reads wikilinks, so an unlinked cell can name a page-less entity
 
-*Numbered 033, not 032, and placed before ADR-032 in this file: two sessions
-appended concurrently on 6 Sep and both reached for 032. This one was written
-first and renumbered rather than displacing the other, so file order and number
-order disagree here. Nothing else does.*
+*Two sessions appended to this file concurrently on 6 Sep and both reached for
+032. Settled as 032 here and 033 for the other; if a commit message or a stale
+cross-reference says otherwise, this heading is the one to trust.*
 
 **Problem**
 
@@ -3056,7 +3055,13 @@ silent rows naming an entity the graph does not hold
 **Proof it is safe, which is the whole reason this was allowed**
 
 F-032 and ADR-030 both said this stays deferred until a sweep proves the ripple
-safe. The sweep was run before and after, on the same tree:
+safe. The sweep was run before and after — and then run **again**, because
+another session committed a routing change (ADR-031's `belongs` cue) between the
+two halves of the first run, which would have made the proof a comparison
+against a superseded baseline. The second run was done in a throwaway
+`git worktree` at `83948d9` with **only `src/graph/build.py` changed**, so
+nothing else in the working tree could contribute to the result. Both runs
+agree:
 
 | Gate | Result |
 |---|---|
@@ -3115,7 +3120,7 @@ counts pinned in `test_diagram.py`, `test_corroborate.py`, `test_declines.py`
 and `test_reachability.py`. `tests/test_diagram.py` went red on the stale SVG the
 moment the count moved, which is the design working.
 
-*Status: accepted. 380 tests, 1 of them new. `docs/limitations.md` keeps the
+*Status: accepted. 383 tests, 1 of them new. `docs/limitations.md` keeps the
 entry, rewritten from "one entity has no node" to the completeness claim and the
 12 concepts that remain outside — the boundary did not disappear, it moved to a
 place where it is the correct boundary.*

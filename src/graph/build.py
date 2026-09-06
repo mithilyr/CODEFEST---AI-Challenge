@@ -38,6 +38,10 @@ RELATIONS_PATH = PROJECT_ROOT / "config" / "relations.yaml"
 #: A markdown table row: `| field | value |`.
 _ROW_RE = re.compile(r"^\|\s*(?P<field>[^|]+?)\s*\|\s*(?P<value>.*?)\s*\|\s*$")
 
+#: A `[[wikilink]]` target, used to learn entity *names* from anywhere on a wiki
+#: page - infobox or prose. Names only; edges still come from infobox rows.
+_LINK_RE = re.compile(r"\[\[([^\]]+)\]\]")
+
 #: Fields that name the page's own subject rather than a relation.
 #:
 #: A closed list is not enough on its own. MEASURED (F-030): five conflict
@@ -204,12 +208,28 @@ def build_graph(
         if unit.collection == "wiki":
             by_doc.setdefault(unit.canonical_doc_id, []).append(unit)
 
-    # Pass 1: every entity that owns a page, so pass 2 can resolve a plain-text
-    # cell against a known name. `the_ashen_vanguard.md` writes its three
-    # `Belligerent` rows as unlinked text - "The War of Drowned Light", no
-    # brackets - so a link-driven parser reads the page as having no conflicts
-    # at all. Resolution is exact match on the canonical key (ADR-011): a name
-    # that does not match a known entity produces no edge rather than a guess.
+    # Pass 1: the name lexicon that pass 2 resolves a plain-text cell against.
+    # `the_ashen_vanguard.md` writes its three `Belligerent` rows as unlinked
+    # text - "The War of Drowned Light", no brackets - so a link-driven parser
+    # reads the page as having no conflicts at all. Resolution is exact match on
+    # the canonical key (ADR-011): a name that does not match a known entity
+    # produces no edge rather than a guess.
+    #
+    # Two sources, page subjects first so their spelling wins:
+    #
+    # 1. Every entity that owns a page.
+    # 2. Every `[[wikilink]]` target anywhere on a wiki page, including prose.
+    #    Page subjects alone were not enough (F-032): `| Members | Halvard
+    #    Cindervale; Voltaire Hollowmere; Orin Veyra |` is unlinked and none of
+    #    the three owns a page, so the row resolved to nothing and Halvard
+    #    Cindervale - named in 21 evidence units - got no node at all.
+    #
+    # Reading prose here is not prose relation extraction, which ADR-027
+    # measured and rejected. A `[[wikilink]]` is markup: the wiki declaring that
+    # a string names an entity. This learns *names* from it and never relations
+    # - every edge still comes from an infobox row, and `_resolve_unlinked`
+    # still demands an exact, whole-cell, all-or-nothing match on a literal
+    # template. Measured: it changes exactly two rows corpus-wide (ADR-031).
     known: dict[str, str] = {}
     for doc_id, units in sorted(by_doc.items()):
         found = _first_table_block(units)
@@ -217,6 +237,13 @@ def build_graph(
             continue
         name = _subject_name(infobox_rows(found[1]), doc_id, units)
         known[canonical_key(name)] = name
+
+    for _, units in sorted(by_doc.items()):
+        for unit in units:
+            for target in _LINK_RE.findall(unit.text):
+                name = display_name(target)
+                if name:
+                    known.setdefault(canonical_key(name), name)
 
     graph = Graph()
     unmapped: dict[str, int] = {}

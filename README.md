@@ -84,7 +84,7 @@ serves on **http://127.0.0.1:8000**. Three surfaces:
 |---|---|
 | `/` | The seven development 1B questions, each a link |
 | `/ask?q=...` | One answer, with every hop's source document, row and authority tier |
-| `/graph` | All 117 entities as one static SVG — no CDN, no JavaScript |
+| `/graph` | All 118 entities as one static SVG — no CDN, no JavaScript |
 
 To answer one question without the browser:
 
@@ -117,7 +117,7 @@ buys.
 python -m src.ingest.integrity   # is your corpus the corpus we measured against?
 python -m pytest                 # 345 tests
 python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
-python -m src.graph.build        # 117 entities, 261 edges, 15 relations
+python -m src.graph.build        # 118 entities, 265 edges, 15 relations
 ```
 
 All four run with no API key and no network.
@@ -145,7 +145,7 @@ The short version. One pipeline, four stages:
    `EvidenceUnit`s. Provenance is attached once, here, so nothing downstream
    reconstructs it and disagrees.
 2. **Evidence units → graph** (`src/graph/`) — wiki infobox rows parsed one row at
-   a time into 117 entities and 261 edges across 15 relations, held as a Python
+   a time into 118 entities and 265 edges across 15 relations, held as a Python
    dict of lists.
 3. **Question → answer** (`src/query/`) — three routing tiers, below.
 4. **Answer → prose → screen** (`src/query/synthesis.py`, `src/ui/`) — the model
@@ -178,7 +178,7 @@ off by default.
 
 ### Deliberately not used
 
-- **No graph database.** 117 entities and 261 edges is a dict of lists.
+- **No graph database.** 118 entities and 265 edges is a dict of lists.
 - **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
 - **No agent framework.** LangChain/LangGraph/CrewAI would be code we did not write.
 

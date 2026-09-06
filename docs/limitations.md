@@ -52,46 +52,55 @@ same subject is reachable from the untruncated sibling document.
 
 ## System limitations
 
-### One entity in the corpus has no node in the graph
+### The graph holds every entity the corpus treats as first-class
+
+Kept here rather than deleted, because it was a limitation until 6 Sep and the
+number is worth stating positively.
 
 The graph's nodes come from wiki infobox rows, so an entity the wiki never
-tabulates has no node, and a question about it declines by construction rather
-than on evidence. **Measured, 6 Sep** — `python -m eval.probes.entity_reachability`,
-ADR-030:
+tabulates would have no node, and a question about it would decline by
+construction rather than on evidence. **Measured** —
+`python -m eval.probes.entity_reachability`, ADR-030 and ADR-032:
 
 Of the **79** non-wiki documents that declare their own subject in the filename
-(`<doctype>_concerning_<subject>`, which is the archive stating who a document
-is about), **77 reach a graph node and 2 do not**. One of those two is a corpus
-filename truncation, not a gap (below). So **exactly one entity the corpus
-treats as first-class has no node: Halvard Cindervale** — named in 21 evidence
-units, including five in the tier-1 codex Annals and three ephemera documents
-titled after him.
+(`<doctype>_concerning_<subject>`, the archive stating who each document is
+about), **79 reach a graph node.** The single remaining unresolved slug is a
+corpus filename truncated mid-word, and the entity it names has a node under its
+full name (see the corpus-defects section above). **Zero** infobox rows on a
+mapped relation field name an entity the graph does not hold.
 
-The cause is ours, not the corpus's, and it is a single row (**F-032**):
-`wiki/the_ashen_vanguard.md` writes `| Members | Halvard Cindervale; Voltaire
-Hollowmere; Orin Veyra |` with no `[[links]]`, and an unlinked infobox cell can
-only resolve against entities that already own a wiki page. Not fixed three days
-from the deadline: it moves the graph to 118/264, reddens `tests/test_diagram.py`,
-invalidates the 117/261 quoted in five documents, and changes no measured answer.
+It was **1 of 79** when first measured. `wiki/the_ashen_vanguard.md` writes
+`| Members | Halvard Cindervale; Voltaire Hollowmere; Orin Veyra |` with no
+`[[links]]`, and the builder's name lexicon held page subjects only — so the row
+built nothing and Halvard Cindervale, named in 21 evidence units, got no node at
+all (**F-032**). The lexicon now also holds every `[[wikilink]]` target. That is
+names learned from markup, never relations read from prose: every edge still
+comes from an infobox row, and an unlinked cell still needs an exact,
+whole-cell, all-or-nothing match. It changed exactly two rows corpus-wide, took
+the graph from 117/261 to **118/265**, and moved no answer's correctness in
+either sweep.
 
-**Impact: low, and visible to the user rather than hidden.** Nothing in the
-answer key, the frozen 55 or the dev 1B seven traverses this entity. A question
-about him returns `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`, which the demo
-UI renders as *"Present in the corpus, absent from the graph"*, names
-`src/graph/build.py` and "wiki infobox rows only" as the reason, and quotes the
-codex, ephemera and wiki passages with their authority tiers. Note that this
-status needs the evidence-unit scan the UI's `Engine` loads at startup; the bare
-`python -m src.query.engine` CLI degrades the same question to
-`unresolved_entity`.
+**What is still outside the graph, honestly.** 12 of the 119 distinct
+`[[wikilink]]` targets in the wiki have no node, and none of them is an entity
+of the kind the graph types: `Sundering`, `Ley-ruins` and `Ashen Era` are events
+and periods; `Court Chronicler`, `Quartermaster`, `Choir Novice` and `Sapper`
+are in-world offices; `Annals` and `Codex` are the documents themselves. A
+question naming one of these returns
+`EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE`, which the demo UI renders as
+*"Present in the corpus, absent from the graph"*, names `src/graph/build.py` and
+"wiki infobox rows only" as the reason, and quotes the passages with their
+authority tiers. This status needs the evidence-unit scan the UI's `Engine`
+loads at startup; the bare `python -m src.query.engine` CLI degrades the same
+question to `unresolved_entity`.
 
 **A separate, weaker measurement, recorded so nobody re-derives it and
 overstates it.** A capitalised-multi-word-span scan of the 27,415 non-wiki
-paragraph and page units yields 741 distinct candidate names, of which 579 reach
-no node. **That 579 is not an entity count.** Fifteen were sampled and
+paragraph and page units yields 741 distinct candidate names, of which 578 reach
+no node. **That 578 is not an entity count.** Fifteen were sampled and
 hand-checked against their documents and **0 of the 15 is a genuine entity** —
 they are document titles, section headings, form-field labels, adjacent codex
 field values, and verbs or conjunctions swept in beside names that do resolve.
-Quote the 1 of 79, not the 579.
+Quote the 0 of 79, never the 578.
 
 ### OCR output is model-dependent
 
