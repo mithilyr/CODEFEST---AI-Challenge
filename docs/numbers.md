@@ -85,7 +85,7 @@ found 0 real entities (document titles, headings, prose fragments).
 |---|---|---|
 | Templates, dev 1B | **7/7** correct, 7/7 complete evidence | `python -m comparison.harness` |
 | Templates, frozen 49 | no route shape on **36**; 10 correct / 11 routed = **91%** | ″ |
-| Shipped three tiers | **21 correct / 29 complete evidence** | ″ |
+| Shipped three tiers | **22 correct / 31 complete evidence** | ″ |
 | Ambiguous / unnecessary depth | 4 / 0 | ″ |
 | Honest refusal | **6 of 6** unanswerable questions declined | ″ |
 | Cue tier precision | 40% (ADR-019), against templates' 91% | `python -m comparison.ablations` |

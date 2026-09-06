@@ -461,8 +461,15 @@ def test_the_guard_ignores_cue_words_shared_across_relations(
     from src.query.route import RouteResult, unique_relation_cues
 
     unique = unique_relation_cues()
-    for shared in ("plac", "conflict", "record", "major", "military"):
+    # NOT "military" any more. It was shared between serves_at ("Military
+    # service") and belligerent_in ("Military action", "Military involvement",
+    # "Military record") until ADR-034 moved `Military service` to
+    # belligerent_in, where the verb in its one and only cell says it belongs:
+    # `Fought for [[The Ashen Vanguard]] in [[The Leaden Accord]]`. All four
+    # `Military *` field names now name one relation, so the word does too.
+    for shared in ("plac", "conflict", "record", "major"):
         assert shared not in unique, f"{shared!r} names more than one relation"
+    assert unique.get("military") == "belligerent_in"
 
     # rb_041: contains "place" and means nothing by it.
     result = route(

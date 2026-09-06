@@ -180,8 +180,13 @@ def test_a_shared_cue_word_is_a_fallback_not_a_veto(cues):
     )
     assert cued_relations(cues, rb_003) == {"forged_at", "housed_in", "serves_at"}
 
+    # rb_055 cued {member_of, serves_at} until ADR-034. "serv" was shared
+    # because `Serving figure` sat under member_of, and that field is on
+    # `palewell_abbey.md` - a place, not a faction - so the person named serves
+    # at it. Moving it to serves_at left "serv" naming one relation. The
+    # question is still answered correctly; only the cue set narrowed.
     rb_055 = "Which faction does the Marsh Revenant serve?"
-    assert cued_relations(cues, rb_055) == {"member_of", "serves_at"}
+    assert cued_relations(cues, rb_055) == {"serves_at"}
 
 
 def test_every_three_hop_question_routes_to_its_gold_chain(cues):

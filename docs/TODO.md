@@ -42,7 +42,7 @@ are done: `origin` is configured
       **Moved again 2026-09-06, and this time on real routing changes, not
       diagnosis**: no-route-shape 35 → **36** (ADR-029's coverage guard
       declines `rb_039`, which the cue tier then answers correctly), and the
-      shipped tier went 17 → 18 → 19 → **21 correct** and 27 → 28 → 31 → **29
+      shipped tier went 17 → 18 → 19 → **22 correct** and 27 → 28 → 31 → 29 → **31
       complete evidence** across ADR-029, ADR-031 and ADR-033. Complete
       evidence going *down* while correct went *up* is deliberate and
       explained in ADR-033: three questions had been earning it by walking

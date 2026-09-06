@@ -34,8 +34,26 @@ relations:
     inverse: has_member
     fields:
       forward: [Member of, Membership, Affiliation, Allegiance]
-      reverse: [Members, Member, Known members, Personnel, Known participant,
-                Notable fighter, Serving figure, Castellan]
+      reverse: [Members, Member, Known members, Personnel, Castellan]
+    # NOT `Known participant`, `Notable fighter` or `Serving figure`. All three
+    # sat here until 6 Sep and all three were wrong, each in the same way: the
+    # page they appear on is not a faction, so the cell does not record
+    # membership. `Notable fighter` is on `the_winter_reckoning.md` and
+    # `Known participant` on `the_leaden_accord.md` - a war and an accord - so
+    # the person named FOUGHT IN it (belligerent_in). `Serving figure` is on
+    # `palewell_abbey.md`, a place, so the person SERVES AT it (serves_at).
+    # The graph asserted `brannoc_palefroth member_of winter_reckoning`:
+    # membership in a war.
+    #
+    # Found by `eval/probes/prose_relations.py` (ADR-034), which read the codex
+    # and chronicles against the graph: the prose says "fought in The Winter
+    # Reckoning" and "serves at Palewell Abbey" where the infobox mapping said
+    # "member of". Cross-collection evidence caught a defect the infobox parse
+    # could not see, because the wiki row's field name is the only thing the
+    # builder gets and a field name can be misread.
+    #
+    # Each of the three field names occurs EXACTLY ONCE in the corpus, so the
+    # blast radius of moving them is four rows, checked before the move.
     # Every field name above is a *record-keeping* noun. None is how a person
     # asks the question: "the faction X belongs to" cues nothing at all, which
     # is why 3h_002's middle hop was never considered (ADR-031).
@@ -75,9 +93,18 @@ relations:
     inverse: served_by
     fields:
       forward: [Serves at, Service, Place of service, Place of Service,
-                Military service, Serves at Emberdeep, Serves at Greyfell Citadel,
+                Serves at Emberdeep, Serves at Greyfell Citadel,
                 Serves at the fortress, Serving at Crookvale,
                 Personnel serving at Hollowreach]
+      # `Serving figure` on `palewell_abbey.md` names the person; the page's
+      # subject is the place being served at, so this is the reverse direction.
+      reverse: [Serving figure]
+    # NOT `Military service`. Its one occurrence reads
+    #   `Military service | Fought for [[The Ashen Vanguard]] in [[The Leaden Accord]]`
+    # which is the two-argument clause ADR-010 describes: one ternary fact whose
+    # conflict argument is The Leaden Accord. Mapped here it produced
+    # `sabelle_mournvale serves_at leaden_accord` - serving at an accord. The
+    # verb in the cell is "Fought", so the field belongs to belligerent_in.
 
   wields:
     inverse: wielded_by
@@ -98,7 +125,12 @@ relations:
     fields:
       forward: [Belligerent, Belligerent in, Belligerencies, Conflict,
                 Military action, Military involvement, Military record,
-                Major fighting]
+                Major fighting, Military service]
+      # Both occur on a CONFLICT's page and name a person who fought in it, so
+      # the page's subject is the target and the cell names the source. They sat
+      # under `member_of` reverse until 6 Sep, which asserted that a person can
+      # be a member of a war. See the note on member_of and ADR-034.
+      reverse: [Known participant, Notable fighter]
 
   mentor_of:
     inverse: mentored_by

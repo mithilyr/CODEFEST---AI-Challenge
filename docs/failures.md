@@ -1515,3 +1515,52 @@ entity of a kind the graph types — events (`Sundering`, `Ley-ruins`), offices
 `Codex`). The fixture moved to `Court Chronicler`. The status now fires only on
 things the graph legitimately does not model, never on something it dropped,
 which is a better boundary than the one it had.
+
+## F-033 — A correct answer produced by an accident of vocabulary
+
+**Where it was found.** Running the before/after sweep for ADR-034's relation
+mapping fix on 6 Sep. `rb_011` moved from correct to wrong, and the cause was
+not the thing that changed.
+
+**Reproduce it.**
+
+```bash
+python -m comparison.harness      # rb_011, arm C
+```
+
+Question: *"Which figures counted themselves among the victors of the War of
+Drowned Light?"* Gold: the individuals, reached by `victor_of -> member_of`.
+
+```
+before   fallback_ambiguous   14 individuals          correct
+after    fallback_sufficient  ('The Silent Choir',)   wrong
+```
+
+**What was actually happening.** The cue vocabulary is derived from the field
+names in `config/relations.yaml`. The field name `Serving figure` contributes
+the tokens "serving" and **"figure"**. It sat under `member_of`, so the word
+"figures" in the question cued `member_of` — which is the relation that answers
+the question. The route was right. The reason was a coincidence between a
+question's ordinary noun and a field name's ordinary noun.
+
+ADR-034 moved `Serving figure` to `serves_at`, where the page it appears on
+(`palewell_abbey.md`, a place) says it belongs. The accident moved with it, and
+`rb_011` now cues `{serves_at, victor_of}` and stops one hop short.
+
+**Why this is logged rather than netted off.** The sweep's headline is +1
+correct and +2 complete evidence, and `rb_011` disappears inside that. But it
+moved from an *ambiguous* answer containing the gold to a *confident* answer
+that is wrong, which is the transition F-025 and F-031 both exist to warn
+about. A net-positive sweep can still contain a regression in the shape that
+matters most, and the only way to see it is per-question.
+
+**What we did not do.** Add "figure" to `CUE_STOPWORDS` — measured, it does not
+restore the answer, because removing the accidental cue leaves `member_of`
+cued by nothing. Nor revert the mapping to keep the point: `relations.yaml`
+would then still assert that a person can be a *member of* an abbey, which is
+false about the corpus, in exchange for a correct answer we could not explain.
+
+**The real defect this exposed.** `member_of`'s question vocabulary is one word
+(`belongs`, per ADR-031's note). "Counted themselves among", "figures", "who
+was in" and similar phrasings cue it not at all. That is the gap to close, and
+closing it is what would make `rb_011` correct for a reason we could defend.

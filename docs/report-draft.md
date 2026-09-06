@@ -36,7 +36,7 @@ python -m pytest                → 386 passed, 0 network calls
 python -m comparison.harness    → 49 answerable of 55
                                                 A templates  B cues  C shipped
                                    route_success         11      30         33
-                                   answer_correct        10      12         21
+                                   answer_correct        10      13         22
                                    complete_evidence     11      20         29
                                    no_route_shape        36       4         14
                                    ambiguous              1       5          4
@@ -98,7 +98,7 @@ exception:
    field (`routing_tier`) the UI surfaces, not metadata thrown away once an
    answer exists.
 
-**Together the three tiers answer 21 of 49 correctly with complete evidence on
+**Together the three tiers answer 22 of 49 correctly with complete evidence on
 29, against the templates' 10 and 11** — and refuse all 6 unanswerable
 questions rather than inventing a route for them.
 
@@ -153,7 +153,7 @@ preference between architectures, is what justified a cue-based second tier,
 and the same discipline gated the third: after both deterministic tiers,
 **14 of 49** still reach no route, which is the number the LLM planner is
 scoped against. *Source: ADR-019, ADR-020, ADR-029; `python -m
-comparison.harness` — `no_route_shape` 36/4/14, `answer_correct` 10/12/21.*
+comparison.harness` — `no_route_shape` 36/4/13, `answer_correct` 10/13/22.*
 
 **2. Deterministic-first is a default, not a comment.**
 `answer_question(use_planner=...)` defaults to `False`, discovered necessary

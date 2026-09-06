@@ -3259,3 +3259,125 @@ system's remaining errors actually live.
 F-032's fix was uncommitted in the working tree (graph 118/265); the deltas are
 isolated to this file, but re-derive the absolutes with
 `python -m comparison.harness` once that lands.*
+
+## ADR-034 — Prose relations are an independent check on the infobox mapping, not a source of edges
+
+**The question ADR-027 and ADR-030 left between them**
+
+ADR-027 measured *existing edges* (255 of 261 attested outside the wiki).
+ADR-030/032 measured the *node set* (78 of 79 declared subjects reachable, the
+79th a filename truncation, so 0 genuine gaps). Neither asked whether the codex,
+chronicles or ephemera assert a **relation** that no infobox row produced.
+
+ADR-027 rejected a prose relation extractor partly on the grounds that "the 4
+wrong answers name only wiki pages in `required_evidence`" — and ADR-030 already
+recorded that this is partly circular, because `required_evidence` was derived
+from the wiki-built graph. This ADR closes that gap by measuring directly.
+
+**Method**
+
+`eval/probes/prose_relations.py`, read-only:
+
+    python -m eval.probes.prose_relations
+
+Twelve verb patterns, each mapping to a relation `config/relations.yaml`
+already defines — the probe never invents a relation name, because an edge under
+a relation nothing else uses is an edge no template can traverse. Entities
+resolve through `corroborate.scan_surfaces`, which is `route.py`'s gazetteer, so
+the surface forms are byte-identical to the ones the answer path recognises and
+ADR-011 holds unchanged. Every candidate is classified against the built graph
+as CONFIRMS / INVERTED / NEW.
+
+**MEASURED**
+
+```
+182 raw candidates in codex / chronicles / ephemera
+    CONFIRMS : 158      prose restating an edge the graph already holds
+    INVERTED :  15
+    NEW      :   9      (7 distinct triples)
+```
+
+All 7 distinct NEW triples were hand-checked against the documents that state
+them. **6 of 7 are correct extractions; 1 is a false positive** — "In The Purge
+of Blackport, Maelis Greyfen fought for House Morvain" yielded
+`belligerent_in house_morvain`, a faction where a conflict belongs. That is the
+two-argument ternary ADR-010 describes, and both of its correct edges already
+exist.
+
+A first pass without guards scored **2 of 12**. Three guards, each a measured
+failure mode, took it to 6 of 7: a pronoun between subject and verb (anaphora —
+F-009's lesson in a new place), a coordinating conjunction between subject and
+verb (the verb heads a second predicate: "Halvard Cindervale is a member of The
+Ashen Vanguard **and serves at** Fenthrone" yielded `ashen_vanguard serves_at
+fenthrone`), and an object more than 40 characters past the verb. Every guard
+**declines** a candidate rather than repairing it.
+
+**What the 6 turned out to be — and this is the finding**
+
+Only **2** are facts the graph lacks entirely: `vharenford ruled_by
+ashen_vanguard` and `corvus_duskbane serves_at vharenford`, both tier-1 codex.
+
+The other **4 are relation-typing errors in `config/relations.yaml`**. The graph
+held the same entity pair under the wrong relation:
+
+| Wiki row | Was | Prose says | Now |
+|---|---|---|---|
+| `the_winter_reckoning.md` `Notable fighter` | `member_of` | "fought in The Winter Reckoning" | `belligerent_in` |
+| `the_leaden_accord.md` `Known participant` | `member_of` | "fought in The Leaden Accord" | `belligerent_in` |
+| `palewell_abbey.md` `Serving figure` | `member_of` | "serves at Palewell Abbey" | `serves_at` |
+| `sabelle_….md` `Military service` | `serves_at` | "Fought for … in …" | `belligerent_in` |
+
+The graph asserted `brannoc_palefroth member_of winter_reckoning`: membership in
+a war. The field names sit on pages that are not factions — a war, an accord, an
+abbey — so the cell was never recording membership. Each of the four field names
+occurs **exactly once** in the corpus, so the blast radius was four rows,
+checked before the move.
+
+**Decision**
+
+Fix the four mappings. Do **not** ingest prose into the graph: the two genuinely
+new edges do not justify a new parser, schema normalisation and the
+re-derivation cascade, three days out. The probe ships as a measurement.
+
+**The sweep, run before and after per ADR-029's protocol**
+
+```
+                        before   after
+answer_correct (C)          21      22
+complete_evidence (C)       29      31
+route_success (C)           33      34
+no_route_shape (C)          14      13
+graph                  118/265  118/265     labels moved, nothing created
+eval.run_eval                     identical
+templates-only arm (A)            identical
+```
+
+`comparison.ablations` moved with the cue tier: `as_written` precision 40% → 45%.
+Graph counts are unchanged, so `tests/test_diagram.py` and the architecture SVG
+are unaffected. 395 tests green.
+
+**One question regressed, and it was right for the wrong reason (F-033)**
+
+`rb_011` — "Which figures counted themselves among the victors of the War of
+Drowned Light?" — went from `fallback_ambiguous` **correct** to
+`fallback_sufficient` **wrong**, returning the winning faction where the question
+asks for people.
+
+The cause is not the relation fix. `Serving figure` contributed the token
+**"figure"** to whichever relation it was filed under, and the question contains
+"figures". Filed under `member_of`, that accidentally cued `member_of` — the
+relation that answers the question, for a reason having nothing to do with
+membership. Moving the field moved the accident with it. Adding "figure" to
+`CUE_STOPWORDS` does not restore the answer; only the accidental cue did.
+
+**This is kept rather than reverted**, and the reasoning is the project's own:
+an answer produced by an accident of vocabulary is not a capability, and
+`member_of`'s cue vocabulary being too thin to route this question honestly is
+the real defect. The regression is in the shape this project treats as worst —
+a decline becoming a confident wrong answer — so it is recorded here rather than
+netted off against the +2. **Revisit condition:** if `member_of` gains a
+legitimate cue that routes `rb_011`, re-run the sweep and expect 23.
+
+*Status: accepted. 395 tests. Two existing tests updated, both pinning facts
+that legitimately changed: "military" now names one relation, and rb_055's cue
+set narrowed to `{serves_at}` while still answering correctly.*

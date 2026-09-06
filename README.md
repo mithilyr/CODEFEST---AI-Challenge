@@ -160,7 +160,7 @@ never at an empty result and never at an invented answer.
 | Tier | Module | Measured |
 |---|---|---|
 | 1 — templates | `route.py` | **7/7** on the dev 1B questions (ADR-017); matches no route shape on **36 of 49** independently written questions |
-| 2 — cue fallback | `fallback.py` | **21 correct / 29 complete evidence** of 49, against templates-alone's 10 / 11 (ADR-019; counts updated by ADR-024, ADR-029, ADR-031, ADR-033) — at 40% precision against templates' 91% |
+| 2 — cue fallback | `fallback.py` | **22 correct / 31 complete evidence** of 49, against templates-alone's 10 / 11 (ADR-019; counts updated by ADR-024, ADR-029, ADR-031, ADR-033) — at 40% precision against templates' 91% |
 | 3 — LLM plan | `planner.py` | Emits a validated *plan*, never an answer. **Off by default**, and deliberately unmeasured on the frozen set |
 
 **Never quote the 7/7 without the 36/49 beside it.** 7/7 measures fit to seven
@@ -300,7 +300,7 @@ baseline's 0 of 7.
 **Read those numbers with the routing measurement beside them.** On 49
 independently authored questions, frozen before either router ran, the templates
 match no route shape on **36**. The shipped three-tier system answers **21
-correctly with 29 complete evidence**, against templates-alone's **10 / 11** — at
+correctly with 31 complete evidence**, against templates-alone's **10 / 11** — at
 40% precision where templates hold 91%. It declines all **6 of 6** questions
 whose answer the corpus does not contain. 7/7 measures fit; 36/49 measures
 routing capability, and the second is the honest headline. Reproduce with
