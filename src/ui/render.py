@@ -93,6 +93,16 @@ ul.values { margin: 0; padding-left: 1.2rem; font-size: 1.05rem; font-weight: 60
 .warn { background: #fde9c9; color: #6d4106; }
 .bad  { background: #fbdcdc; color: #7a1d1d; }
 .gloss { margin: .6rem 0 0; color: #3d3d45; font-size: .92rem; }
+.modelbar { margin: 0 0 .9rem; padding: .7rem .85rem; background: #fff8e8;
+            border: 1px solid #e8cf95; border-left: 4px solid #b8860b;
+            border-radius: 6px; }
+.modelbar .mbhead { font-size: .78rem; font-weight: 700; letter-spacing: .05em;
+                    color: #6d4106; margin: 0 0 .35rem;
+                    font-family: ui-monospace, Consolas, monospace; }
+.modelbar p { margin: .3rem 0 0; font-size: .9rem; color: #3d3d45; }
+.modelbar .plan { font-family: ui-monospace, Consolas, monospace;
+                  font-size: .84rem; background: #f6ecd2; padding: .1rem .4rem;
+                  border-radius: 4px; color: #5a3d05; }
 .note { margin: .6rem 0 0; padding: .6rem .75rem; background: #f4f4f7;
         border-left: 3px solid #9a9aa8; font-size: .9rem;
         font-family: ui-monospace, Consolas, monospace; white-space: pre-wrap; }
@@ -164,16 +174,41 @@ ul.entitylist a { color: #26263a; text-decoration: none; }
 ul.entitylist a:hover { text-decoration: underline; }
 """
 
-_STATUS_CLASS = {
-    "sufficient": "ok",
-    "conflicting_evidence": "warn",
-    "abstention": "warn",
-}
+#: The one status that is an unqualified answer. Everything else that answers
+#: carries a caveat - a lower-precision tier, an unnarrowed set, or a whole
+#: record instead of a value - and is ambered rather than greened.
+_UNQUALIFIED = "sufficient"
+
+#: Declines the engine *chose*, as opposed to routes it could not find. These
+#: were amber before this function became a rule, and turning them red would
+#: have been a real change of meaning: ADR-026's position is that a decline is a
+#: result, and abstaining on purpose is not the same as failing to route.
+_CHOSEN_DECLINES = frozenset({"abstention"})
 
 
-def _status_class(status: str) -> str:
-    """Colour band for a status code. A lookup, not an assessment."""
-    return _STATUS_CLASS.get(status, "bad")
+def _status_class(status: str, answerable: bool) -> str:
+    """Colour band for a status. A rule, not a table.
+
+    This was a three-entry lookup with `bad` as the default, which quietly
+    painted **five answerable statuses red**: `fallback_sufficient`,
+    `fallback_ambiguous`, `planned_sufficient`, `planned_ambiguous` and
+    `profile`. The cue-fallback tier returns 17 correct answers on the frozen
+    set and every one of them was shown in the same colour as a failure.
+
+    A partial table over a growing enum drifts silently every time a status is
+    added - it has to be edited, and nothing fails if it is not. Deriving the
+    band from `answerable`, which the view already carries, cannot go stale: a
+    new status is coloured correctly the day it exists.
+
+    `answerable` comes from `EvidenceStatus.is_answerable` via the view, so this
+    stays a lookup on data the engine decided rather than an assessment made
+    here (ADR-018).
+    """
+    if status in _CHOSEN_DECLINES:
+        return "warn"
+    if not answerable:
+        return "bad"
+    return "ok" if status == _UNQUALIFIED else "warn"
 
 
 def _clip(text: str, limit: int = 320) -> str:
@@ -252,7 +287,12 @@ def _answer_block(view: dict) -> str:
             f'<p class="gloss">{len(values)} values. The engine returned a set; '
             "they are listed as it ordered them.</p>"
         )
-    return f"<section><h2>Answer</h2>{body}</section>"
+    # Above the value, deliberately. A reader who takes only the answer
+    # should have already been told a model chose the route to it.
+    return (
+        f"<section><h2>Answer</h2>"
+        f"{_model_route_banner(view)}{body}</section>"
+    )
 
 
 def _strategy_block(view: dict) -> str:
@@ -284,9 +324,48 @@ def _strategy_block(view: dict) -> str:
     return f"<section><h2>Strategy used</h2>{inner}</section>"
 
 
+def _model_route_banner(view: dict) -> str:
+    """Say plainly when a model chose the route, and what that did and did not do.
+
+    A planner-tier answer was structurally indistinguishable from a
+    deterministic one: same layout, a different word in the status pill, and the
+    engine's note in the same grey box every fallback reason uses. A reader
+    skimming could not tell a model had been involved at all.
+
+    That matters in both directions. It understates the system - the planner is
+    the tier that exists *because* ADR-019 measured the deterministic ones
+    missing 35 of 49 realistic questions - and it overstates it, because an
+    answer a model routed carries different risk from one a template routed
+    (F-025: a well-formed plan, relevant to nothing, that passed validation).
+
+    The banner renders `view["note"]`, which the engine wrote. It adds no
+    judgement of its own, and it appears only when the engine set
+    `routed_by_model`.
+    """
+    if not view.get("routed_by_model"):
+        return ""
+
+    chain = " &rarr; ".join(_e(r) for r in view["chain"]) or "no relations"
+    start = _e(view["start_name"] or view["start_key"] or "an entity")
+
+    return (
+        '<div class="modelbar">'
+        '<p class="mbhead">ROUTED BY A LANGUAGE MODEL</p>'
+        "<p>No deterministic template matched, so this route was proposed by a "
+        "model rather than by a rule. It chose <em>where to look</em>; it did "
+        "not write the answer.</p>"
+        f'<p>Proposed plan: <span class="plan">{start} &nbsp;{chain}</span></p>'
+        "<p>Every name in that plan was checked against the graph before "
+        "anything was traversed, and the evidence below is the graph's. "
+        "Nothing the model said is quoted as fact.</p>"
+        + (f'<p class="note">{_e(view["note"])}</p>' if view["note"] else "")
+        + "</div>"
+    )
+
+
 def _status_block(view: dict) -> str:
     """Evidence sufficiency, and the fallback reason when there is one."""
-    cls = _status_class(view["status"])
+    cls = _status_class(view["status"], view["answerable"])
     parts = [
         f'<span class="status {cls}">{_e(view["status"])}</span>',
         f'<p class="gloss">{_e(view["status_gloss"])}</p>',
@@ -296,7 +375,9 @@ def _status_block(view: dict) -> str:
         f'{"yes" if view["answerable"] else "no"}</strong> '
         "&mdash; read from the status the engine returned, not decided here.</p>"
     )
-    if view["note"]:
+    # A planner-tier note is already shown in the banner above the answer;
+    # repeating it here would say the same sentence twice on one page.
+    if view["note"] and not view.get("routed_by_model"):
         parts.append(
             "<p class=\"gloss\" style=\"margin-bottom:.2rem\"><strong>"
             "Fallback reason, in the engine's words:</strong></p>"

@@ -444,3 +444,183 @@ def test_view_returns_plain_data_only(views):
 
     for v in views.values():
         json.dumps(v)  # raises TypeError if anything non-serialisable slipped in
+
+
+# --------------------------------------------------------------------------
+# The model-routed banner
+#
+# A planner-tier answer used to be structurally indistinguishable from a
+# deterministic one - same layout, a different word in the status pill, and the
+# engine's note in the same grey box every fallback reason uses. That
+# understates the tier (it exists because ADR-019 measured the deterministic
+# ones missing 35 of 49 realistic questions) and understates its risk (F-025:
+# a well-formed plan, relevant to nothing, that passed validation).
+# --------------------------------------------------------------------------
+
+
+def _planned_answer(graph) -> Answer:
+    """An Answer as `engine._planned_answer` builds one, without calling a model.
+
+    Constructed rather than obtained live on purpose: the planner is off by
+    default so no test spends daily quota or depends on a provider being
+    reachable (F-025), and what is under test here is rendering, not routing.
+    """
+    from src.graph.traverse import walk_relations
+
+    paths = walk_relations(graph, "Gravemaw Wyrm", ["lair_in", "ruled_by"])
+    assert paths, "fixture question must still traverse"
+    return Answer(
+        question="Tell me where the Gravemaw Wyrm sleeps, and who holds it.",
+        status=EvidenceStatus.PLANNED_SUFFICIENT,
+        values=("The Bleeding Crown",),
+        template="llm_plan",
+        chain=("lair_in", "ruled_by"),
+        start_key="gravemaw_wyrm",
+        paths=tuple(paths),
+        documents=tuple(dict.fromkeys(d for p in paths for d in p.documents)),
+        note=(
+            "No deterministic tier matched. A model proposed the chain "
+            "lair_in -> ruled_by from Gravemaw Wyrm (model: test/model-x); "
+            "every name in it was checked against the graph before traversal, "
+            "and the evidence below is the graph's, not the model's."
+        ),
+    )
+
+
+def test_view_marks_an_llm_planned_answer_as_model_routed(graph):
+    """The tier name is the engine's word; the view turns it into a flag."""
+    v = build_view(_planned_answer(graph), graph)
+    assert v["routed_by_model"] is True
+    assert v["template"] == "llm_plan"
+
+
+def test_deterministic_answers_are_not_marked_model_routed(views):
+    """The flag must not fire on the tiers that never call a model."""
+    for question, v in views.items():
+        assert v["routed_by_model"] is False, question
+
+
+def test_banner_appears_only_for_a_model_routed_answer(graph, views):
+    planned = page_answer(build_view(_planned_answer(graph), graph))
+    assert "ROUTED BY A LANGUAGE MODEL" in planned
+
+    for question, v in views.items():
+        assert "ROUTED BY A LANGUAGE MODEL" not in page_answer(v), question
+
+
+def test_banner_states_what_the_model_did_and_did_not_do(graph):
+    """The distinction the whole architecture rests on, said in the UI.
+
+    A reader must not be able to come away thinking the model wrote the answer.
+    """
+    html = page_answer(build_view(_planned_answer(graph), graph))
+    assert "chose <em>where to look</em>" in html
+    assert "did not write the answer" in html
+    assert "checked against the graph before" in html
+
+
+def test_banner_shows_the_plan_the_model_proposed(graph):
+    """Naming the chain is what makes the claim checkable rather than a badge."""
+    html = page_answer(build_view(_planned_answer(graph), graph))
+    assert "Gravemaw Wyrm" in html
+    assert "lair_in" in html and "ruled_by" in html
+
+
+def test_banner_precedes_the_answer_value(graph):
+    """Provenance before the value, so a reader who takes only the answer
+    has already been told a model chose the route to it."""
+    html = page_answer(build_view(_planned_answer(graph), graph))
+    assert html.index("ROUTED BY A LANGUAGE MODEL") < html.index("The Bleeding Crown")
+
+
+def test_the_engine_note_is_not_printed_twice(graph):
+    """It moved into the banner; leaving it below would repeat the sentence."""
+    html = page_answer(build_view(_planned_answer(graph), graph))
+    assert html.count("A model proposed the chain") == 1
+    assert "Fallback reason" not in html
+
+
+def test_a_fallback_answer_still_shows_its_reason_below(graph):
+    """Removing the duplicate must not remove the non-planner case.
+
+    The cue-fallback tier writes its own note and has no banner, so that note
+    is the only place its reason appears.
+    """
+    v = build_view(
+        answer_question(
+            "Which house rules the stronghold where the relic borne by "
+            "Cerys Sablewood the Ashen is kept?",
+            graph,
+        ),
+        graph,
+    )
+    assert v["routed_by_model"] is False
+    assert v["note"]
+    assert "Fallback reason" in page_answer(v)
+
+
+def test_banner_escapes_a_hostile_model_note(graph):
+    """The note is model-influenced text reaching the page - escape it."""
+    answer = _planned_answer(graph)
+    hostile = Answer(**{**answer.__dict__, "note": "<script>alert(1)</script>"})
+    html = page_answer(build_view(hostile, graph))
+    assert "<script>alert(1)</script>" not in html
+    assert escape("<script>alert(1)</script>") in html
+
+
+# --------------------------------------------------------------------------
+# Status colouring (F-032)
+#
+# `_status_class` was a three-entry lookup defaulting to "bad", which painted
+# five *answerable* statuses in the same red as a failure - including
+# `fallback_sufficient`, which is how the cue tier returns its 17 correct
+# answers on the frozen set.
+# --------------------------------------------------------------------------
+
+
+def test_no_answerable_status_is_coloured_as_a_failure():
+    """The defect, stated as the invariant that would have caught it."""
+    mis = [
+        s.value
+        for s in EvidenceStatus
+        if s.is_answerable and render._status_class(s.value, True) == "bad"
+    ]
+    assert mis == [], f"answerable but painted as failure: {mis}"
+
+
+def test_only_an_unqualified_answer_is_green():
+    """A cue-routed or model-routed answer is real but carries a caveat.
+
+    Greening it would let a 40%-precision tier borrow the colour of a 91% one,
+    which is the same argument that keeps their statuses distinct.
+    """
+    assert render._status_class("sufficient", True) == "ok"
+    for qualified in (
+        "fallback_sufficient",
+        "fallback_ambiguous",
+        "planned_sufficient",
+        "planned_ambiguous",
+        "profile",
+    ):
+        assert render._status_class(qualified, True) == "warn", qualified
+
+
+def test_a_chosen_decline_is_not_coloured_as_a_failure():
+    """ADR-026: a decline is a result. Abstaining on purpose is not failing."""
+    assert render._status_class("abstention", False) == "warn"
+
+
+def test_routing_failures_stay_red():
+    """The change must not have quietly turned every decline amber."""
+    for miss in ("no_template_match", "unresolved_entity", "no_path"):
+        assert render._status_class(miss, False) == "bad", miss
+
+
+def test_colouring_cannot_go_stale_when_a_status_is_added():
+    """A rule over `answerable`, not a table that must be remembered.
+
+    The old table had to be edited whenever the enum grew, and nothing failed
+    if it was not - which is precisely how five statuses ended up red.
+    """
+    assert render._status_class("some_future_answerable_status", True) == "warn"
+    assert render._status_class("some_future_decline", False) == "bad"

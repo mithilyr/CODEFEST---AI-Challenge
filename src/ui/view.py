@@ -367,6 +367,12 @@ def build_view(answer: Answer, graph: Graph, corroboration=None) -> dict:
         "answerable": answer.status.is_answerable,
         "values": list(answer.values),
         "template": answer.template,
+        # Presentation needs to know a model chose this route, and the tier
+        # identity is the engine's word for it - `llm_plan` is set only by
+        # `engine._planned_answer`. Derived here rather than in render.py so the
+        # renderer keeps branching on view data instead of knowing tier names,
+        # and so the string lives in one place if a fourth tier is ever added.
+        "routed_by_model": answer.template == "llm_plan",
         "chain": list(answer.chain),
         "start_key": answer.start_key,
         "start_name": None if answer.start_key is None else _display(graph, answer.start_key),
