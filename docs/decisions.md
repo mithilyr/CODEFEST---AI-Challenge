@@ -3912,7 +3912,7 @@ path.
 
 **Decision, and the constraint it crosses**
 
-`graphview.py` renders 117 entities with no script and no CDN, and that has been
+`graphview.py` renders every graph entity with no script and no CDN, and that has been
 a stated property. This adds **one inline `<script>`, about fifteen lines**, and
 the distinction that makes it acceptable is narrow but real:
 
@@ -4172,7 +4172,7 @@ Two things, reported and then found:
 
 2. **`/graph` was unreachable by link from anywhere.** Checked across the whole
    renderer: `href="/graph"` appeared zero times. A built and tested demo
-   surface - all 117 entities as one static SVG, no CDN, no script (ADR-020) -
+   surface - all 118 entities as one static SVG, no CDN, no script (ADR-020) -
    could be reached only by typing the URL. A judge would never see it.
 
 The second was not reported; it was found looking for the first, and it is the

@@ -1313,7 +1313,7 @@ def _catalogue_block(catalogue: dict | None) -> str:
 CORPUS_DOCUMENTS = 317
 
 #: Where a reader can go from any page. `/graph` was previously reachable only
-#: by typing the URL - a built, tested demo surface (117 entities as one static
+#: by typing the URL - a built, tested demo surface (every graph entity as one static
 #: SVG) that a judge had no way to discover. `#entities` is an anchor on the
 #: front page, so from an answer page the link navigates home and jumps to it.
 _NAV = (
