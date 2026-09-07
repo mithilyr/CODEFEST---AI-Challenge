@@ -89,6 +89,16 @@ button[disabled] { opacity: .65; cursor: progress; }
 
 /* Hidden until the form is submitted, so a page that never waits never shows
    it. With scripting off the class is never added and this stays invisible. */
+/* The clicked link, while its page loads. Marking the one that was clicked
+   matters more here than in the form: seven dev questions look alike, and a
+   spinner on the button alone does not say which one is being answered. */
+.pending { position: relative; opacity: .55; }
+.pending::after { content: ""; display: inline-block; width: .7rem;
+                  height: .7rem; margin-left: .45rem; vertical-align: -1px;
+                  border-radius: 50%; border: 2px solid #b9c2d1;
+                  border-top-color: #46608a;
+                  animation: spin .7s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .pending::after { animation: none; } }
 .busymsg { display: none; flex-basis: 100%; margin: .1rem 0 0;
            align-items: center; gap: .5rem; font-size: .88rem; color: #46608a; }
 form.busy .busymsg { display: flex; }
@@ -344,16 +354,37 @@ _BUSY_SCRIPT = """
   var form = document.getElementById("askform");
   if (!form) return;
   var button = form.querySelector("button");
+
+  function busy() {
+    form.classList.add("busy");
+    button.textContent = "Searching\u2026";
+    setTimeout(function () { button.disabled = true; }, 0);
+  }
   function reset() {
     form.classList.remove("busy");
     button.disabled = false;
     button.textContent = "Ask";
+    var pending = document.querySelector(".pending");
+    if (pending) pending.classList.remove("pending");
   }
-  form.addEventListener("submit", function () {
-    form.classList.add("busy");
-    button.textContent = "Searching\u2026";
-    setTimeout(function () { button.disabled = true; }, 0);
+
+  form.addEventListener("submit", busy);
+
+  // Every dev-question shortcut, every "Who is X?" entity link and every
+  // spelling suggestion is a plain <a> to /ask - the same request the form
+  // makes, and until now the only one of the three that showed it was running.
+  document.addEventListener("click", function (event) {
+    if (!event.target || !event.target.closest) return;
+    var link = event.target.closest('a[href^="/ask?q="]');
+    if (!link) return;
+    // A modified click opens a new tab and leaves this page where it is, so
+    // showing a busy state here would be a lie that never clears.
+    if (event.button !== 0 || event.metaKey || event.ctrlKey ||
+        event.shiftKey || event.altKey) return;
+    link.classList.add("pending");
+    busy();
   });
+
   window.addEventListener("pageshow", reset);
 })();
 </script>

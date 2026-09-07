@@ -11,14 +11,44 @@ report's team section.
 |---|---|---|
 | **Mithil** | Implementation lead; author of record on the git history | All 117 commits (`mithilyr <mithilrajapakse11@gmail.com>`); the repository at `github.com/mithilyr/CODEFEST---AI-Challenge` |
 | **Yasiru** | Parallel prototype; source of the adopted cue-router design | `github.com/YasiruRF/delphi` — its cue-based router was measured against ours and partially adopted (ADR-019, `comparison/cue_router.py`, `comparison/REPORT.md`) |
-| **Tatiana** | *[ROLE — to be completed by the team]* | *[TO BE COMPLETED]* |
-| **Kenolee** | *[ROLE — to be completed by the team]* | *[TO BE COMPLETED]* |
+| **Tatiana** | Question authoring; code review | The independently authored question sets (below); review passes on the implementation |
+| **Kenolee** | Question authoring; code review | The independently authored question sets (below); review passes on the implementation |
 
-> **The two placeholders above are deliberate and must be filled in before
-> submission.** They are not an oversight: nothing in this repository records
-> what Tatiana or Kenolee contributed, and inventing entries would be
-> misrepresentation of exactly the kind §4's integrity rule forbids. Each person
-> should write their own line. See *How to complete this file* below.
+### Why question authoring is a first-class contribution here
+
+It is the reason one of this submission's headline numbers means anything.
+
+`eval/robustness/routing_robustness_v1.json` holds 55 questions, authored
+2026-08-31 and frozen the same day with its sha256 recorded in the file, **before
+either router was run against it**. The file records its own independence
+conditions:
+
+> The author had no access to `src/query/route.py`, `engine.py`, `resolve.py`,
+> `config/relations.yaml`, or either router implementation. […] `relations.yaml`
+> was withheld specifically because it is the cue-based router's vocabulary
+> source; an author who read it would have biased the comparison toward that
+> router.
+
+That withholding is the whole design. A question set written by someone who has
+read the router's vocabulary tests the vocabulary, not the router. Because these
+questions were written blind, **36 of 49 no route shape** — and **1 of 21 on the
+novel questions** — is a measurement of routing capability rather than of fit,
+and the team can say so without qualification. A judge can verify the freeze
+date and hash independently of anything we assert.
+
+The set is in three groups: 28 paraphrases of the dev questions across four axes
+(synonym, reordering, indirect, colloquial), 21 novel multi-hop questions traced
+by hand against the wiki, and 6 that the system *should* refuse.
+
+*[TEAM — optional, and only if it is true: if the two of you split the work in a
+way worth recording (for example one wrote the paraphrase axes and the other the
+novel and unanswerable groups), say so here. If you wrote them jointly, leave
+this as it stands. Do not split it for the sake of appearances.]*
+
+*[TEAM — code review: point at something checkable if you can. A defect you
+caught, a file you read end to end, an ADR you disagreed with. "Reviewed the
+code" is true but unverifiable, and §4.1 lets a judge ask any member to explain
+any part on demand.]*
 
 ---
 
@@ -54,8 +84,9 @@ here because it is real, and because the report needs it.
 
 | Contribution | Why it does not appear in the log | Who |
 |---|---|---|
-| The frozen 55-question robustness set (`eval/robustness/routing_robustness_v1.json`) | Authored by someone with **no access** to either router, to `src/query/`, or to `config/relations.yaml` — that isolation is the whole reason the number means anything (ADR-019). Committed by the implementer, authored by someone else | *[TO BE COMPLETED]* |
-| Answer-key review (`eval/answer_key.json`) | Review is a judgement recorded in a JSON field, not a code change. Currently **7 `single_review`, 2 `draft`, 0 confirmed**, all by one reviewer — the F-015 failure mode, and why every eval number is still marked PROVISIONAL | *[TO BE COMPLETED]* |
+| The frozen 55-question robustness set (`eval/robustness/routing_robustness_v1.json`) | Authored by someone with **no access** to either router, to `src/query/`, or to `config/relations.yaml` — that isolation is the whole reason the number means anything (ADR-019). Committed by the implementer, authored by someone else | Tatiana, Kenolee |
+| Code review of the implementation | Review leaves no commit unless it produces one; the reviewer's name is not in the log even when the fix is | Tatiana, Kenolee |
+| Answer-key review (`eval/answer_key.json`) | Review is a judgement recorded in a JSON field, not a code change. Currently **7 `single_review`, 2 `draft`, 0 confirmed**, all by one reviewer — the F-015 failure mode, and why every eval number is still marked PROVISIONAL | *[TO BE COMPLETED — who was the single reviewer?]* |
 | Corpus analysis that produced the ADR-009..013 findings | Measurement runs, not commits | *[TO BE COMPLETED]* |
 | Sister-prototype comparison (ADR-019) | A second repository, `github.com/YasiruRF/delphi` | Yasiru |
 
