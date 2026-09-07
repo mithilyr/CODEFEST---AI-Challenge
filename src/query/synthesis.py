@@ -44,8 +44,10 @@ from src.query.evidence import EvidenceStatus
 
 _INSTRUCTIONS = (
     "You are phrasing an answer that has ALREADY been verified. Write one or "
-    "two plain sentences that state the answer and cite the source document "
-    "for each hop inline.\n"
+    "two plain sentences that state the answer.\n"
+    "Do NOT cite sources, file names or field names. Every hop's document is "
+    "displayed beneath your sentence with its exact row, so repeating it makes "
+    "the sentence unreadable without making it more checkable.\n"
     "Rules you must not break:\n"
     "- Do not add any fact that is not in the chain below.\n"
     "- Do not infer a connection between two facts unless the chain states it.\n"
@@ -221,10 +223,9 @@ def _profile_sentence(answer: Answer, graph: Graph) -> str:
     described = ". ".join(
         f"{subject} {_join(clauses)}" for subject, clauses in by_subject.items()
     )
-    documents = ", ".join(answer.documents)
     return (
         f"{described}. That is the entity's whole recorded profile, not an "
-        f"answer to a narrower question. Sources: {documents}."
+        "answer to a narrower question."
     )
 
 
@@ -241,10 +242,20 @@ def template_sentence(answer: Answer, graph: Graph) -> str:
     has to be decoded works against that.
 
     So each hop is now worded, in the direction the chain actually walked it,
-    and routes sharing a prefix are stated once. What did NOT change is the
-    property the old version was protecting: the sentence still ends in the
-    documents it came from, because a sentence without its sources is not
-    checkable, and it still says nothing the chain does not contain.
+    and routes sharing a prefix are stated once.
+
+    The sentence carries **no citation tail**. An earlier version ended in
+    `Sources: wiki/a.md, wiki/b.md.` on the reasoning that a sentence without
+    its sources is not checkable - true of a sentence read alone, and not true
+    here: every hop's document, field and row is rendered directly beneath it,
+    and the source-documents table lists them again with their tiers. Repeating
+    them inside the sentence made it unreadable without making it more
+    checkable (ADR-042). What is unchanged is the part that mattered - the
+    sentence still says nothing the chain does not contain.
+
+    A conflict sentence is the one exception, and it is not a citation: naming
+    *which* record asserts a disputed claim and which declines to is the
+    content of the disagreement, not a footnote for it.
 
     This path needs no API key. It is what a keyless clone runs, what the test
     suite measures, and what the demo falls back to on a cold network -
@@ -317,8 +328,7 @@ def template_sentence(answer: Answer, graph: Graph) -> str:
                 dispute += f", and {report.denial.document} declines to"
         dispute += "."
 
-    documents = ", ".join(answer.documents)
-    return f"{lead}. {explanation}.{dispute} Sources: {documents}."
+    return f"{lead}. {explanation}.{dispute}"
 
 
 def _prompt(answer: Answer, graph: Graph) -> str:

@@ -4078,3 +4078,81 @@ answers.
 *Status: accepted, validated by 5 tests, a live model run naming 14/14, and a
 deterministic check of the guard itself.*
 
+
+---
+
+## ADR-042 - The answer sentence carries no citations, and the earlier judgement is reversed
+
+**Problem**
+
+The answer box ended in a citation tail. The deterministic sentence closed with
+`Sources: wiki/gravemaw_wyrm.md, wiki/marrowwell_abbey.md.`; the model, told to
+"cite the source document for each hop inline", produced worse - `1b_006`'s
+answer interleaved fourteen names with fourteen parenthetical
+`(source: wiki/..., field 'Members')` clauses, so a fourteen-name list ran to
+half a screen and the names were the hardest part of it to find.
+
+**This ADR reverses a decision, and the reversal is the point**
+
+ADR-037 kept that tail deliberately, and
+`test_the_sentence_still_ends_in_its_sources` defended it with: *"a sentence
+without its sources is not checkable, and the evidence panel below is not a
+substitute inside a quotable sentence."*
+
+That reasoning was sound about a sentence read **alone** and wrong about this
+one. On this page the sentence and its evidence are three centimetres apart:
+every hop is rendered beneath it with document, field name and row index, the
+attestation block adds the other collections that name both ends, and the
+source-documents table lists every document again with its authority tier. The
+citation is not lost - it is stated three times, in the places built to state
+it. Repeating it a fourth time inside the sentence made the sentence unreadable
+without making the answer more checkable.
+
+**Decision**
+
+- `template_sentence` and `_profile_sentence` end at the last clause.
+- The model is told plainly **not** to cite: file names and field names are
+  displayed beneath its sentence, so repeating them costs readability and buys
+  nothing.
+- `_mark_citations` stays. A model told not to cite may still cite, and when it
+  does the styling keeps it small and italic and out of the way.
+
+**One exception, and it is not a citation**
+
+A conflict sentence still names documents: *"The disagreement is over whether
+The Iron-Ring Cartel is named victor of The Purge of Blackport:
+wiki/the_purge_of_blackport.md asserts it, and wiki/the_iron_ring_cartel.md
+declines to."* Naming **which record** asserts a disputed claim and which
+declines is the content of the disagreement, not a footnote for it - strip
+those and the sentence degrades to "the sources disagree", which is the vaguer
+thing `1b_009` exists to avoid saying.
+
+**Measured result**
+
+```
+before  The Bleeding Crown. Gravemaw Wyrm has its lair in Marrowwell Abbey,
+        which is ruled by The Bleeding Crown. Sources: wiki/gravemaw_wyrm.md,
+        wiki/marrowwell_abbey.md.
+
+after   The Bleeding Crown. Gravemaw Wyrm has its lair in Marrowwell Abbey,
+        which is ruled by The Bleeding Crown.
+
+model, 1b_006, after: fourteen names in one clean list, no parentheticals.
+
+459 tests, unchanged. Three were rewritten rather than deleted, each stating
+which earlier judgement it now records and why.
+```
+
+**An observation from the live run, recorded because it will recur**
+
+The model's fourteen-name list contained a stray bare "Ravensmoor" between
+"Ossric Ravensmoor" and "Ossric Wrenfield" - a stutter, not an entity. It
+renders **unbolded**, because `_bold_values` emboldens only strings the engine
+returned. That was not designed as an integrity check and it works as one: on
+this page, bold is a name the graph produced and plain text is the model's own
+words. No fix was made for the stutter itself; building one against a single
+rotation head's noise would be worse than the noise.
+
+*Status: accepted. Reverses ADR-037's citation-tail decision on the grounds
+that the page, not the sentence, is the unit of checkability.*
+

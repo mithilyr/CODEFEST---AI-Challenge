@@ -80,11 +80,19 @@ def test_an_empty_model_response_degrades_to_the_template(answer, graph):
     assert "The Leaden Accord" in result.text
 
 
-def test_the_template_names_the_answer_the_route_and_the_sources(answer, graph):
+def test_the_template_names_the_answer_and_the_route_but_not_its_sources(answer, graph):
+    """The citation tail is gone (ADR-042).
+
+    It read `Sources: wiki/a.md, wiki/b.md.` and was defended as "a sentence
+    without its sources is not checkable" - true of a sentence read alone, and
+    not true of this one: the hop blocks beneath it carry every document, field
+    and row, and the source-documents table lists them again with tiers.
+    """
     text = template_sentence(answer, graph)
     assert "The Leaden Accord" in text
     assert "Ederon Fellgard" in text
-    assert "wiki/" in text, "a sentence without its sources is not checkable"
+    assert "Sources:" not in text
+    assert "wiki/" not in text
 
 
 # --------------------------------------------------------------------------
@@ -228,13 +236,16 @@ def test_a_conflict_sentence_names_the_disputed_hop_and_picks_no_side(graph):
         assert verdict not in text.lower()
 
 
-def test_the_sentence_still_ends_in_its_sources(answer, graph):
-    """The property the old template was protecting, kept. A sentence without
-    its sources is not checkable, and the evidence panel below is not a
-    substitute inside a quotable sentence."""
+def test_the_sentence_ends_cleanly_and_carries_no_citation_tail(answer, graph):
+    """ADR-042 reversed the earlier judgement here, deliberately.
+
+    The old rule was that the evidence panel is not a substitute inside a
+    quotable sentence. It is a substitute on a page where the sentence and the
+    panel are three centimetres apart, and the tail was the single ugliest
+    thing in the answer box."""
     text = template_sentence(answer, graph)
     assert text.rstrip().endswith(".")
-    assert "Sources: wiki/" in text
+    assert "Sources:" not in text
 
 
 def test_a_profile_is_worded_as_a_record_not_as_candidate_answers(graph):
@@ -252,4 +263,4 @@ def test_a_profile_is_worded_as_a_record_not_as_candidate_answers(graph):
     # Facts about one subject are one statement, not the subject repeated.
     assert text.count("Ravena Stormwell") == 1
     assert "whole recorded profile" in text
-    assert "Sources: wiki/ravena_stormwell.md" in text
+    assert "Sources:" not in text

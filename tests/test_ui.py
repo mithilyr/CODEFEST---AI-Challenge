@@ -847,9 +847,25 @@ def test_nothing_the_engine_did_not_return_is_emboldened(graph):
 
 
 def test_citations_are_marked_so_they_can_be_set_small_and_italic(graph):
-    html = page_answer(_synth(graph, Q_013))
-    assert 'class="cite"' in html
+    """The marker survives ADR-042 and still matters.
+
+    The template sentence no longer carries a citation tail, so `1b_013` has
+    nothing to mark. Two things still do: `1b_009`, whose dispute clause names
+    the records that assert and deny (content, not a footnote), and any model
+    that cites despite being told not to - which is exactly when the styling
+    needs to keep it out of the way.
+    """
+    from src.query.synthesis import Synthesis
+
+    html = page_answer(_synth(graph, Q_009))
+    assert 'class="cite"' in html, "the dispute clause names two documents"
     assert ".cite { font-size: .78em; font-style: italic;" in html
+
+    answer = answer_question(Q_013, graph, use_planner=False)
+    cited = Synthesis(
+        "The Bleeding Crown (source: wiki/marrowwell_abbey.md).", "model", "m"
+    )
+    assert 'class="cite"' in page_answer(build_view(answer, graph, None, cited))
 
 
 def test_the_phrasing_provenance_is_behind_a_disclosure(graph):
