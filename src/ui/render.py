@@ -366,6 +366,13 @@ _BUSY_SCRIPT = """
     button.textContent = "Ask";
     var pending = document.querySelector(".pending");
     if (pending) pending.classList.remove("pending");
+    var reloadForm = document.getElementById("reloadform");
+    if (reloadForm) {
+      reloadForm.classList.remove("busy");
+      var rb = reloadForm.querySelector("button");
+      rb.disabled = false;
+      rb.textContent = "Reindex corpus";
+    }
   }
 
   form.addEventListener("submit", busy);
@@ -383,6 +390,33 @@ _BUSY_SCRIPT = """
         event.shiftKey || event.altKey) return;
     link.classList.add("pending");
     busy();
+  });
+
+  // Reindex is a POST that rebuilds the whole corpus (~6s) and gives no
+  // feedback at all, so a judge who sees nothing happen clicks it again.
+  // Unlike a second question, a second reindex is NOT harmless: the server
+  // serialises them on a lock, so the second click queues a full second
+  // rebuild behind the first and doubles the wait it was meant to cut short.
+  // The guard is therefore explicit - preventDefault on any submit once the
+  // form is already busy - and not merely the disabled button, which does not
+  // stop a form submitted by the Enter key.
+  //
+  // DELEGATED, not bound to the element. This script is emitted inside the ask
+  // form, roughly 10KB before the reindex form appears in the document, so a
+  // getElementById here runs against a DOM that does not contain it yet and
+  // silently attaches nothing - which is exactly how the first version of this
+  // shipped looking correct and doing nothing.
+  document.addEventListener("submit", function (event) {
+    var reload = event.target;
+    if (!reload || reload.id !== "reloadform") return;
+    if (reload.classList.contains("busy")) {
+      event.preventDefault();
+      return;
+    }
+    reload.classList.add("busy");
+    var reloadButton = reload.querySelector("button");
+    reloadButton.textContent = "Reindexing\u2026";
+    setTimeout(function () { reloadButton.disabled = true; }, 0);
   });
 
   window.addEventListener("pageshow", reset);
@@ -871,7 +905,8 @@ def _routes_block(view: dict) -> str:
         hops = "".join(_hop_html(h) for h in route["hops"])
         blocks.append(
             f'<div class="route"><p class="rhead">Route {route["index"]} of '
-            f'{len(view["routes"])} &mdash; {len(route["hops"])} hops</p>'
+            f'{len(view["routes"])} &mdash; {len(route["hops"])} '
+            f'{"hop" if len(route["hops"]) == 1 else "hops"}</p>'
             f"{_chain_line(route)}{hops}</div>"
         )
 
@@ -1416,8 +1451,11 @@ def _reload_block() -> str:
     """
     return (
         "<section><h2>Corpus</h2>"
-        '<form action="/reload" method="post" style="margin:0">'
+        '<form id="reloadform" action="/reload" method="post" style="margin:0">'
         '<button type="submit">Reindex corpus</button>'
+        '<p class="busymsg"><span class="spinner"></span>'
+        "Reindexing the corpus&hellip; about six seconds. "
+        "The page will report what changed.</p>"
         "</form>"
         "<p class='gloss'>The graph is read from disk at startup and held. Add or "
         "change a document in the corpus and reindex to pick it up - about six "

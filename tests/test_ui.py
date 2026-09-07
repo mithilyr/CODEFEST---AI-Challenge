@@ -1289,3 +1289,62 @@ def test_every_question_link_on_the_page_matches_the_handler(graph):
     )
     # The seven dev questions plus one per entity.
     assert len(links) == len(render.DEMO_QUESTIONS) + len(graph.nodes)
+
+
+def test_the_reindex_button_shows_that_it_is_working(graph):
+    """~6s rebuild with no feedback at all is how a judge clicks it twice."""
+    html = page_index()
+    assert '<form id="reloadform"' in html
+    assert "Reindexing the corpus" in html
+    assert 'reloadButton.textContent = "Reindexing' in html
+
+
+def test_a_second_reindex_is_blocked_rather_than_queued(graph):
+    """Unlike a second question, a second reindex is not harmless: the server
+    serialises reloads on a lock, so a second click queues a full second
+    rebuild behind the first and doubles the wait it was meant to cut short.
+
+    The guard is preventDefault, not just the disabled button - a form can be
+    submitted with the Enter key while its button is disabled.
+    """
+    html = page_index()
+    assert 'if (reload.classList.contains("busy")) {' in html
+    assert "event.preventDefault();" in html
+
+
+def test_the_reindex_handler_does_not_depend_on_element_order(graph):
+    """The first version used getElementById and attached nothing.
+
+    The script is emitted inside the ask form, ~10KB before the reindex form
+    appears in the document, so it ran against a DOM that did not contain the
+    element yet - looking correct in review and doing nothing in the browser.
+    Delegation is the fix; this pins both halves of the reason.
+    """
+    html = page_index()
+    assert html.index("<script") < html.index('id="reloadform"'), (
+        "the script still runs before the form exists - delegation is required"
+    )
+    assert 'document.addEventListener("submit"' in html
+    # Not "getElementById is banned" - `reset()` uses it correctly, because it
+    # runs on `pageshow`, long after the document is built. What must not exist
+    # is a listener *bound to the element* at load time.
+    assert 'reload.addEventListener("submit"' not in html, (
+        "the submit handler must be delegated, not bound to an element that "
+        "does not exist yet when this script runs"
+    )
+
+
+def test_back_navigation_clears_the_reindex_button_too(graph):
+    html = page_index()
+    assert 'rb.textContent = "Reindex corpus"' in html
+
+
+def test_a_one_hop_route_says_hop_not_hops(graph):
+    """"Route 1 of 2 - 1 hops" was on every profile answer."""
+    view = _synth(graph, "Who is Halvard Crowhurst?")
+    assert view["status"] == "profile"
+    assert any(len(route["hops"]) == 1 for route in view["routes"])
+
+    html = page_answer(view)
+    assert "&mdash; 1 hop</p>" in html
+    assert "1 hops" not in html

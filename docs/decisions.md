@@ -4373,3 +4373,71 @@ rather than folded in here on the assumption that they are the same problem.
 *Status: accepted. Corrects ADR-040's scoping, which was decided on a latency
 claim that does not hold for these links.*
 
+
+---
+
+## ADR-046 - Reindex shows that it is working, and refuses to be asked twice
+
+**Problem**
+
+ADR-045 extended the busy state to every link that asks a question and left
+Reindex out on purpose, saying it "needs its own guard rather than being folded
+in on the assumption they are the same problem". They are not the same problem:
+
+- Reindex rebuilds the whole corpus. Measured in `reload_corpus`: **6.3s**
+  (ingest 5.0s, graph 0.2s, corroboration 1.2s).
+- It gives no feedback at all, so the natural response to a page that appears
+  not to have reacted is to click again.
+- **A second reindex is not harmless.** `Engine._lock` serialises reloads, so a
+  second click does not merge with the first - it queues a *complete second
+  rebuild* behind it and doubles the wait the user was already unhappy about.
+
+**Decision**
+
+The form shows a spinner and "Reindexing the corpus... about six seconds. The
+page will report what changed." while it runs, and a second submit is blocked
+with `preventDefault` rather than by the disabled button alone - a form can be
+submitted with the Enter key while its button is disabled, and that is precisely
+the user who has already decided nothing is happening.
+
+`reset()` clears the reindex button on `pageshow` for the same back-button
+reason ADR-040 documented for Ask.
+
+**The bug this shipped with first, and why it matters more than the feature**
+
+The first version wired the handler with
+`document.getElementById("reloadform")` at load time. It attached **nothing**.
+The script is emitted inside the ask form, and in the rendered page the
+`<script>` starts at byte 12,488 while `id="reloadform"` appears at byte 22,147
+- roughly 10KB later. `getElementById` returned null, the `if (reload)` guard
+swallowed it silently, and the code read as correct in review while doing
+nothing in the browser.
+
+It was caught only by driving the actual page: clicking the button and asking
+the DOM what state it was in. The unit tests were green, because every one of
+them asserted on *the text of the script* rather than on its effect.
+
+The handler is now delegated on `document`, matching the click delegation
+ADR-045 already added, so it cannot depend on document order. See F-036.
+
+**Also fixed: "Route 1 of 2 - 1 hops"**
+
+Every profile answer said "1 hops". Pluralised.
+
+**Measured result**
+
+```
+5 new tests, 479 total (was 474).
+
+  the reindex form carries a busy message and a spinner
+  a second submit is preventDefault-ed, not merely disabled
+  pageshow clears the reindex button too
+  the script is emitted BEFORE #reloadform, and the handler is delegated
+  a one-hop route says "1 hop"
+
+Live in the browser: click -> busy true, label "Reindexing...", message
+displayed; a second submit event comes back defaultPrevented true.
+```
+
+*Status: accepted. Completes ADR-045's deferred scope.*
+

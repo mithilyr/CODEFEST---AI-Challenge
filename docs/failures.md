@@ -1715,3 +1715,53 @@ branch. This is a defect in a code path the frozen set does not reach at all.
 Each was invisible to a green suite, and each was found by looking at what the
 product actually does with real input.
 
+
+---
+
+## F-036 - A listener bound to an element that did not exist yet, and five green tests that could not tell
+
+**Approach.** Reindex needed a busy state (ADR-046). The obvious wiring, matching
+what already worked for the ask form:
+
+    var reload = document.getElementById("reloadform");
+    if (reload) {
+      reload.addEventListener("submit", ...);
+    }
+
+**Result.** It attached nothing. `_BUSY_SCRIPT` is emitted inside
+`_search_form`, and `_reload_block` renders much later in the body - measured in
+the served page, the `<script>` begins at byte **12,488** and `id="reloadform"`
+appears at byte **22,147**. The script runs the moment the parser reaches it, so
+`getElementById` looked for an element roughly 10KB of HTML before the parser
+had created it, returned null, and `if (reload)` swallowed the miss without a
+console error.
+
+The identical pattern works two lines above for `askform` only because that
+element is emitted *before* the script, which is invisible when reading the two
+side by side.
+
+**Why the tests did not catch it.** Four tests covered the feature and passed:
+the form has an id, the message text is present, the guard calls
+`preventDefault`, `reset` restores the label. Every one asserts on **the text of
+the script**, which was perfectly correct. None asserted on its **effect**,
+which was nothing. A string-matching test on emitted JavaScript proves the
+characters were written, never that the browser did anything with them.
+
+It was found by driving the real page - clicking the button and asking the DOM
+for `classList.contains("busy")`, which came back `false`.
+
+**What changed.** The handler is delegated on `document`, like ADR-045's click
+handler, so document order cannot matter.
+`test_the_reindex_handler_does_not_depend_on_element_order` asserts *both* halves
+of the reason: that the script is still emitted before the form, and that no
+listener is bound to the element by id at load time. Pinning only the second
+would leave the test looking arbitrary once someone forgets why.
+
+**The general lesson, and it is the third of this shape.** F-028 was a status
+fully tested and unreachable in production. F-034 was a completeness check whose
+test exercised a different branch from the demo. This is a script whose tests
+read its source instead of running it. Each time the suite was green about
+something no user could use. **A test that inspects an artefact is not a test
+that the artefact works** - and for anything that only executes in a browser,
+the only honest check is to open one.
+
