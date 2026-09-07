@@ -331,11 +331,21 @@ def _answer_block(view: dict) -> str:
         body = f'<p class="answer">{_e(values[0])}</p>'
     else:
         items = "".join(f"<li>{_e(v)}</li>" for v in values)
-        body = (
-            f'<ul class="values">{items}</ul>'
-            f'<p class="gloss">{len(values)} values. The engine returned a set; '
-            "they are listed as it ordered them.</p>"
+        # A profile's endpoints are not candidate answers - "Who is X?" names
+        # no relation, so these are the things X's record links to, and calling
+        # them "values the engine returned" invites a reader to pick one. The
+        # caption is keyed on the status the engine chose, like STATUS_GLOSS;
+        # it decides nothing.
+        caption = (
+            f"{len(values)} entities this record links to. The question named no "
+            "relation, so this is the entity's whole profile rather than an "
+            "answer to a narrower one."
+            if view["status"] == "profile"
+            else f"{len(values)} values. The engine returned a set; "
+            "they are listed as it ordered them."
         )
+        body = f'<ul class="values">{items}</ul><p class="gloss">{caption}</p>'
+
     # Order matters. The model-route banner is first because a reader who
     # takes only the answer should already have been told a model chose the
     # route to it. The phrased sentence follows, then the bare value it states

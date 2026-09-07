@@ -770,3 +770,14 @@ def test_prose_is_escaped(graph):
     )
     assert "<script>alert" not in html
     assert "&lt;script&gt;" in html
+
+
+def test_a_profile_answer_does_not_call_its_endpoints_values(graph):
+    """The bullets under a profile are the entities its record links to. Calling
+    them "values the engine returned" invites a reader to pick one as the
+    answer, and a profile has no such answer to pick."""
+    view = build_view(answer_question("Who is Ravena Stormwell?", graph), graph)
+    assert view["status"] == "profile"
+    html = page_answer(view)
+    assert "entities this record links to" in html
+    assert "The engine returned a set" not in html

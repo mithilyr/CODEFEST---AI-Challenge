@@ -235,3 +235,21 @@ def test_the_sentence_still_ends_in_its_sources(answer, graph):
     text = template_sentence(answer, graph)
     assert text.rstrip().endswith(".")
     assert "Sources: wiki/" in text
+
+
+def test_a_profile_is_worded_as_a_record_not_as_candidate_answers(graph):
+    """"Who is X?" names no relation, so the endpoints are X's record - not a
+    set of answers to choose between. The generic lead called them
+    "2 answers: The Silent Choir and Vharenford", which invites a reader to
+    pick one; neither is an answer to anything."""
+    answer = answer_question("Who is Ravena Stormwell?", graph, use_planner=False)
+    assert answer.status == EvidenceStatus.PROFILE
+
+    text = template_sentence(answer, graph)
+    assert text.startswith("Ravena Stormwell is a member of The Silent Choir")
+    assert "serves at Vharenford" in text
+    assert "answers:" not in text
+    # Facts about one subject are one statement, not the subject repeated.
+    assert text.count("Ravena Stormwell") == 1
+    assert "whole recorded profile" in text
+    assert "Sources: wiki/ravena_stormwell.md" in text

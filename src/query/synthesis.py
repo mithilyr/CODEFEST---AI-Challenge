@@ -190,6 +190,42 @@ def _explain(steps: list[tuple[str, str, str]], endpoints: list[str]) -> str:
     return ", ".join(parts)
 
 
+def _profile_sentence(answer: Answer, graph: Graph) -> str:
+    """`EvidenceStatus.PROFILE`: an entity's record, not an answer to a question.
+
+    "Who is Ravena Stormwell?" names no relation, so `fallback.profile_of`
+    returns every fact the graph holds about her. Those endpoints are not
+    candidate answers and must not be worded as if they were - the generic lead
+    called them "2 answers: The Silent Choir and Vharenford", which invites a
+    reader to pick one, and neither is an answer to anything. Her record is the
+    answer.
+
+    Facts about one subject are joined into a single statement rather than
+    repeated as "X is ...; X serves ...", because a profile is a description of
+    one thing and reads like one.
+    """
+    by_subject: dict[str, list[str]] = {}
+    for path in answer.paths:
+        steps = _steps(path, graph)
+        if not steps:
+            continue
+        subject = steps[0][0]
+        clauses = by_subject.setdefault(subject, [])
+        for index, (_, phrase, obj) in enumerate(steps):
+            clause = f"{phrase} {obj}" if index == 0 else f"which {phrase} {obj}"
+            if clause not in clauses:
+                clauses.append(clause)
+
+    described = ". ".join(
+        f"{subject} {_join(clauses)}" for subject, clauses in by_subject.items()
+    )
+    documents = ", ".join(answer.documents)
+    return (
+        f"{described}. That is the entity's whole recorded profile, not an "
+        f"answer to a narrower question. Sources: {documents}."
+    )
+
+
 def template_sentence(answer: Answer, graph: Graph) -> str:
     """A deterministic statement built from the verified chain.
 
@@ -215,6 +251,9 @@ def template_sentence(answer: Answer, graph: Graph) -> str:
     """
     if not answer.paths:
         return "No answer: " + (answer.note or answer.status.value)
+
+    if answer.status == EvidenceStatus.PROFILE:
+        return _profile_sentence(answer, graph)
 
     # Routes sharing every hop but their endpoint are one statement with a list
     # at the end, not N statements. Keyed on the wording, so two routes that
