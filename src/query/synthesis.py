@@ -51,7 +51,9 @@ _INSTRUCTIONS = (
     "- Do not infer a connection between two facts unless the chain states it.\n"
     "- Do not soften or resolve a disagreement; if one is listed, say plainly "
     "that the sources disagree.\n"
-    "- If the chain does not support a confident answer, say so."
+    "- If the chain does not support a confident answer, say so.\n"
+    "- If several endpoints are listed as answers, name EVERY one of them. "
+    "Naming a few and stopping presents one answer as the answer."
 )
 
 #: Statuses whose *whole point* is that the sources disagree. The prompt gets
@@ -320,7 +322,23 @@ def template_sentence(answer: Answer, graph: Graph) -> str:
 
 
 def _prompt(answer: Answer, graph: Graph) -> str:
-    lines = [_INSTRUCTIONS, "", f"Question: {answer.question}", "", "Verified chain:"]
+    lines = [_INSTRUCTIONS, "", f"Question: {answer.question}", ""]
+
+    # MEASURED: asked `1b_006`, which has fourteen equally valid answers, the
+    # model wrote "Corvus Hollowmere the Pale was a member of The Silent
+    # Choir..." and stopped - 1 of 14, phrased as though it were the answer.
+    # The hops were all in the prompt; what was missing was any statement that
+    # the endpoints are a *set*. Listing them separately, above the chain,
+    # says it in the one place a reader of the prompt cannot miss.
+    if len(answer.values) > 1:
+        lines += [
+            f"This question has {len(answer.values)} answers, ALL equally valid. "
+            "Your sentence must name every one:",
+            ", ".join(answer.values),
+            "",
+        ]
+
+    lines.append("Verified chain:")
     for path in answer.paths:
         for hop in _hops(path, graph):
             lines.append(

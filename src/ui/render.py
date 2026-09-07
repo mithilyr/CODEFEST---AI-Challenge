@@ -189,6 +189,11 @@ footer { color: #7a7a86; font-size: .8rem; text-align: center; margin: 1.5rem 0 
 .prose { margin: 0 0 .9rem; padding: .85rem 1rem; background: #f2f6fb;
          border-left: 3px solid #3f6ea8; border-radius: 0 6px 6px 0; }
 .prosetext { margin: 0; font-size: 1.08rem; line-height: 1.6; color: #16233a; }
+.unstated { margin: .8rem 0 0; padding: .75rem .9rem; background: #fff8e8;
+            border: 1px solid #e8cf95; border-left: 4px solid #b8860b;
+            border-radius: 6px; }
+.unstated p { margin: 0 0 .4rem; font-size: .92rem; color: #3d3d45; }
+.unstated ul.values { font-size: .98rem; }
 .prosemeta { margin: .6rem 0 0; font-size: .8rem; color: #4a5568;
              border: 0; background: none; }
 .prosemeta > summary { padding: 0; font-size: .78rem; font-weight: 600;
@@ -500,6 +505,50 @@ def _prose_block(view: dict) -> str:
     )
 
 
+def _unstated_values_block(view: dict) -> str:
+    """Every answer the sentence failed to name, listed, with how many it missed.
+
+    WHY THIS EXISTS - a regression this project is specifically built to catch
+    ------------------------------------------------------------------------
+    ADR-038 dropped the bare value list whenever a sentence was present, on the
+    reasoning that the sentence already states the values. For a single answer
+    that holds. For `1b_006` it did not: asked a question with **fourteen**
+    equally valid answers, the model phrased **one** of them - "Corvus
+    Hollowmere the Pale was a member of The Silent Choir..." - with two correct
+    citations attached, and the list that would have exposed the omission had
+    just been removed. A confident, well-sourced, incomplete answer is the exact
+    failure the evidence trail exists to prevent, and presentation had quietly
+    removed the check.
+
+    So the list comes back, but only when it is needed: the values the sentence
+    does not name are shown, with a plain statement of how many were missed. A
+    sentence that names all of them (the deterministic template always does)
+    still renders alone, which is the clean single-box layout the demo wants.
+
+    This checks a *string* against the engine's own `values`; it does not decide
+    what the answer is, re-rank anything, or edit the sentence. It decides
+    whether the display is complete, which is presentation's own business.
+    """
+    values = view["values"]
+    if len(values) < 2:
+        return ""
+
+    prose = view.get("prose") or ""
+    missing = [v for v in values if v not in prose]
+    if not missing:
+        return ""
+
+    items = "".join(f"<li>{_e(v)}</li>" for v in missing)
+    return (
+        '<div class="unstated">'
+        f"<p><strong>The sentence above names {len(values) - len(missing)} of "
+        f"{len(values)} answers.</strong> The engine returned all "
+        f"{len(values)}; these are the ones it did not mention:</p>"
+        f'<ul class="values">{items}</ul>'
+        "</div>"
+    )
+
+
 def _answer_block(view: dict) -> str:
     """The phrased answer, and nothing else when there is one.
 
@@ -515,7 +564,10 @@ def _answer_block(view: dict) -> str:
     values = view["values"]
     prose = _prose_block(view)
     if prose:
-        return f"<section><h2>Answer</h2>{_model_route_banner(view)}{prose}</section>"
+        return (
+            f"<section><h2>Answer</h2>{_model_route_banner(view)}"
+            f"{prose}{_unstated_values_block(view)}</section>"
+        )
 
     if not values:
         body = (

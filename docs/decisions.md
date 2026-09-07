@@ -3989,3 +3989,92 @@ the substring it replaced.
 *Status: accepted, validated by 6 tests and a live check of the busy state in a
 browser.*
 
+
+---
+
+## ADR-041 - A phrased answer may not quietly drop answers the engine returned
+
+**Problem**
+
+Reported from the running demo, and reproduced: asked `1b_006` - "Which
+individual was a member of the faction that ultimately won the War of Drowned
+Light?", which has **fourteen** equally valid answers - the page displayed:
+
+> **Corvus Hollowmere the Pale** was a member of The Silent Choir, which won
+> the War of Drowned Light *(source: wiki/the_war_of_drowned_light.md, field
+> 'Victor')* *(source: wiki/corvus_hollowmere_the_pale.md, field 'Membership')*
+
+One of fourteen, phrased as though it were the answer, with two correct
+citations attached. Measured:
+
+```
+engine values                : 14
+model prose named            :  1 / 14
+values list rendered on page : False
+```
+
+Two independent defects, and the second is the serious one:
+
+1. The model was handed all fourteen paths and phrased one. The hops were all
+   in the prompt; nothing in it said the endpoints were a *set*.
+2. **ADR-038 had removed the value list whenever prose was present**, on the
+   reasoning that the sentence already states the values. True for one answer,
+   false for fourteen - and it deleted the only thing on the page that would
+   have exposed the omission.
+
+A confident, well-sourced, incomplete answer is precisely the failure this
+project exists to prevent, and presentation had removed the check that caught
+it. See F-034.
+
+**Decision**
+
+*Tell the model the endpoints are a set.* When `len(values) > 1` the prompt now
+carries, above the chain, `This question has N answers, ALL equally valid. Your
+sentence must name every one:` followed by the list, plus a standing rule that
+naming a few and stopping presents one answer as the answer.
+
+*And do not rely on that.* `_unstated_values_block` compares the rendered
+sentence against the engine's own `values`. Any value the sentence does not
+name is listed, under a plain statement - "The sentence above names 1 of 14
+answers" - so an omission is visible on the page rather than inferred from a
+route count further down. A sentence that names all of them renders alone,
+which keeps ADR-038's clean single-box layout wherever it is honest.
+
+The guard checks a string against values the engine produced. It does not
+decide what the answer is, re-rank anything, or edit the sentence - it decides
+whether the *display* is complete, which is presentation's own business.
+
+**Measured result**
+
+```
+Prompt fix, verified live against the model:
+
+  before   1 / 14 values named, no correction on the page
+  after   14 / 14 values named, each individually cited, guard correctly silent
+
+Guard, verified deterministically with a synthetic one-of-fourteen sentence:
+
+  "The sentence above names 1 of 14 answers" rendered, all 14 listed
+
+5 new tests, 459 total (was 454).
+```
+
+**Why both halves, when the prompt fix worked**
+
+Because the prompt fix is a request and the guard is a check. The model
+complied this time on this question with this rotation head; none of those are
+guaranteed next week. The guard costs one string comparison and turns a silent
+under-report into a visible one, which is the same trade the whole evidence
+trail makes.
+
+**Trade-offs**
+
+The guard is substring matching, so a sentence that refers to a value without
+naming it exactly ("all fourteen members") would trip it and show a list that
+is arguably redundant. That is the right direction to fail: a redundant list
+costs a reader three seconds, and a missing one cost this demo thirteen
+answers.
+
+*Status: accepted, validated by 5 tests, a live model run naming 14/14, and a
+deterministic check of the guard itself.*
+

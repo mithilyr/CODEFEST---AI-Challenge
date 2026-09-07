@@ -1035,3 +1035,95 @@ def test_the_submit_button_is_disabled_out_of_band(graph):
 def test_the_spinner_respects_reduced_motion(graph):
     html = page_index()
     assert "@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }" in html
+
+
+# -- a sentence may not quietly drop answers (ADR-041) -----------------------
+
+
+def test_a_sentence_that_names_one_of_fourteen_is_corrected_on_the_page(graph):
+    """The regression ADR-038 introduced and this catches.
+
+    Asked `1b_006`, which has fourteen equally valid answers, a model wrote one
+    of them with two correct citations attached - and ADR-038 had just removed
+    the value list that would have exposed it. Measured, not hypothetical: the
+    live model named 1 of 14.
+    """
+    from src.query.synthesis import Synthesis
+
+    answer = answer_question(Q_006, graph, use_planner=False)
+    assert len(answer.values) == 14
+
+    partial = Synthesis(
+        "Corvus Hollowmere the Pale was a member of The Silent Choir, which "
+        "won the War of Drowned Light.",
+        "model",
+        "vendor/model:free",
+    )
+    html = page_answer(build_view(answer, graph, None, partial))
+
+    assert "names 1 of 14 answers" in html
+    for value in answer.values:
+        assert escape(value, quote=True) in html, f"{value} is missing from the page"
+
+
+def test_a_sentence_naming_every_answer_renders_alone(graph):
+    """The deterministic template names all fourteen, so nothing is appended -
+    the clean single-box layout is preserved wherever it is honest."""
+    from src.query.synthesis import synthesise
+
+    answer = answer_question(Q_006, graph, use_planner=False)
+    view = build_view(answer, graph, None, synthesise(answer, graph, use_model=False))
+    html = page_answer(view)
+    assert 'class="unstated"' not in html
+    for value in answer.values:
+        assert escape(value, quote=True) in html
+
+
+def test_a_single_answer_never_triggers_the_guard(graph):
+    """One value that the sentence happens to word differently is not an
+    omission worth a warning box - the guard is about a dropped *set*."""
+    from src.query.synthesis import Synthesis
+
+    answer = answer_question(Q_013, graph, use_planner=False)
+    assert len(answer.values) == 1
+    view = build_view(answer, graph, None, Synthesis("A sentence.", "model", "m"))
+    assert 'class="unstated"' not in page_answer(view)
+
+
+def test_the_model_is_told_to_name_every_answer(graph):
+    """The prompt fix. The hops were always all there; what was missing was any
+    statement that the endpoints are a set."""
+    from src.query.synthesis import synthesise
+
+    class _Pool:
+        def __init__(self):
+            self.prompts = []
+
+        def generate(self, contents, **kw):
+            self.prompts.append("\n".join(contents))
+            return "phrased", "fake/model:free"
+
+    pool = _Pool()
+    synthesise(answer_question(Q_006, graph, use_planner=False), graph, pool=pool)
+    prompt = pool.prompts[0]
+
+    assert "This question has 14 answers, ALL equally valid" in prompt
+    assert "must name every one" in prompt
+    assert "Ravena Stormwell" in prompt and "Thessaly Coldwater" in prompt
+    assert "name EVERY one of them" in prompt
+
+
+def test_a_single_answer_prompt_does_not_claim_a_set(graph):
+    from src.query.synthesis import synthesise
+
+    class _Pool:
+        def __init__(self):
+            self.prompts = []
+
+        def generate(self, contents, **kw):
+            self.prompts.append("\n".join(contents))
+            return "phrased", "fake/model:free"
+
+    pool = _Pool()
+    synthesise(answer_question(Q_013, graph, use_planner=False), graph, pool=pool)
+    assert "ALL equally valid" not in pool.prompts[0]

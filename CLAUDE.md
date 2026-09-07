@@ -222,7 +222,7 @@ python -m src.graph.build          # build the graph, print coverage
 python -m src.graph.corroborate    # cross-collection attestation, ADR-027's numbers
 python -m src.query.engine "<question>"   # answer one question end-to-end
                                            # (no arg: runs the 1b_013 vertical slice)
-python -m pytest                   # 454 tests
+python -m pytest                   # 459 tests
 python -m src.ui.server            # the demo UI on http://127.0.0.1:8000
                                    #   /graph shows the whole graph as one SVG
 python -m src.ui.server --with-model   # enable the LLM planner + phrasing

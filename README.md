@@ -155,7 +155,7 @@ buys.
 
 ```bash
 python -m src.ingest.integrity   # is your corpus the corpus we measured against?
-python -m pytest                 # 454 tests
+python -m pytest                 # 459 tests
 python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
 python -m src.graph.build        # 118 entities, 265 edges, 15 relations
 ```
@@ -244,7 +244,7 @@ comparison/            the router comparison and guard ablations behind ADR-019
 config/                authority.yaml, relations.yaml, corpus_manifest.sha256
 configuration-example/ annotated copies of the above, readable without the tree
 docs/                  ADRs, failure log, limitations, architecture, diagram, TODO
-tests/                 454 tests
+tests/                 459 tests
 ai_usage/              exported AI collaboration transcripts (deliverable §4.1)
 ocr_cache/             the 17 scan transcripts, committed so OCR needs no key
 data/                  where the corpus goes; gitignored, ships empty
@@ -270,7 +270,7 @@ python -m src.ingest.integrity                   # verify corpus against the man
 python -m src.ingest.pipeline                    # ingest, print summary
 python -m src.ingest.ocr                         # transcribe scans (17/17 from cache)
 python -m src.graph.build                        # build graph, print coverage
-python -m pytest                                 # 454 tests
+python -m pytest                                 # 459 tests
 
 # Answering
 python -m src.ui.server                          # the demo, http://127.0.0.1:8000

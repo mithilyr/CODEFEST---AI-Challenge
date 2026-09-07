@@ -1601,3 +1601,53 @@ false about the corpus, in exchange for a correct answer we could not explain.
 (`belongs`, per ADR-031's note). "Counted themselves among", "figures", "who
 was in" and similar phrasings cue it not at all. That is the gap to close, and
 closing it is what would make `rb_011` correct for a reason we could defend.
+
+
+---
+
+## F-034 - Removing a duplicate that was also the only check
+
+**Approach.** ADR-038 sharpened the answer page down to a single box. The
+sentence states the answer and the join that produced it, so the bullet list of
+`answer.values` underneath was straightforward duplication - it pushed the
+evidence off the screen and said nothing the sentence had not just said. It was
+removed whenever prose was present, and the values were emboldened inside the
+sentence instead.
+
+**Result.** Correct for every single-answer question, and wrong for `1b_006`.
+Asked a question with fourteen equally valid answers, the model wrote one of
+them - "Corvus Hollowmere the Pale was a member of The Silent Choir, which won
+the War of Drowned Light" - with two accurate citations attached, and the page
+displayed it as the answer. Measured on the running demo: **1 of 14 values
+named, 0 of the other 13 shown anywhere above the evidence trail.**
+
+Reported by a user reading the page, not by any test. Every test still passed:
+`test_1b_006_renders_all_fourteen_values_and_every_route` builds its view
+*without* synthesis, so it exercised the fallback branch that still renders the
+list, and never saw the branch the demo actually runs.
+
+**Why it failed.** "Duplicate" was the wrong word for it. The list was
+duplicating the sentence's *content* while independently verifying its
+*completeness* - and only the first of those was visible when deciding to
+delete it. A second rendering of the same data is redundant right up until the
+two disagree, which is exactly when you need both.
+
+The test gap has the same shape. A fixture that omits an optional argument
+takes a different code path from production, and a suite full of such fixtures
+can be green about a page nobody is looking at.
+
+**What changed.** The list returns as a *conditional*: shown only for the
+values a sentence fails to name, under a statement of how many were missed
+(ADR-041). The prompt separately tells the model the endpoints are a set, which
+fixed the immediate case at 14/14 - but the guard stays, because a prompt is a
+request and a comparison is a check.
+`test_a_sentence_that_names_one_of_fourteen_is_corrected_on_the_page` pins the
+guard using the real sentence the model produced, so the exact regression
+cannot return.
+
+**The general lesson, and it is not the first time.** F-028 was a status that
+could not fire in production while being fully live in tests. This is a check
+that could not fire in production while its test exercised a different branch.
+Both were green suites over a broken page. When a test builds the object under
+test differently from the way the product builds it, it is testing a sibling.
+
