@@ -4231,3 +4231,80 @@ documents that happen to yield text". The footer's claim is about the corpus, so
 *Status: accepted, validated by 5 tests and a live check of the nav and footer
 on an answered page.*
 
+
+---
+
+## ADR-044 - The third nav item is the relation vocabulary, and ADR-026's reason for the entity list does not survive
+
+**Problem**
+
+Asked directly what the entities tab was for, the honest answer was: it has been
+justified twice, with two different arguments, and neither holds.
+
+**ADR-026's argument**, when the list was built: a judge typing a first question
+is guessing against a closed name space, so publishing the names stops them
+discovering the boundary by failing at it. Measured on the frozen set:
+
+```
+declines: 20 of 55
+  SHAPE  no_template_match          16
+  SHAPE  relation_unavailable        1
+  SHAPE  path_missing_attribute      1
+  NAME   ambiguous_entity            1
+  NAME   unresolved_entity           1
+
+a name the list would have shown : 2/20
+a question shape it cannot help  : 18/20
+```
+
+Nine declines in ten are the system not recognising the question's *shape*. The
+entity resolves; no template or cue matches what was asked of it. The entity
+list addresses one decline in ten.
+
+**The replacement argument**, offered after that measurement: 118 working entry
+points for a live demo. Weaker than it sounds. A judge has a question in mind
+and types it - browsing 118 fantasy names for one to click is not a thing that
+happens on camera. And what those links produce is `EvidenceStatus.PROFILE`, a
+single-hop record dump. This is sub-track 1B, *Connecting Facts Across Thousands
+of Pages*. A profile connects nothing, so the tab's headline feature
+demonstrates the one capability the sub-track is not about.
+
+**Decision**
+
+The third nav item points at `#relations`, labelled **What you can ask**. The
+relations table is what addresses the other 18 declines: it states, from
+`config/relations.yaml`, exactly which question shapes exist, with each
+relation's infobox field names beside its question cues (ADR-024).
+
+**The entity list stays on the front page.** It is an honest statement of scope,
+it costs a scroll, and since F-035 every one of its 118 links leads to a real
+sourced answer. What it loses is a tab it did not earn.
+
+**The decline blocks still link straight to it.** A question that fails on an
+unresolved or ambiguous *name* is precisely the 2-in-20 case where browsing
+names is the right remedy, so `#entities` remains the link in
+`_established_block` and `_suggestion_block`.
+
+**One argument against this, recorded because it is real**
+
+`<datalist>` autocomplete only offers suggestions when the input's own value
+matches an option. Once a user is typing a question - "Which faction won the war
+that Halvard..." - the value matches no option and the browser offers nothing.
+So autocomplete does **not** cover name discovery mid-sentence, and the
+browsable list is the only place names can be found. That is an argument for
+keeping the section, which this ADR does. It is not an argument for the tab.
+
+**Measured result**
+
+```
+2 new tests, 470 total (was 468).
+
+  nav reads Ask / Graph / What you can ask; ">Entities</a>" appears nowhere
+  #entities and #relations both still render on the front page
+  all 118 "Who is X?" links still present
+  a decline about an unresolved name still links to #entities
+```
+
+*Status: accepted. Supersedes ADR-026's justification for publishing the entity
+list; the list itself is retained on different and narrower grounds.*
+

@@ -1313,13 +1313,24 @@ def _catalogue_block(catalogue: dict | None) -> str:
 CORPUS_DOCUMENTS = 317
 
 #: Where a reader can go from any page. `/graph` was previously reachable only
-#: by typing the URL - a built, tested demo surface (every graph entity as one static
-#: SVG) that a judge had no way to discover. `#entities` is an anchor on the
-#: front page, so from an answer page the link navigates home and jumps to it.
+#: by typing the URL - a built, tested demo surface (every graph entity as one
+#: static SVG) that a judge had no way to discover.
+#:
+#: The third item points at the **relation** vocabulary, not the entity list,
+#: and that is a correction rather than a preference. ADR-026 published the
+#: entity list to stop a judge discovering the system's boundary by failing at
+#: it; measured on the frozen set, **18 of 20 declines are question-shape
+#: failures and only 2 are a name the list would have shown**. The relations
+#: table is what addresses the other 18, so it is what earns a tab.
+#:
+#: The entity list is still on the front page, above the relations table, and
+#: the decline blocks still link straight to it (`#entities`) - a question that
+#: fails on an unresolved *name* is exactly the 2-in-20 case where browsing
+#: names is the right remedy.
 _NAV = (
     ("ask", "/", "Ask"),
     ("graph", "/graph", "Graph"),
-    ("entities", "/#entities", "Entities"),
+    ("relations", "/#relations", "What you can ask"),
 )
 
 

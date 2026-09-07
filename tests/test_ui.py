@@ -1206,3 +1206,43 @@ def test_the_footer_document_count_matches_the_corpus(corpus_root):
     # here would have quietly redefined what the page says.
     assert CORPUS_DOCUMENTS == len(result.documents)
     assert f"over {len(result.documents)} documents" in page_index()
+
+
+def test_the_third_nav_item_is_the_relation_vocabulary_not_the_entity_list(graph):
+    """A correction, not a preference (ADR-044).
+
+    ADR-026 published the entity list to stop a judge discovering the system's
+    boundary by failing at it. Measured on the frozen set, **18 of 20 declines
+    are question-shape failures and only 2 are a name the list would have
+    shown** - so the relations table addresses the other 18 and is what earns a
+    tab. `Who is X?` also returns a single-hop PROFILE, which is the weakest
+    thing to put one click from the front page in a sub-track about connecting
+    facts across documents.
+    """
+    from src.graph.build import load_relation_map
+    from src.query.catalogue import build_catalogue
+
+    html = page_index(build_catalogue(graph, load_relation_map()))
+    assert '<a href="/#relations">What you can ask</a>' in html
+    assert ">Entities</a>" not in html
+
+    # The list itself is not gone - it is still on the front page, above the
+    # relations table, with every one of its links working (F-035).
+    assert 'id="entities"' in html
+    assert 'id="relations"' in html
+    assert html.count('href="/ask?q=Who%20is%20') == len(graph.nodes)
+
+
+def test_a_decline_about_a_name_still_points_at_the_entity_list(graph):
+    """The 2-in-20 case. A question that fails on an unresolved *name* is
+    exactly where browsing names is the right remedy, so those links stay."""
+    view = build_view(
+        answer_question(
+            "Which faction ultimately won the war of which Xanthor Nevermore is a member?",
+            graph,
+            use_planner=False,
+        ),
+        graph,
+    )
+    assert view["answerable"] is False
+    assert 'href="/#entities"' in page_answer(view)
