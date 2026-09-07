@@ -1246,3 +1246,46 @@ def test_a_decline_about_a_name_still_points_at_the_entity_list(graph):
     )
     assert view["answerable"] is False
     assert 'href="/#entities"' in page_answer(view)
+
+
+def test_a_question_link_shows_the_busy_state_too(graph):
+    """Every dev-question shortcut, entity link and spelling suggestion is a
+    plain <a> to /ask - the same request the form makes. Until ADR-045 the form
+    was the only one of the three that showed it was running."""
+    html = page_index()
+    assert 'event.target.closest(\'a[href^="/ask?q="]\')' in html
+    assert 'link.classList.add("pending")' in html
+    assert ".pending::after" in html, "the clicked link needs its own spinner"
+
+
+def test_a_modified_click_does_not_show_a_busy_state(graph):
+    """Ctrl/cmd/shift-click opens a new tab and leaves this page where it is,
+    so a busy state here would be a lie that never clears."""
+    html = page_index()
+    assert "event.button !== 0 || event.metaKey || event.ctrlKey" in html
+    assert "event.shiftKey || event.altKey" in html
+
+
+def test_the_reset_clears_the_pending_link(graph):
+    """Back-navigation restores the page from cache with the clicked link still
+    dimmed and still spinning."""
+    html = page_index()
+    assert 'document.querySelector(".pending")' in html
+    assert 'pending.classList.remove("pending")' in html
+
+
+def test_every_question_link_on_the_page_matches_the_handler(graph):
+    """The handler keys on `/ask?q=` - assert that is actually how the links
+    are written, so a change to `_e_url` cannot silently orphan it."""
+    import re as _re
+    from src.graph.build import load_relation_map
+    from src.query.catalogue import build_catalogue
+
+    html = page_index(build_catalogue(graph, load_relation_map()))
+    links = _re.findall(r'<a href="(/ask[^"]*)"', html)
+    assert links, "the front page should carry question links"
+    assert all(link.startswith("/ask?q=") for link in links), sorted(
+        {link for link in links if not link.startswith("/ask?q=")}
+    )
+    # The seven dev questions plus one per entity.
+    assert len(links) == len(render.DEMO_QUESTIONS) + len(graph.nodes)

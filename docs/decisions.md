@@ -4308,3 +4308,68 @@ keeping the section, which this ADR does. It is not an argument for the tab.
 *Status: accepted. Supersedes ADR-026's justification for publishing the entity
 list; the list itself is retained on different and narrower grounds.*
 
+
+---
+
+## ADR-045 - A link that asks a question shows that it is asking
+
+**Problem**
+
+ADR-040 gave the Ask form a busy state and explicitly scoped it there, leaving
+"the dev-question links, the 117 entity links and the Reindex button ... plain
+navigations that were considered and left alone for now". Reported from the
+demo: clicking a dev question shows nothing at all.
+
+That scoping was wrong on its own terms. The reasoning at the time was that the
+entity and question links "hit the ~11ms deterministic path" - but a dev-question
+link fires exactly the same `GET /ask?q=...` the form fires, and under
+`--with-model` on a question nobody has asked before it waits on the same
+OpenRouter round-trip. The links are not a faster path; they are the same path
+with the typing already done.
+
+**Decision**
+
+The busy state is keyed on **what the click does**, not on which control was
+used: any left-click on `a[href^="/ask?q="]` raises it. That is one rule
+covering all three cases at once - the seven dev-question shortcuts, the 118
+`Who is X?` entity links, and the spelling suggestion on an
+`AMBIGUOUS_ENTITY` decline, which is the one a judge is most likely to click
+after a typo and the one where a dead-feeling page reads worst.
+
+**The clicked link marks itself.** The seven dev questions look alike, and a
+spinner on the Ask button alone does not say *which* of them is being answered.
+`.pending` dims the link and gives it its own spinner.
+
+**A modified click is excluded, and that is not a detail.** Ctrl/cmd/shift/alt
+-click opens a new tab and leaves this page exactly where it is. Raising a busy
+state there would leave the page permanently claiming to be searching for
+something it is not - a lie with no event left to clear it. `pageshow` also
+clears `.pending`, for the same back-button reason ADR-040 documented for the
+button.
+
+**Measured result**
+
+```
+4 new tests, 474 total (was 470).
+
+  click handler present and keyed on /ask?q=
+  modified-click guard present
+  pageshow clears .pending as well as the form state
+  every /ask link on the front page matches the handler's selector -
+    7 dev questions + 118 entity links, none written any other way
+
+Live: clicking 1b_009 dims that link, spins it, and puts the form into
+"Searching..." with the model-phrasing message.
+```
+
+**Still deliberately out of scope**
+
+The **Reindex corpus** button. It takes about six seconds, gives no feedback,
+and is a POST rather than a question - a judge may well click it twice. It
+needs the same treatment and a different guard (a second reindex mid-reindex is
+not harmless the way a second question is), so it is left for its own change
+rather than folded in here on the assumption that they are the same problem.
+
+*Status: accepted. Corrects ADR-040's scoping, which was decided on a latency
+claim that does not hold for these links.*
+
