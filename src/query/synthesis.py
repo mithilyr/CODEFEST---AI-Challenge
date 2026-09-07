@@ -93,36 +93,191 @@ def _hops(path: Path, graph: Graph) -> list[dict]:
     return out
 
 
-def template_sentence(answer: Answer, graph: Graph) -> str:
-    """A deterministic sentence built from the verified chain.
+#: How each relation reads in a sentence, in the direction the chain walks it.
+#:
+#: `(forward, reverse)`. Forward phrases an edge `A --[r]--> B` as "A <p> B";
+#: reverse phrases the same edge walked from B as "B <p> A". Both are needed
+#: because traversal is bidirectional by necessity - the corpus is asymmetric,
+#: and `1b_006` walks `victor_of` backwards from the war to the faction that
+#: won it (ADR-016).
+#:
+#: This is phrasing vocabulary and nothing else. It cannot affect what is
+#: retrieved, which relation is walked, or which endpoint is returned - by the
+#: time this module runs all of that is decided. It is kept here rather than in
+#: `config/relations.yaml` for exactly that reason: `cues:` in config change
+#: what gets *answered* (ADR-024) and deserve a judge's eye, whereas these
+#: change only how a finished answer is worded. Completeness against the live
+#: graph is pinned by `test_every_relation_in_the_graph_has_a_phrase`.
+_PHRASES: dict[str, tuple[str, str]] = {
+    "belligerent_in": ("fought in", "had as a belligerent"),
+    "concealed_tie_to": ("has a concealed tie to", "is the concealed tie of"),
+    "devastated": ("devastated", "was devastated by"),
+    "forged_at": ("was forged at", "is the forging place of"),
+    "housed_in": ("is housed in", "houses"),
+    "in_region": ("lies in", "contains"),
+    "lair_in": ("has its lair in", "is the lair of"),
+    "member_of": ("is a member of", "counts among its members"),
+    "mentor_of": ("is a mentor of", "was mentored by"),
+    "rival_of": ("is a rival of", "is a rival of"),
+    "ruled_by": ("is ruled by", "rules"),
+    "serves_at": ("serves at", "is served by"),
+    "victor_of": ("is named victor of", "was won by"),
+    "waged_at": ("was waged at", "was the site of"),
+    "wields": ("wields", "is wielded by"),
+}
 
-    Deliberately plain. It states the answer, the route, and the sources, and
-    claims nothing else - a template that tried to read well would be a
-    template that could be wrong in a way nobody checked.
+#: Above this many endpoints, the explanation says "those N" instead of
+#: repeating the list it just gave. `1b_006` has fourteen, and naming them
+#: twice in one sentence is how the old template became unreadable.
+_RELIST_LIMIT = 3
+
+
+def phrase_for(relation: str, forward: bool) -> str:
+    """The wording for one hop, or a plain fallback for an unmapped relation.
+
+    The fallback names the relation rather than guessing at English for it. A
+    new relation added to config should read awkwardly here until someone gives
+    it a phrase - not silently read as something it is not.
+    """
+    pair = _PHRASES.get(relation)
+    if pair is None:
+        return f"is linked by {relation} to" if forward else f"is linked by {relation} from"
+    return pair[0] if forward else pair[1]
+
+
+def _steps(path: Path, graph: Graph) -> list[tuple[str, str, str]]:
+    """One `(subject, phrase, object)` per hop, in the order walked."""
+    current = path.start
+    out = []
+    for edge in path.edges:
+        forward = edge.source == current
+        nxt = edge.target if forward else edge.source
+        out.append(
+            (
+                graph.nodes[current].name if current in graph.nodes else current,
+                phrase_for(edge.relation, forward),
+                graph.nodes[nxt].name if nxt in graph.nodes else nxt,
+            )
+        )
+        current = nxt
+    return out
+
+
+def _join(names: list[str]) -> str:
+    if len(names) == 1:
+        return names[0]
+    if len(names) == 2:
+        return f"{names[0]} and {names[1]}"
+    return ", ".join(names[:-1]) + f", and {names[-1]}"
+
+
+def _explain(steps: list[tuple[str, str, str]], endpoints: list[str]) -> str:
+    """One route, as a clause chain: "A does X to B, which does Y to C"."""
+    parts = []
+    for index, (subject, phrase, obj) in enumerate(steps):
+        last = index == len(steps) - 1
+        if last:
+            target = (
+                f"those {len(endpoints)}"
+                if len(endpoints) > _RELIST_LIMIT
+                else _join(endpoints)
+            )
+        else:
+            target = obj
+        parts.append(
+            f"{subject} {phrase} {target}" if index == 0 else f"which {phrase} {target}"
+        )
+    return ", ".join(parts)
+
+
+def template_sentence(answer: Answer, graph: Graph) -> str:
+    """A deterministic statement built from the verified chain.
+
+    WHY THIS IS NOT A DATA DUMP ANY MORE
+    ------------------------------------
+    The first version rendered `"<values>. Route: A -> B -> C. Sources: ..."`.
+    It was honest and nearly unreadable: `1b_006` produced fourteen arrow
+    chains that differ only in their last node, in one sentence, and a reader
+    had to reconstruct what "->" meant for each relation. The demo's whole
+    claim is that a joined answer can be understood and checked, and prose that
+    has to be decoded works against that.
+
+    So each hop is now worded, in the direction the chain actually walked it,
+    and routes sharing a prefix are stated once. What did NOT change is the
+    property the old version was protecting: the sentence still ends in the
+    documents it came from, because a sentence without its sources is not
+    checkable, and it still says nothing the chain does not contain.
+
+    This path needs no API key. It is what a keyless clone runs, what the test
+    suite measures, and what the demo falls back to on a cold network -
+    CLAUDE.md's "never record the demo against a cold cache" rule applies to
+    the prose as much as to the answer.
     """
     if not answer.paths:
         return "No answer: " + (answer.note or answer.status.value)
 
-    values = ", ".join(answer.values) or "no endpoint"
-    chains = []
+    # Routes sharing every hop but their endpoint are one statement with a list
+    # at the end, not N statements. Keyed on the wording, so two routes that
+    # read identically collapse even if they came from different edges.
+    groups: dict[tuple, tuple[list, list[str]]] = {}
     for path in answer.paths:
-        hops = _hops(path, graph)
-        if not hops:
+        steps = _steps(path, graph)
+        if not steps:
             continue
-        chains.append(" -> ".join([hops[0]["from"]] + [h["to"] for h in hops]))
-    documents = ", ".join(answer.documents)
+        key = tuple((subject, phrase) for subject, phrase, _ in steps)
+        if key not in groups:
+            groups[key] = (steps, [])
+        endpoints = groups[key][1]
+        if steps[-1][2] not in endpoints:
+            endpoints.append(steps[-1][2])
 
-    lead = values
+    values = list(answer.values)
+    if not values:
+        lead = "no endpoint"
+    elif len(values) == 1:
+        lead = values[0]
+    else:
+        lead = f"{len(values)} answers: {_join(values)}"
+
     if answer.status == EvidenceStatus.CONFLICTING_EVIDENCE:
-        lead = f"{values} - but the sources disagree, and the disagreement is not settled by authority tier"
+        lead = (
+            f"{lead} - but the sources disagree, and the disagreement is not "
+            "settled by authority tier"
+        )
     elif answer.status in (
         EvidenceStatus.FALLBACK_AMBIGUOUS,
         EvidenceStatus.PLANNED_AMBIGUOUS,
     ):
-        lead = f"any of: {values}"
+        lead = f"any of: {_join(values)}" if values else lead
 
-    route = "; ".join(dict.fromkeys(chains))
-    return f"{lead}. Route: {route}. Sources: {documents}."
+    explanation = "; ".join(
+        _explain(steps, endpoints) for steps, endpoints in groups.values()
+    )
+
+    # Name the disputed hop. Without this the explanation states the contested
+    # claim as flatly as the uncontested one and leaves the caveat stranded in
+    # the lead - a reader would have to work out for themselves which of the
+    # two hops the disagreement is even about. Every value here comes off the
+    # report `conflict.py` already produced; nothing is decided a second time,
+    # and no side is preferred.
+    dispute = ""
+    if answer.status == EvidenceStatus.CONFLICTING_EVIDENCE and answer.conflict:
+        report = answer.conflict
+        subject = graph.nodes[report.subject_key].name if report.subject_key in graph.nodes else report.subject_key
+        obj = graph.nodes[report.object_key].name if report.object_key in graph.nodes else report.object_key
+        asserting = ", ".join(dict.fromkeys(e.document for e in report.asserting_edges))
+        dispute = (
+            f" The disagreement is over whether {subject} "
+            f"{phrase_for(report.relation, True)} {obj}"
+        )
+        if asserting:
+            dispute += f": {asserting} asserts it"
+            if report.denial:
+                dispute += f", and {report.denial.document} declines to"
+        dispute += "."
+
+    documents = ", ".join(answer.documents)
+    return f"{lead}. {explanation}.{dispute} Sources: {documents}."
 
 
 def _prompt(answer: Answer, graph: Graph) -> str:

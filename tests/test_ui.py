@@ -699,3 +699,74 @@ def test_the_front_page_offers_a_reindex_control():
     html = page_index()
     assert 'action="/reload"' in html
     assert "Reindex" in html
+
+
+# -- the phrased answer on the page (ADR-037) --------------------------------
+
+
+def test_a_view_without_synthesis_carries_no_prose_and_renders_none(views):
+    """The keys always exist; a caller that phrases nothing gets None.
+
+    `render.py` must never have to guess whether a key is present, and the page
+    must not look like it withheld a sentence it does not have.
+    """
+    for view in views.values():
+        assert view["prose"] is None
+        assert view["phrasing"] is None
+        assert view["phrasing_model"] is None
+        assert 'class="prose"' not in page_answer(view)
+
+
+def test_the_page_renders_the_phrased_sentence_with_its_provenance(graph):
+    """The sentence was computed in the query layer and is rendered verbatim.
+
+    It had been computed and then thrown away: `server.py` put it in the view
+    and `render.py` had no block for it, so every demo answer showed a bare
+    entity name. That is what ADR-037 fixes.
+    """
+    from src.query.synthesis import synthesise
+
+    answer = answer_question(Q_013, graph, use_planner=False)
+    synthesis = synthesise(answer, graph, use_model=False)
+    html = page_answer(build_view(answer, graph, None, synthesis))
+
+    assert 'class="prose"' in html
+    assert escape(synthesis.text, quote=True) in html, "rendered verbatim, not reworded"
+    # Provenance is on the page, not just in the dict: a judge asking "did an AI
+    # write this?" gets the answer without reading the source.
+    assert "template" in html
+    assert "no model, no API key, no network" in html
+
+
+def test_model_phrasing_is_labelled_as_model_on_the_page(graph):
+    from src.query.synthesis import Synthesis
+
+    answer = answer_question(Q_013, graph, use_planner=False)
+    view = build_view(
+        answer, graph, None, Synthesis("A phrased answer.", "model", "vendor/model:free")
+    )
+    html = page_answer(view)
+    assert "A phrased answer." in html
+    assert "vendor/model:free" in html
+    assert "forbidden from adding to them" in html
+
+
+def test_nothing_to_phrase_renders_no_prose_block(graph):
+    """A decline's sentence is its diagnostics, not a consolation paragraph."""
+    from src.query.synthesis import synthesise
+
+    answer = answer_question("What colour is the sky in the Ashen Era?", graph, use_planner=False)
+    synthesis = synthesise(answer, graph, use_model=False)
+    assert synthesis.phrasing == "none"
+    assert 'class="prose"' not in page_answer(build_view(answer, graph, None, synthesis))
+
+
+def test_prose_is_escaped(graph):
+    from src.query.synthesis import Synthesis
+
+    answer = answer_question(Q_013, graph, use_planner=False)
+    html = page_answer(
+        build_view(answer, graph, None, Synthesis('<script>alert("x")</script>', "model"))
+    )
+    assert "<script>alert" not in html
+    assert "&lt;script&gt;" in html

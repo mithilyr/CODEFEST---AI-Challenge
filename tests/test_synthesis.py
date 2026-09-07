@@ -142,3 +142,96 @@ def test_a_lower_tier_route_warns_the_model_not_to_overstate_confidence(graph):
     pool = FakePool()
     synthesise(fallback, graph, pool=pool)
     assert "lower-precision tier" in pool.prompts[0]
+
+
+# --------------------------------------------------------------------------
+# Readability. The sentence has to be a statement, not a data dump (ADR-037).
+# --------------------------------------------------------------------------
+
+
+def test_every_relation_in_the_graph_has_a_phrase(graph):
+    """A relation with no phrase falls back to naming itself, which reads badly.
+
+    Pinned against the live graph rather than against the config, so adding a
+    relation that actually produces edges fails here until someone words it.
+    """
+    from src.query.synthesis import _PHRASES
+
+    built = {edge.relation for edge in graph.edges}
+    missing = sorted(built - set(_PHRASES))
+    assert not missing, f"relations with no phrasing: {missing}"
+
+
+def test_the_sentence_words_each_hop_instead_of_drawing_arrows(answer, graph):
+    """The old template emitted "Route: A -> B -> C" and left the reader to
+    work out what each arrow meant. Each hop is now worded in the direction the
+    chain walked it."""
+    text = template_sentence(answer, graph)
+    assert "->" not in text
+    assert "Route:" not in text
+    assert "is a member of The Iron-Ring Cartel" in text
+    assert "which is named victor of The Leaden Accord" in text
+
+
+def test_a_reverse_hop_is_worded_in_the_direction_it_was_walked(graph):
+    """`1b_006` walks `victor_of` backwards, from the war to the faction that
+    won it. Phrasing it forward would assert the war won the faction."""
+    answer = answer_question(
+        "Which individual was a member of the faction that ultimately won "
+        "the War of Drowned Light?",
+        graph,
+        use_planner=False,
+    )
+    text = template_sentence(answer, graph)
+    assert "The War of Drowned Light was won by The Silent Choir" in text
+    assert "The War of Drowned Light is named victor of" not in text
+
+
+def test_routes_sharing_a_prefix_are_stated_once(graph):
+    """`1b_006` has fourteen answers reached the identical way. The old
+    template printed fourteen near-identical arrow chains in one sentence."""
+    answer = answer_question(
+        "Which individual was a member of the faction that ultimately won "
+        "the War of Drowned Light?",
+        graph,
+        use_planner=False,
+    )
+    text = template_sentence(answer, graph)
+
+    assert len(answer.values) == 14
+    assert text.count("The Silent Choir") == 1, "the shared hop is stated once"
+    # The names are listed once, as the answer - and referred back to, not
+    # relisted, in the explanation.
+    assert text.count("Ravena Stormwell") == 1
+    assert "those 14" in text
+
+
+def test_a_conflict_sentence_names_the_disputed_hop_and_picks_no_side(graph):
+    """`1b_009`. The caveat is useless if a reader cannot tell which of the two
+    hops is disputed - and stating the contested hop as flatly as the
+    uncontested one is the failure ADR-018 exists to prevent."""
+    answer = answer_question(
+        "In what way is Halvard Crowhurst connected to the victors of the "
+        "Purge of Blackport?",
+        graph,
+        use_planner=False,
+    )
+    assert answer.status == EvidenceStatus.CONFLICTING_EVIDENCE
+    text = template_sentence(answer, graph)
+
+    assert "the sources disagree" in text
+    assert "The disagreement is over whether" in text
+    # Both sides named, neither preferred.
+    assert "wiki/the_purge_of_blackport.md asserts it" in text
+    assert "wiki/the_iron_ring_cartel.md declines to" in text
+    for verdict in ("therefore", "so the victor is", "in fact won"):
+        assert verdict not in text.lower()
+
+
+def test_the_sentence_still_ends_in_its_sources(answer, graph):
+    """The property the old template was protecting, kept. A sentence without
+    its sources is not checkable, and the evidence panel below is not a
+    substitute inside a quotable sentence."""
+    text = template_sentence(answer, graph)
+    assert text.rstrip().endswith(".")
+    assert "Sources: wiki/" in text

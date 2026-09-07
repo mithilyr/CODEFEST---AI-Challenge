@@ -166,11 +166,7 @@ class Engine:
         synthesis = synthesise(
             answer, self.graph, use_model=self.use_model_phrasing
         )
-        view = build_view(answer, self.graph, self.corroboration)
-        view["prose"] = synthesis.text
-        view["phrasing"] = synthesis.phrasing
-        view["phrasing_model"] = synthesis.model
-        return view
+        return build_view(answer, self.graph, self.corroboration, synthesis)
 
 
 def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:

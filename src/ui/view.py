@@ -338,12 +338,20 @@ def _diagnostics(answer: Answer) -> dict | None:
     }
 
 
-def build_view(answer: Answer, graph: Graph, corroboration=None) -> dict:
+def build_view(answer: Answer, graph: Graph, corroboration=None, synthesis=None) -> dict:
     """Everything the page needs, read off one `Answer`.
 
     The returned dict is plain data - no engine objects leak into the
     template, so `render.py` cannot call back into the query layer even if
     someone later tries to make it.
+
+    `synthesis` is an optional `src.query.synthesis.Synthesis`. It is a
+    parameter rather than something the server bolts on afterwards so that
+    `prose`, `phrasing` and `phrasing_model` are always present in the dict -
+    a caller that phrases nothing gets None, and `render.py` never has to guess
+    whether a key exists. The UI does not compose this sentence and could not:
+    it is written in the query layer from the already-verified chain, and the
+    evidence trail is rendered beside it, never replaced by it.
     """
     routes = [
         _route(graph, p, i, answer, corroboration)
@@ -394,6 +402,13 @@ def build_view(answer: Answer, graph: Graph, corroboration=None) -> dict:
         "note": answer.note,
         # Partial evidence for a decline. None on an answered result.
         "diagnostics": _diagnostics(answer),
+        # The phrased answer, and the provenance of the phrasing itself.
+        # `phrasing` is "model" | "template" | "none" - CLAUDE.md requires every
+        # LLM fallback to be countable, and this is the field that answers a
+        # judge asking "did an AI write this sentence?".
+        "prose": None if synthesis is None else synthesis.text,
+        "phrasing": None if synthesis is None else synthesis.phrasing,
+        "phrasing_model": None if synthesis is None else synthesis.model,
         "resolutions": [
             {
                 "mention": r.mention,

@@ -3601,3 +3601,136 @@ what changed when you ask. A new scanned PDF still needs OCR under Gemini's
 ~20/day per-model cap, and no button fixes that.
 
 *Status: accepted.*
+
+
+---
+
+## ADR-037 - The answer is a statement, and the sentence was already being written and thrown away
+
+**Problem**
+
+The demo's Answer panel showed a bare entity name - `The Bleeding Crown` - and
+nothing else. For a sub-track whose whole subject is *connecting facts across
+documents*, the one thing the headline did not convey was the connection. A
+judge had to read the evidence path and reconstruct the join themselves.
+
+Two separate causes, and the first was embarrassing:
+
+1. **The sentence already existed and never reached the page.**
+   `src/query/synthesis.py` has phrased answers since ADR-020.
+   `src/ui/server.py` computed one on every request and wrote it into the view
+   as `view["prose"]`. `src/ui/render.py` **had no block for it** - `grep -n
+   prose src/ui/render.py` matched one unrelated word in a decline caption.
+   Every demo answer since then discarded a sentence it had already paid for.
+
+2. **The deterministic phrasing was a data dump, not a statement.** It rendered
+   `"<values>. Route: A -> B -> C. Sources: ..."`. Measured on `1b_006`, which
+   has fourteen answers reached the identical way, that produced **fourteen
+   near-identical arrow chains inside one sentence**, 1,100 characters, with
+   `The Silent Choir` repeated fourteen times. A reader also had to decode what
+   `->` meant at each hop, which differs per relation.
+
+**Decision**
+
+*Render what synthesis produces*, and make what it produces readable.
+
+`build_view` now takes the `Synthesis` as a parameter rather than the server
+bolting three keys onto the returned dict, so `prose`, `phrasing` and
+`phrasing_model` are always present and `render.py` never guesses whether a key
+exists. A caller that phrases nothing gets `None` and no block renders.
+
+`template_sentence` words each hop in **the direction the chain walked it**,
+from a 15-entry relation phrase map, and states routes sharing a prefix once:
+
+    before  The Bleeding Crown. Route: Gravemaw Wyrm -> Marrowwell Abbey ->
+            The Bleeding Crown. Sources: ...
+
+    after   The Bleeding Crown. Gravemaw Wyrm has its lair in Marrowwell
+            Abbey, which is ruled by The Bleeding Crown. Sources: ...
+
+    1b_006  before: 14 arrow chains, ~1,100 chars, "The Silent Choir" x14
+            after:  one statement, "The War of Drowned Light was won by The
+                    Silent Choir, which counts among its members those 14"
+
+Direction matters and is not cosmetic: `1b_006` walks `victor_of` *backwards*,
+from the war to the faction that won it. Phrasing it forward would assert that
+the war won the faction. `test_a_reverse_hop_is_worded_in_the_direction_it_was_walked`
+pins that.
+
+**A conflict names its disputed hop.** `1b_009`'s sentence previously stated
+the contested hop ("The Purge of Blackport was won by The Iron-Ring Cartel") as
+flatly as the uncontested one, leaving the caveat stranded in the lead with
+nothing to attach to. It now adds: *"The disagreement is over whether The
+Iron-Ring Cartel is named victor of The Purge of Blackport:
+wiki/the_purge_of_blackport.md asserts it, and wiki/the_iron_ring_cartel.md
+declines to."* Both sides named, neither preferred - every value read off the
+report `conflict.py` already produced.
+
+**Why this does not breach ADR-018**
+
+ADR-018 says the UI composes no answers, and it still composes none. The
+sentence is written in `src/query/` from a chain that was already routed,
+walked, filtered and conflict-checked; `render.py` escapes it and puts it in a
+box. The three thinness tests are untouched and green.
+
+The related ADR-018 statement - that the page does *not* write `1b_009`'s
+sentence and instead shows both sides - is **narrowed, not reversed**. The
+evidence trail, the conflict panel with both tier-2 sources, and the bare value
+all still render underneath, so the sentence is checkable against the rows that
+produced it rather than standing in for them. What changed is that a reader is
+no longer required to do the join themselves before they can see what was
+found.
+
+**The default stays deterministic**
+
+Phrasing has two paths and the keyless one is the default, unchanged by this
+ADR. `--with-model` opts in. Both were verified live:
+
+```
+template  The Bleeding Crown. Gravemaw Wyrm has its lair in Marrowwell Abbey,
+          which is ruled by The Bleeding Crown. Sources: ...
+
+model     The Gravemaw Wyrm's lair is located in Marrowwell Abbey
+          (wiki/gravemaw_wyrm.md, field 'Lair'). Marrowwell Abbey is ruled by
+          The Bleeding Crown, so the dominion that encompasses the lair belongs
+          to The Bleeding Crown (wiki/marrowwell_abbey.md, field 'Ruled by').
+          [nvidia/nemotron-3-super-120b-a12b:free]
+
+model, on 1b_009: "...yet the cartel source denies that it was the victor,
+          indicating a disagreement between the sources." - it did not pick a
+          side, which is what `_CONFLICT_STATUSES` instructs.
+```
+
+The model reads better and the template is now good enough that losing it costs
+prose polish rather than comprehension. That is deliberate: CLAUDE.md's "never
+record the demo against a cold cache" applies to the sentence as much as to the
+answer, and a demo whose headline degrades to gibberish when the network drops
+is a demo with a single point of failure. `phrasing` is rendered on the page,
+so a judge asking "did an AI write this?" reads the answer rather than the
+source.
+
+**Measured result**
+
+```
+11 new tests, 432 total (was 421).
+
+  every relation that produces edges has a phrase   15/15
+  1b_013  one clause per hop, no arrows
+  1b_006  14 answers, "The Silent Choir" stated once (was 14x)
+  1b_009  dispute named, both documents cited, no side taken
+  keyless run renders `template` + "no model, no API key, no network"
+  a view with no synthesis renders no prose block and does not raise
+```
+
+**Trade-offs**
+
+The phrase map is 15 hand-written pairs in `synthesis.py` rather than in
+`config/relations.yaml` beside ADR-024's `cues:`. The distinction is
+deliberate: `cues` change *what gets answered* and belong where a judge can
+argue with them; these change only how a finished answer is worded and cannot
+affect retrieval. If that judgement is wrong the move is mechanical, and
+`test_every_relation_in_the_graph_has_a_phrase` keeps the map honest either way.
+
+*Status: accepted, validated by 11 tests, a live run of both phrasing paths, and
+the three ADR-018 thinness tests still passing.*
+

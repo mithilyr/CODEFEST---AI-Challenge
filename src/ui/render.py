@@ -158,6 +158,10 @@ td.mono { font-family: ui-monospace, Consolas, monospace; font-size: .82rem; }
 .examples .qid { font-family: ui-monospace, Consolas, monospace;
                  font-weight: 700; margin-right: .35rem; color: #5c5c66; }
 footer { color: #7a7a86; font-size: .8rem; text-align: center; margin: 1.5rem 0 0; }
+.prose { margin: 0 0 .9rem; padding: .85rem 1rem; background: #f2f6fb;
+         border-left: 3px solid #3f6ea8; border-radius: 0 6px 6px 0; }
+.prosetext { margin: 0; font-size: 1.08rem; line-height: 1.6; color: #16233a; }
+.prosemeta { margin: .55rem 0 0; font-size: .8rem; color: #4a5568; }
 .suggest { margin: .7rem 0; padding: .7rem .85rem; background: #fff8e6;
            border-left: 3px solid #d99b1c; border-radius: 0 5px 5px 0; }
 .suggest ul { margin: .3rem 0 0; padding-left: 1.2rem; }
@@ -265,9 +269,54 @@ def _e_url(value: str) -> str:
     return escape(urlquote(value), quote=True)
 
 
-def _answer_block(view: dict) -> str:
-    """The engine's `values`, listed. No sentence is composed from them.
+#: How the phrasing provenance reads on the page. A caption on a field the
+#: synthesis module set, not an assessment of the sentence.
+_PHRASING_LABEL = {
+    "model": (
+        "Written by a language model from the verified chain below. The model "
+        "was given the hops and forbidden from adding to them; it chose no "
+        "evidence and reached no conclusion of its own."
+    ),
+    "template": (
+        "Built deterministically from the verified chain below - no model, no "
+        "API key, no network. Every clause corresponds to one hop."
+    ),
+}
 
+
+def _prose_block(view: dict) -> str:
+    """The phrased answer, above the evidence that produced it.
+
+    This is rendered, not composed. `src/query/synthesis.py` wrote the sentence
+    from a chain that was already verified, and the hops it was built from are
+    on the same page underneath - so a reader can check the sentence against
+    the rows it came from rather than trusting it (ADR-037).
+
+    Absent entirely when nothing phrased the answer, which is what any caller
+    that passes no synthesis gets. The page must never look like it withheld a
+    sentence it does not have.
+    """
+    prose = view.get("prose")
+    phrasing = view.get("phrasing")
+    if not prose or phrasing == "none":
+        return ""
+
+    model = view.get("phrasing_model")
+    badge = _e(phrasing or "")
+    if phrasing == "model" and model:
+        badge = f"{badge} &middot; {_e(model)}"
+
+    return (
+        f'<div class="prose"><p class="prosetext">{_e(prose)}</p>'
+        f'<p class="prosemeta"><span class="tag">{badge}</span> '
+        f'{_PHRASING_LABEL.get(phrasing or "", "")}</p></div>'
+    )
+
+
+def _answer_block(view: dict) -> str:
+    """The phrased answer, then the engine's `values`.
+
+    The sentence comes from the query layer; this block does not write one.
     When there are no values the block says so plainly and defers to the
     status block for the reason - it does not write an apology or a guess.
     """
@@ -287,11 +336,14 @@ def _answer_block(view: dict) -> str:
             f'<p class="gloss">{len(values)} values. The engine returned a set; '
             "they are listed as it ordered them.</p>"
         )
-    # Above the value, deliberately. A reader who takes only the answer
-    # should have already been told a model chose the route to it.
+    # Order matters. The model-route banner is first because a reader who
+    # takes only the answer should already have been told a model chose the
+    # route to it. The phrased sentence follows, then the bare value it states
+    # - the sentence is the thing a person reads, and the value is the thing a
+    # person checks.
     return (
         f"<section><h2>Answer</h2>"
-        f"{_model_route_banner(view)}{body}</section>"
+        f"{_model_route_banner(view)}{_prose_block(view)}{body}</section>"
     )
 
 
