@@ -184,7 +184,12 @@ def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
         def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler's name
             parsed = urlparse(self.path)
             if parsed.path == "/":
-                self._send(page_index(engine.catalogue()))
+                self._send(
+                    page_index(
+                        engine.catalogue(),
+                        model_phrasing=engine.use_model_phrasing,
+                    )
+                )
                 return
             if parsed.path == "/graph":
                 self._send(
@@ -210,7 +215,12 @@ def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
 
             question = (parse_qs(parsed.query).get("q") or [""])[0].strip()
             if not question:
-                self._send(page_index(engine.catalogue()))
+                self._send(
+                    page_index(
+                        engine.catalogue(),
+                        model_phrasing=engine.use_model_phrasing,
+                    )
+                )
                 return
             try:
                 view = engine.ask(question)
@@ -220,7 +230,7 @@ def make_handler(engine: Engine) -> type[BaseHTTPRequestHandler]:
                 # bug report the audience can read.
                 self._send(page_error(f"{type(exc).__name__}: {exc}"), status=500)
                 return
-            self._send(page_answer(view))
+            self._send(page_answer(view, model_phrasing=engine.use_model_phrasing))
 
         def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler's name
             parsed = urlparse(self.path)

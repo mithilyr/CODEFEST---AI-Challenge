@@ -390,7 +390,7 @@ def test_index_page_offers_autocomplete_and_a_browsable_list(graph):
     catalogue = build_catalogue(graph, load_relation_map())
     html = page_index(catalogue)
 
-    # Native autocomplete, no JavaScript and no dependency.
+    # Native autocomplete: a browser feature, not a library.
     assert '<datalist id="entities">' in html
     assert 'list="entities"' in html
     assert html.count("<option ") == 118
@@ -399,7 +399,14 @@ def test_index_page_offers_autocomplete_and_a_browsable_list(graph):
     assert "The relations it can follow" in html
     # Every entity is a working entry point, not just a name on a list.
     assert html.count('href="/ask?q=Who%20is%20') == 118
-    assert "<script" not in html
+
+    # The page carries exactly one script - the inline busy state (ADR-040) -
+    # and it loads nothing. "No JavaScript" was the wrong invariant to pin; "no
+    # dependency, nothing fetched" is the one that matters and is now explicit.
+    assert html.count("<script") == 1
+    assert "src=" not in html.split("<script", 1)[1].split("</script>", 1)[0]
+    for host in ("http://", "https://", "//cdn"):
+        assert host not in html
 
 
 def test_index_page_still_renders_without_a_catalogue():

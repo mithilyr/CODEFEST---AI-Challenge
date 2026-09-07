@@ -72,7 +72,20 @@ main { max-width: 62rem; margin: 0 auto; }
 h1 { font-size: 1.35rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
 h1 a { color: inherit; text-decoration: none; }
 .sub { color: #5c5c66; font-size: .85rem; margin: 0 0 1.5rem; }
-form { display: flex; gap: .5rem; margin: 0 0 1.25rem; }
+form { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.25rem;
+       align-items: center; }
+button[disabled] { opacity: .65; cursor: progress; }
+
+/* Hidden until the form is submitted, so a page that never waits never shows
+   it. With scripting off the class is never added and this stays invisible. */
+.busymsg { display: none; flex-basis: 100%; margin: .1rem 0 0;
+           align-items: center; gap: .5rem; font-size: .88rem; color: #46608a; }
+form.busy .busymsg { display: flex; }
+.spinner { width: .85rem; height: .85rem; flex: none; border-radius: 50%;
+           border: 2px solid #c3d2e8; border-top-color: #46608a;
+           animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 input[type=text] { flex: 1; padding: .7rem .85rem; font-size: 1rem;
                    border: 1px solid #c8c8d0; border-radius: 6px;
                    background: #fff; color: inherit; }
@@ -281,17 +294,74 @@ def _tier_tag(tier, label) -> str:
 # -- blocks ------------------------------------------------------------------
 
 
-def _search_form(question: str = "") -> str:
+#: Shown while a question is in flight. Two wordings, because only one of
+#: them is true at a time: a deterministic run answers in about 11ms and the
+#: message is gone before it is read, while a model-phrased run on a question
+#: nobody has asked before waits on one OpenRouter round-trip. Naming the slow
+#: part keeps CLAUDE.md's rule that an LLM call is visible rather than hidden
+#: inside a spinner.
+_BUSY_DETERMINISTIC = "Searching the archive\u2026"
+_BUSY_WITH_MODEL = (
+    "Searching the archive\u2026 phrasing with a model can take a few seconds"
+)
+
+#: The whole of this page's JavaScript.
+#:
+#: It changes nothing about what the server does or what the page says - with
+#: scripting off, the form submits exactly as it always has and the message
+#: below simply never appears. That is why it is acceptable here while
+#: `graphview.py` still renders the graph with no script at all: this is
+#: feedback about a request already in flight, not behaviour the result
+#: depends on.
+#:
+#: Two details are deliberate. The button is disabled on a timeout rather than
+#: inline, because disabling a submit button *during* its own submit handler
+#: cancels the submission in some browsers. And `pageshow` resets everything,
+#: because the back button restores a page from the browser's cache with the
+#: button still disabled and the label still reading "Searching" - which looks
+#: exactly like the hang this exists to prevent.
+_BUSY_SCRIPT = """
+<script>
+(function () {
+  var form = document.getElementById("askform");
+  if (!form) return;
+  var button = form.querySelector("button");
+  function reset() {
+    form.classList.remove("busy");
+    button.disabled = false;
+    button.textContent = "Ask";
+  }
+  form.addEventListener("submit", function () {
+    form.classList.add("busy");
+    button.textContent = "Searching\u2026";
+    setTimeout(function () { button.disabled = true; }, 0);
+  });
+  window.addEventListener("pageshow", reset);
+})();
+</script>
+"""
+
+
+def _search_form(question: str = "", *, model_phrasing: bool = False) -> str:
+    """The question box, with a busy state for the wait after it is submitted.
+
+    `model_phrasing` is the server's own `--with-model` flag, not anything read
+    off a result: the message has to be right *before* the request is sent, so
+    it cannot be derived from an answer that does not exist yet.
+    """
+    message = _BUSY_WITH_MODEL if model_phrasing else _BUSY_DETERMINISTIC
     return (
-        '<form action="/ask" method="get">'
+        '<form id="askform" action="/ask" method="get">'
         f'<input type="text" name="q" value="{_e(question)}" '
         'placeholder="Ask a question about the Ashen Era archive" '
         # Native autocomplete against the 117 entity names. The list is only
         # emitted on the index page; elsewhere the attribute simply matches no
         # datalist and the input behaves as a plain text box.
         'list="entities" autocomplete="off" autofocus>'
-        "<button type=\"submit\">Ask</button>"
+        '<button type="submit">Ask</button>'
+        f'<p class="busymsg"><span class="spinner"></span>{_e(message)}</p>'
         "</form>"
+        f"{_BUSY_SCRIPT}"
     )
 
 
@@ -1182,7 +1252,7 @@ def _shell(title: str, body: str) -> str:
     )
 
 
-def page_index(catalogue: dict | None = None) -> str:
+def page_index(catalogue: dict | None = None, *, model_phrasing: bool = False) -> str:
     """The front page: ask, or browse what there is to ask about.
 
     `catalogue` is optional so the page still renders without one (tests, and
@@ -1191,7 +1261,7 @@ def page_index(catalogue: dict | None = None) -> str:
     """
     return _shell(
         "Ashen Era Intelligence Assistant",
-        _search_form()
+        _search_form(model_phrasing=model_phrasing)
         + _entity_datalist(catalogue)
         + _examples_block()
         + _reload_block()
@@ -1239,10 +1309,10 @@ def page_graph(svg: str, legend: str, node_count: int, edge_count: int) -> str:
     return _shell("The knowledge graph - Ashen Era", body)
 
 
-def page_answer(view: dict) -> str:
+def page_answer(view: dict, *, model_phrasing: bool = False) -> str:
     """The full result page: all nine demo surfaces, in reading order."""
     body = (
-        _search_form(view["question"])
+        _search_form(view["question"], model_phrasing=model_phrasing)
         + _answer_block(view)
         + _status_block(view)
         + _strategy_block(view)

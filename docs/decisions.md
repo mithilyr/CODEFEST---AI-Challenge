@@ -3892,3 +3892,100 @@ actually carries the surface. A test that checks a label is testing the label.
 *Status: accepted, validated by 5 tests and a live pass over an answered
 question, a conflict and a fourteen-route answer.*
 
+
+---
+
+## ADR-040 - A visible busy state, and the first JavaScript in the project
+
+**Problem**
+
+Submitting a question gave no acknowledgement at all. The page is a plain GET
+and the browser sits on the old document until the response arrives, so a user
+who clicked Ask could not tell the difference between "working" and "my click
+did not register" - and the natural response to that is to click again.
+
+Measured on the running server: a cached or fully deterministic answer returns
+in **~11ms**, which needs no indicator. The case that actually feels dead is
+`--with-model` on a question nobody has asked before, which waits on one
+OpenRouter round-trip. So the problem is real and concentrated in exactly one
+path.
+
+**Decision, and the constraint it crosses**
+
+`graphview.py` renders 117 entities with no script and no CDN, and that has been
+a stated property. This adds **one inline `<script>`, about fifteen lines**, and
+the distinction that makes it acceptable is narrow but real:
+
+> The script changes nothing about what the server does or what the page says.
+> With scripting off the form submits exactly as it always has and the message
+> never appears. It is feedback about a request already in flight, not
+> behaviour any result depends on.
+
+The invariant worth pinning was never "no JavaScript" - it is **no dependency
+and nothing fetched**. That is now asserted explicitly: exactly one `<script>`
+tag, no `src`, and no `http://`, `https://`, `cdnjs` or `unpkg` anywhere in
+either page.
+
+**The message names the slow part**
+
+Two wordings, because only one is true at a time:
+
+    deterministic   "Searching the archive..."
+    --with-model    "Searching the archive... phrasing with a model can take
+                     a few seconds"
+
+Promising a wait for a model that will never be called would be the page lying
+about its own architecture, and CLAUDE.md's rule is that an LLM call is visible
+and counted rather than hidden inside a spinner. The flag is the server's own
+`use_model_phrasing`, plumbed into `page_index` and `page_answer` - it cannot be
+read off a result, because the message has to be right *before* the request is
+sent.
+
+**Two browser details that are not incidental**
+
+- The submit button is disabled on a `setTimeout(..., 0)` rather than inline.
+  Disabling a submit button *inside its own submit handler* cancels the
+  submission in some browsers, which would turn a loading indicator into a
+  page that genuinely does nothing.
+- `pageshow` resets the label and the disabled flag. The back button restores a
+  page from the browser's cache with the button still disabled and still
+  reading "Searching" - which looks exactly like the hang this exists to
+  prevent.
+
+The spinner is CSS, and honours `prefers-reduced-motion`.
+
+**Scope**
+
+The Ask form only, on both pages. The dev-question links, the 117 entity links
+and the Reindex button are plain navigations that were considered and left
+alone for now - the entity and question links hit the ~11ms deterministic path,
+and Reindex is a separate case worth its own treatment.
+
+**Measured result**
+
+```
+6 new tests, 454 total (was 448).
+
+  form still carries action/method and an enabled button (works with JS off)
+  exactly one script tag, no src, no remote host on either page
+  wording differs correctly between --with-model and deterministic
+  pageshow reset present; disable is out-of-band
+```
+
+**Two tests changed, and why neither was a loosening**
+
+`test_index_page_offers_autocomplete_and_a_browsable_list` asserted
+`"<script" not in html`. That was pinning "no JavaScript", which is no longer
+the property; it now asserts one inline script and nothing fetched, which is
+stricter about the thing that matters.
+
+`test_every_dynamic_value_is_escaped` asserted `"<script>" not in html` as its
+XSS check, which the page's own script broke. The property was never "the page
+contains no script" but "nothing a user typed becomes markup", so it now
+asserts the hostile input appears escaped, appears nowhere unescaped, and that
+every script on the page is the renderer's own. That is a stronger test than
+the substring it replaced.
+
+*Status: accepted, validated by 6 tests and a live check of the busy state in a
+browser.*
+

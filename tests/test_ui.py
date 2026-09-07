@@ -422,12 +422,27 @@ def test_ambiguous_entity_lists_candidates_without_choosing(graph):
 
 
 def test_every_dynamic_value_is_escaped(graph):
-    """A question is user input and reaches the page; it must not reach it as markup."""
+    """A question is user input and reaches the page; it must not reach it as markup.
+
+    This used to assert `"<script>" not in html`, which stopped being a usable
+    check when the page grew its own inline busy-state script (ADR-040). The
+    property was never "the page contains no script" - it is "nothing a user
+    typed becomes markup" - so it is now asserted directly: the hostile input
+    appears escaped, appears nowhere unescaped, and every script tag on the
+    page is the one the renderer wrote.
+    """
+    import re as _re
+
     hostile = 'Whose <script>alert("x")</script> dominion & lair?'
     v = build_view(answer_question(hostile, graph), graph)
     html = page_answer(v)
-    assert "<script>" not in html
-    assert "&lt;script&gt;" in html
+
+    assert "&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;" in html
+    assert 'alert("x")' not in html, "user input reached the page as live markup"
+
+    scripts = _re.findall(r"<script[^>]*>(.*?)</script>", html, _re.S)
+    assert len(scripts) == 1, f"expected only the busy-state script, got {len(scripts)}"
+    assert "askform" in scripts[0]
 
 
 def test_index_and_error_pages_render(graph):
@@ -952,3 +967,71 @@ def test_the_chain_follows_the_engines_own_hop_order(graph):
         for hop in route["hops"]:
             expected += [hop["relation"], hop["to_name"]]
         assert plain == escape(" \u2192 ".join(expected), quote=True)
+
+
+# -- the busy state (ADR-040) ------------------------------------------------
+
+
+def test_the_form_still_works_with_scripting_off(graph):
+    """The script is feedback about a request, never a precondition for one.
+
+    With JavaScript disabled the form submits exactly as it always has and the
+    busy message is simply never shown - the `busy` class is the only thing the
+    script adds, and CSS hides the message without it.
+    """
+    html = page_index()
+    assert '<form id="askform" action="/ask" method="get">' in html
+    assert 'name="q"' in html
+    assert '<button type="submit">Ask</button>' in html, "not pre-disabled"
+    assert ".busymsg { display: none;" in html
+
+
+def test_the_page_loads_no_script_and_no_asset_from_anywhere(graph):
+    """One inline snippet, and nothing fetched. That is the invariant that
+    matters - not "no JavaScript", which was the wrong thing to pin."""
+    import re as _re
+
+    for html in (page_index(), page_answer(_synth(graph, Q_013))):
+        opens = _re.findall(r"<script[^>]*>", html)
+        assert len(opens) == 1, f"expected one script tag, got {opens}"
+        assert "src=" not in opens[0]
+        for remote in ("http://", "https://", "//cdn", "cdnjs", "unpkg"):
+            assert remote not in html
+
+
+def test_the_busy_message_names_the_slow_part_only_when_a_model_is_used(graph):
+    """A deterministic run answers in about 11ms; promising a wait for the
+    model when no model will be called would be a lie the page tells itself."""
+    off = page_index(model_phrasing=False)
+    assert "Searching the archive" in off
+    assert "phrasing with a model" not in off
+
+    on = page_index(model_phrasing=True)
+    assert "phrasing with a model can take a few seconds" in on
+
+    # The answer page carries the same flag, so the wording does not change
+    # between the front page and a follow-up question.
+    view = _synth(graph, Q_013)
+    assert "phrasing with a model" in page_answer(view, model_phrasing=True)
+    assert "phrasing with a model" not in page_answer(view, model_phrasing=False)
+
+
+def test_the_busy_state_is_reset_on_back_navigation(graph):
+    """The back button restores a page from the browser's cache with the button
+    still disabled and still reading "Searching" - which looks exactly like the
+    hang this exists to prevent."""
+    html = page_index()
+    assert 'window.addEventListener("pageshow", reset)' in html
+    assert 'button.textContent = "Ask"' in html
+
+
+def test_the_submit_button_is_disabled_out_of_band(graph):
+    """Disabling a submit button inside its own submit handler cancels the
+    submission in some browsers. The timeout lets the request start first."""
+    html = page_index()
+    assert "setTimeout(function () { button.disabled = true; }, 0)" in html
+
+
+def test_the_spinner_respects_reduced_motion(graph):
+    html = page_index()
+    assert "@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }" in html
