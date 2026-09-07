@@ -731,7 +731,15 @@ def test_the_page_renders_the_phrased_sentence_with_its_provenance(graph):
     html = page_answer(build_view(answer, graph, None, synthesis))
 
     assert 'class="prose"' in html
-    assert escape(synthesis.text, quote=True) in html, "rendered verbatim, not reworded"
+
+    # Rendered verbatim, not reworded. The sentence now carries markup - answer
+    # values emboldened, citations set small and italic - so it is no longer a
+    # contiguous string in the source. Strip the tags back out and every
+    # character the query layer wrote must still be there, in order.
+    import re as _re
+
+    body = _re.search(r'<p class="prosetext">(.*?)</p>', html, _re.S).group(1)
+    assert _re.sub(r"<[^>]+>", "", body) == escape(synthesis.text, quote=True)
     # Provenance is on the page, not just in the dict: a judge asking "did an AI
     # write this?" gets the answer without reading the source.
     assert "template" in html
@@ -781,3 +789,94 @@ def test_a_profile_answer_does_not_call_its_endpoints_values(graph):
     html = page_answer(view)
     assert "entities this record links to" in html
     assert "The engine returned a set" not in html
+
+
+# -- the sharpened answer page (ADR-038) -------------------------------------
+
+
+def _synth(graph, question):
+    from src.query.synthesis import synthesise
+
+    answer = answer_question(question, graph, use_planner=False)
+    return build_view(answer, graph, None, synthesise(answer, graph, use_model=False))
+
+
+def test_an_answered_page_shows_the_sentence_and_not_a_duplicate_value_list(graph):
+    """The sentence states the answer and the join. Repeating the bare values
+    underneath was duplication that pushed the evidence off the screen."""
+    html = page_answer(_synth(graph, Q_013))
+    assert 'class="prose"' in html
+    assert 'class="values"' not in html
+    assert 'class="answer"' not in html
+
+
+def test_the_answer_values_are_emboldened_inside_the_sentence(graph):
+    view = _synth(graph, Q_013)
+    html = page_answer(view)
+    for value in view["values"]:
+        assert f"<b>{escape(value, quote=True)}</b>" in html
+
+
+def test_nothing_the_engine_did_not_return_is_emboldened(graph):
+    """The bold strings come from `view["values"]`, which the engine produced."""
+    import re as _re
+
+    view = _synth(graph, Q_013)
+    body = _re.search(r'<p class="prosetext">(.*?)</p>', page_answer(view), _re.S).group(1)
+    bolded = set(_re.findall(r"<b>(.*?)</b>", body))
+    assert bolded <= {escape(v, quote=True) for v in view["values"]}
+
+
+def test_citations_are_marked_so_they_can_be_set_small_and_italic(graph):
+    html = page_answer(_synth(graph, Q_013))
+    assert 'class="cite"' in html
+    assert ".cite { font-size: .78em; font-style: italic;" in html
+
+
+def test_the_phrasing_provenance_is_behind_a_disclosure(graph):
+    """Still on the page and still one click away - just not competing with the
+    answer for the top of the screen."""
+    html = page_answer(_synth(graph, Q_013))
+    assert '<details class="prosemeta"><summary>How this answer was written</summary>' in html
+    assert "no model, no API key, no network" in html
+
+
+def test_the_supporting_surfaces_are_collapsed_on_an_answered_page(graph):
+    """Every surface stays one click away; none of them competes with the answer."""
+    import re as _re
+
+    html = page_answer(_synth(graph, Q_013))
+    for title in (
+        "Strategy used",
+        "Evidence sufficiency",
+        "Evidence path",
+        "Source documents and tiers",
+    ):
+        assert _re.search(rf'<details class="sect"><summary>{title}', html), title
+    # `open` appears on none of them: the answer is what a reader sees first.
+    assert '<details class="sect" open><summary>Strategy used' not in html
+
+
+def test_evidence_sufficiency_is_open_on_a_decline(graph):
+    """The named reason IS the result when there is no answer - collapsing it by
+    default would undo ADR-026."""
+    view = _synth(graph, "What colour is the sky in the Ashen Era?")
+    assert view["answerable"] is False
+    html = page_answer(view)
+    assert '<details class="sect" open><summary>Evidence sufficiency' in html
+    # The partial-evidence blocks are not collapsed at all.
+    assert "<h2>What the system recognised</h2>" in html
+
+
+def test_a_surfaced_conflict_is_open(graph):
+    """A same-tier contradiction a reader must click to discover is one the demo
+    did not surface (`1b_009`)."""
+    html = page_answer(_synth(graph, Q_009))
+    assert '<details class="sect" open><summary>Conflict, and how it was handled' in html
+
+
+def test_the_checkpoint_footer_is_gone(graph):
+    """It was also wrong: an LLM does phrase answers on this path now."""
+    for html in (page_answer(_synth(graph, Q_013)), page_index()):
+        assert "Checkpoint 2" not in html
+        assert "no LLM in this path" not in html

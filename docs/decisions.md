@@ -3734,3 +3734,95 @@ affect retrieval. If that judgement is wrong the move is mechanical, and
 *Status: accepted, validated by 11 tests, a live run of both phrasing paths, and
 the three ADR-018 thinness tests still passing.*
 
+
+---
+
+## ADR-038 - One answer box, and every audit surface one click behind it
+
+**Problem**
+
+ADR-037 put a phrased sentence on the answer page. ADR-026 put partial evidence
+on every decline. ADR-027 added attestation. Each was right on its own and the
+result was a page with ten stacked open panels, where the thing a reader wanted
+- the answer - was one card among ten and the sentence was immediately followed
+by a bullet list repeating the same values.
+
+For a submission, that reads as an engineering artefact rather than a product.
+The evidence has to remain reachable in one click, because being able to check
+every hop is the entire claim; it does not have to be the first thing on screen.
+
+**Decision**
+
+*The answer section is the sentence, and nothing else.* The duplicate value list
+is gone when a sentence exists - the sentence already states the values, and
+they are now emboldened inside it. The bare list survives only as a fallback for
+a caller that passes no synthesis, so a page can never show neither.
+
+*Four surfaces collapse:* Strategy used, Evidence sufficiency, Evidence path,
+Source documents and tiers. `<details>`/`<summary>`, so no JavaScript and no
+dependency - the same constraint `graphview.py` works under.
+
+*Two things refuse to collapse, and the exceptions are the point:*
+
+| Case | Behaviour | Why |
+|---|---|---|
+| A surfaced conflict | open | A same-tier contradiction a reader must click to discover is one the demo did not surface. `1b_009` exists to prevent exactly that |
+| A decline | Evidence sufficiency open, partial-evidence blocks not collapsed at all | The named reason *is* the result when there is no answer. Collapsing it would undo ADR-026 and restore the "looks like a crash" failure it was written to fix |
+
+*Citations set small and italic* (`.cite`), matched in three shapes because
+three writers produce them - the model brackets with U+3010/3011, or
+parenthesises, and `template_sentence` writes bare paths after "Sources:". A
+citation should be checkable without competing with the sentence for attention.
+
+*The phrasing provenance moves behind a disclosure* - still present, still one
+click away, no longer a paragraph of explanation above the fold.
+
+*The footer is deleted.* It read "Checkpoint 2 - deterministic engine, no LLM in
+this path", which stopped being true when ADR-037 rendered model phrasing.
+
+**Emboldening is a join, not a judgement**
+
+The bold strings are `view["values"]` - what the engine returned. `_bold_values`
+applies them to text runs only, never inside a tag or a citation, longest first
+so "Corvus Hollowmere the Pale" is not half-matched by "Corvus Hollowmere".
+`test_nothing_the_engine_did_not_return_is_emboldened` asserts the set of
+emboldened strings is a subset of the engine's own values, and
+`test_the_page_renders_the_phrased_sentence_with_its_provenance` strips the
+markup back out and compares to the original sentence character for character -
+so this can add emphasis and can never edit prose.
+
+ADR-018's three thinness tests are untouched and green.
+
+**Measured result**
+
+```
+9 new tests, 443 total (was 434).
+
+  answered   1 answer card, 4 collapsed surfaces, values bold in the sentence
+  1b_009     conflict panel open without a click, both tier-2 sources visible
+  decline    evidence sufficiency open, partial-evidence blocks open
+  no page contains "Checkpoint 2" or "no LLM in this path"
+```
+
+**Two bugs found while writing it, both from escapes eaten before they landed**
+
+`content: "\25B8"` for the disclosure triangle rendered as a control character
+followed by "B8": the CSS lives in a non-raw Python string, where `\25` is an
+*octal* escape. The glyph is now written literally. Separately, a `\b` in the
+citation regex reached the file as a literal backspace byte (0x08) and silently
+matched nothing, so bare `Sources: wiki/...` paths were never marked - a regex
+that fails open looks like it works. Both are the same lesson: an escape that
+passes through two layers of quoting should be verified against behaviour, not
+against the source reading correctly.
+
+**Trade-offs**
+
+A judge who wants the evidence now clicks for it. That is the right default for
+a five-minute demo and the wrong one for an auditor, so nothing was removed and
+nothing was made conditional - every surface renders exactly as before, one
+`<summary>` away. If the video needs a panel open on camera, adding `open` to
+`_details` is one argument.
+
+*Status: accepted, validated by 9 tests and a live pass over an answered
+question, a conflict and a decline.*
+

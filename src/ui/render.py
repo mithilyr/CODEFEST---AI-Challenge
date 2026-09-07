@@ -24,6 +24,7 @@ Nine surfaces the demo has to expose, and where each one lives:
 
 from __future__ import annotations
 
+import re
 from html import escape
 
 DEMO_QUESTIONS: list[tuple[str, str]] = [
@@ -161,7 +162,36 @@ footer { color: #7a7a86; font-size: .8rem; text-align: center; margin: 1.5rem 0 
 .prose { margin: 0 0 .9rem; padding: .85rem 1rem; background: #f2f6fb;
          border-left: 3px solid #3f6ea8; border-radius: 0 6px 6px 0; }
 .prosetext { margin: 0; font-size: 1.08rem; line-height: 1.6; color: #16233a; }
-.prosemeta { margin: .55rem 0 0; font-size: .8rem; color: #4a5568; }
+.prosemeta { margin: .6rem 0 0; font-size: .8rem; color: #4a5568;
+             border: 0; background: none; }
+.prosemeta > summary { padding: 0; font-size: .78rem; font-weight: 600;
+                       color: #46608a; }
+.prosemeta p { margin: .4rem 0 0; }
+
+/* A citation should be checkable without competing with the sentence for
+   attention: smaller, italic, and set back in weight. */
+.cite { font-size: .78em; font-style: italic; color: #5a6478;
+        font-family: ui-monospace, Consolas, monospace; }
+.prosetext b { font-weight: 700; color: #0f1c33; }
+
+/* The collapsed surfaces. Same card as `section` so the page reads as one
+   stack whether a block is open or shut. */
+details.sect { background: #fff; border: 1px solid #e2e2e8; border-radius: 8px;
+               margin: 0 0 .6rem; }
+details.sect > summary { padding: .7rem 1.15rem; cursor: pointer;
+                         font-size: .72rem; text-transform: uppercase;
+                         letter-spacing: .09em; color: #6a6a76;
+                         font-weight: 700; list-style: none; }
+details.sect > summary::-webkit-details-marker { display: none; }
+/* The glyph literally, not "\\25B8": this CSS lives in a non-raw Python string,
+   where \\25 is an OCTAL escape (U+0015) and the browser then saw a control
+   character followed by "B8". */
+details.sect > summary::before { content: "▸"; display: inline-block;
+                                 margin-right: .5rem; transition: transform .15s;
+                                 color: #9a9aa8; }
+details.sect[open] > summary::before { transform: rotate(90deg); }
+details.sect > summary:hover { color: #1b1b1f; background: #fafafc; }
+details.sect > .sectbody { padding: 0 1.15rem 1rem; }
 .suggest { margin: .7rem 0; padding: .7rem .85rem; background: #fff8e6;
            border-left: 3px solid #d99b1c; border-radius: 0 5px 5px 0; }
 .suggest ul { margin: .3rem 0 0; padding-left: 1.2rem; }
@@ -284,6 +314,73 @@ _PHRASING_LABEL = {
 }
 
 
+#: A document reference as it appears in phrased prose. Three shapes, because
+#: three writers produce them: the model brackets them with U+3010/3011, or
+#: parenthesises them, and `template_sentence` writes bare paths after
+#: "Sources:". Matched so they can be set smaller and italic - a citation
+#: should be checkable without competing with the sentence for attention.
+_CITE_RE = re.compile(
+    "\u3010[^\u3011]*\u3011"                                    # model brackets
+    r"|\((?:wiki|codex|ephemera|chronicles)/[^)]*\)"       # parenthesised
+    # Bare path. Segment-wise rather than a flat character class so a sentence's
+    # closing full stop is not swallowed into the citation and italicised.
+    r"|\b(?:wiki|codex|ephemera|chronicles)/[\w\-]+(?:\.[\w\-]+)*(?:#\d+)?"
+)
+
+#: Splits already-escaped HTML into tag and text runs, so a replacement can be
+#: applied to the words without touching the markup around them.
+_TAG_RE = re.compile(r"(<[^>]*>)")
+
+
+def _details(title: str, body: str, *, open_: bool = False) -> str:
+    """One collapsible section. Empty body renders nothing at all.
+
+    The demo page carries ten surfaces, and on an answered question a reader
+    wants one of them. Collapsing the rest keeps every surface one click away -
+    which is what the evidence claim requires - without making the answer
+    compete with its own audit trail for the top of the screen.
+    """
+    if not body:
+        return ""
+    return (
+        f'<details class="sect"{" open" if open_ else ""}>'
+        f"<summary>{title}</summary>"
+        f'<div class="sectbody">{body}</div></details>'
+    )
+
+
+def _mark_citations(escaped: str) -> str:
+    """Wrap document references so CSS can shrink and italicise them.
+
+    Styling only - the text is not altered, reordered or dropped, so a citation
+    the model wrote is still there to be checked against the evidence path.
+    """
+    return _CITE_RE.sub(lambda m: f'<span class="cite">{m.group(0)}</span>', escaped)
+
+
+def _bold_values(html: str, values: list[str]) -> str:
+    """Embolden the engine's own answer values where the sentence states them.
+
+    A join, not a judgement: the strings come from `view["values"]`, which the
+    engine produced. Nothing is emboldened that the engine did not return, and
+    the sentence is not edited - only marked up.
+
+    Applied to text runs only, so a value that happens to appear inside a tag
+    or a citation is left alone. Longest first, so "Corvus Hollowmere the Pale"
+    is not half-matched by "Corvus Hollowmere".
+    """
+    if not values:
+        return html
+    escaped = sorted((_e(v) for v in values), key=len, reverse=True)
+    pattern = re.compile("|".join(re.escape(v) for v in escaped))
+    return "".join(
+        part
+        if part.startswith("<")
+        else pattern.sub(lambda m: f"<b>{m.group(0)}</b>", part)
+        for part in _TAG_RE.split(html)
+    )
+
+
 def _prose_block(view: dict) -> str:
     """The phrased answer, above the evidence that produced it.
 
@@ -306,21 +403,36 @@ def _prose_block(view: dict) -> str:
     if phrasing == "model" and model:
         badge = f"{badge} &middot; {_e(model)}"
 
+    # Citations set small and italic, and the engine's own answer values set
+    # bold. Both are markup over text this module did not write: `_e` escapes
+    # first, so neither can inject anything, and neither drops a character.
+    text = _bold_values(_mark_citations(_e(prose)), view.get("values") or [])
+
     return (
-        f'<div class="prose"><p class="prosetext">{_e(prose)}</p>'
-        f'<p class="prosemeta"><span class="tag">{badge}</span> '
-        f'{_PHRASING_LABEL.get(phrasing or "", "")}</p></div>'
+        f'<div class="prose"><p class="prosetext">{text}</p>'
+        f'<details class="prosemeta"><summary>How this answer was written</summary>'
+        f'<p><span class="tag">{badge}</span> '
+        f'{_PHRASING_LABEL.get(phrasing or "", "")}</p></details></div>'
     )
 
 
 def _answer_block(view: dict) -> str:
-    """The phrased answer, then the engine's `values`.
+    """The phrased answer, and nothing else when there is one.
 
-    The sentence comes from the query layer; this block does not write one.
-    When there are no values the block says so plainly and defers to the
-    status block for the reason - it does not write an apology or a guess.
+    The sentence comes from the query layer; this block does not write one. It
+    states the answer *and* the join that produced it, so repeating the bare
+    values underneath was duplication that pushed the evidence off the screen -
+    the values are emboldened inside the sentence instead.
+
+    The bare list survives as a fallback for a caller that passes no synthesis
+    (every test that builds a view directly, and any future non-HTML consumer),
+    because a page that shows neither a sentence nor a value shows nothing.
     """
     values = view["values"]
+    prose = _prose_block(view)
+    if prose:
+        return f"<section><h2>Answer</h2>{_model_route_banner(view)}{prose}</section>"
+
     if not values:
         body = (
             '<p class="answer" style="color:#7a1d1d">No answer returned</p>'
@@ -346,15 +458,7 @@ def _answer_block(view: dict) -> str:
         )
         body = f'<ul class="values">{items}</ul><p class="gloss">{caption}</p>'
 
-    # Order matters. The model-route banner is first because a reader who
-    # takes only the answer should already have been told a model chose the
-    # route to it. The phrased sentence follows, then the bare value it states
-    # - the sentence is the thing a person reads, and the value is the thing a
-    # person checks.
-    return (
-        f"<section><h2>Answer</h2>"
-        f"{_model_route_banner(view)}{_prose_block(view)}{body}</section>"
-    )
+    return f"<section><h2>Answer</h2>{_model_route_banner(view)}{body}</section>"
 
 
 def _strategy_block(view: dict) -> str:
@@ -383,7 +487,7 @@ def _strategy_block(view: dict) -> str:
             f"<tr><th>Routes found</th><td>{len(view['routes'])}</td></tr>"
         )
         inner = f"<table>{''.join(rows)}</table>"
-    return f"<section><h2>Strategy used</h2>{inner}</section>"
+    return _details("Strategy used", inner)
 
 
 def _model_route_banner(view: dict) -> str:
@@ -463,7 +567,12 @@ def _status_block(view: dict) -> str:
             )
             + "</div>"
         )
-    return f"<section><h2>Evidence sufficiency</h2>{''.join(parts)}</section>"
+    # Open on a decline. The status and the engine's own reason for
+    # stopping are the answer when there is no answer, and collapsing
+    # them by default would undo exactly what ADR-026 built.
+    return _details(
+        "Evidence sufficiency", "".join(parts), open_=not view["answerable"]
+    )
 
 
 def _attestation_html(hop: dict) -> str:
@@ -534,9 +643,11 @@ def _routes_block(view: dict) -> str:
     """Every hop of every route, each with the cell it was read from."""
     if not view["routes"]:
         return (
-            "<section><h2>Evidence path</h2>"
-            '<p class="gloss">No path was walked, so there are no hops to show.'
-            "</p></section>"
+            _details(
+                "Evidence path",
+                '<p class="gloss">No path was walked, so there are no hops to '
+                "show.</p>",
+            )
         )
     blocks = []
     for route in view["routes"]:
@@ -547,9 +658,9 @@ def _routes_block(view: dict) -> str:
             f'&rarr; {_e(route["endpoint_name"])} '
             f'({len(route["hops"])} hops)</p>{hops}</div>'
         )
-    return (
-        "<section><h2>Evidence path &mdash; every hop, with its source passage</h2>"
-        f"{''.join(blocks)}</section>"
+    return _details(
+        "Evidence path &mdash; every hop, with its source passage",
+        "".join(blocks),
     )
 
 
@@ -561,10 +672,9 @@ def _documents_block(view: dict) -> str:
         f'<td>{_tier_tag(d["tier"], d["tier_label"])}</td></tr>'
         for d in view["documents"]
     )
-    return (
-        "<section><h2>Source documents and tiers</h2>"
-        f"<table><tr><th>Document</th><th>Authority tier</th></tr>{rows}</table>"
-        "</section>"
+    return _details(
+        "Source documents and tiers",
+        f"<table><tr><th>Document</th><th>Authority tier</th></tr>{rows}</table>",
     )
 
 
@@ -609,8 +719,9 @@ def _conflict_block(view: dict) -> str:
         else "Reported by the engine as shown; this page does not re-decide it."
     )
 
-    return (
-        "<section><h2>Conflict, and how it was handled</h2>"
+    return _details(
+        "Conflict, and how it was handled",
+        (
         f'<p class="gloss"><span class="status warn">{_e(conflict["status"])}'
         "</span> &nbsp;must surface: <strong>"
         f'{"yes" if conflict["must_surface"] else "no"}</strong></p>'
@@ -622,7 +733,10 @@ def _conflict_block(view: dict) -> str:
         f'<div class="side denies"><h3>Disputed by</h3>{denies}</div>'
         "</div>"
         f'<p class="gloss">{handling}</p>'
-        "</section>"
+        ),
+        # Open by default. A same-tier contradiction the reader has to click to
+        # discover is a contradiction the demo did not surface (`1b_009`).
+        open_=True,
     )
 
 
@@ -1005,8 +1119,7 @@ def _shell(title: str, body: str) -> str:
         '<p class="sub">Deterministic graph query over 317 documents. '
         "Every hop below cites the infobox row it was read from.</p>"
         f"{body}"
-        "<footer>Checkpoint 2 &mdash; deterministic engine, no LLM in this path."
-        "</footer></main></body></html>"
+        "</main></body></html>"
     )
 
 
