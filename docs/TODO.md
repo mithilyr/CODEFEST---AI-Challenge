@@ -76,18 +76,22 @@ are done: `origin` is configured
       tests in `tests/test_diagram.py` that re-derive every number from the live
       corpus — verified by mutation, after the first version passed a deliberate
       117→125 change.
-- [ ] **Team names, roles and contributions** are recorded nowhere in the repo
-      and are required in the report (§5.3). Two owner lines in "Assign" below
-      are still unfilled. **This is now one of only two mandatory-deliverable
-      gaps left** (the other is the video).
-      MEASURED 2026-09-06: all **78 commits** from 2026-08-28 to today carry a
+- [ ] **Team names, roles and contributions** — `TEAM.md` now exists and is the
+      source for the report's §6. **Two of four entries are still placeholders**
+      and must be filled in by the people concerned before submission:
+      Tatiana and Kenolee. Nothing in the repo records what either contributed,
+      so they were left blank rather than invented — see the note at the top of
+      that file. Also unfilled there: who authored the frozen 55-question set,
+      and who reviewed the answer key.
+      MEASURED 2026-09-07: all **117 commits** from 2026-08-28 to today carry a
       single author, `mithilyr <mithilrajapakse11@gmail.com>`. CLAUDE.md says a
       team of four. The rubric has judges read the commit history to verify
       sustained work, and §5.3 asks who did what — a one-author history cannot
-      evidence four contributors, and it is too late to rewrite it. The honest
-      options are (a) state in §6 how the team actually worked and why the
-      history has one committer, or (b) have the other three author their own
-      commits from here to the deadline. Decide, do not leave it implicit.
+      evidence four contributors, and it is too late to rewrite it honestly.
+      Option (a) is taken: `TEAM.md` states the situation plainly rather than
+      leaving a judge to discover it. Option (b) — the other three authoring
+      their own commits from here to the deadline — is still open and still
+      worth doing for whatever work remains.
 - [x] `configuration-example/` — done. README, `authority.yaml`,
       `relations.yaml`, `env.example`. (`docs/architecture.md` done too.)
 - [x] Decide F-026: `_strip_possessive` did not strip a bare trailing `s`, so
