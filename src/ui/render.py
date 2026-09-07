@@ -119,6 +119,20 @@ ul.values { margin: 0; padding-left: 1.2rem; font-size: 1.05rem; font-weight: 60
 .step .rel { font-family: ui-monospace, Consolas, monospace; font-size: .84rem;
              background: #ececf2; padding: .1rem .4rem; border-radius: 4px;
              color: #3a3a46; }
+.chain { margin: 0 0 .7rem; padding: .55rem .7rem; background: #f7f8fb;
+         border: 1px solid #e4e6ee; border-radius: 6px; line-height: 2.1;
+         word-break: break-word; }
+.chain .rel { font-family: ui-monospace, Consolas, monospace; font-size: .84rem;
+              background: #ececf2; padding: .12rem .45rem; border-radius: 4px;
+              color: #3a3a46; }
+.chain .cnode { font-weight: 600; font-size: .95rem; color: #1b1b1f; }
+.chain .cnode.end { color: #16233a; background: #e6edf7; padding: .1rem .4rem;
+                    border-radius: 4px; }
+.chain .carrow { color: #9a9aa8; margin: 0 .35rem; }
+.chain .rel.disputed { background: #f8dcda; color: #7a1d1d; }
+.sumchain { text-transform: none; letter-spacing: 0; font-weight: 600;
+            color: #3d3d45; font-family: ui-monospace, Consolas, monospace;
+            font-size: .95em; }
 .prov { font-family: ui-monospace, Consolas, monospace; font-size: .8rem;
         color: #4a4a55; margin: 0; }
 .prov .doc { color: #1b3a63; }
@@ -639,6 +653,43 @@ def _hop_html(hop: dict) -> str:
     )
 
 
+def _chain_line(route: dict, *, plain: bool = False) -> str:
+    """The whole route on one line: `A -> rel -> B -> rel -> C`.
+
+    The hop-by-hop blocks below carry the provenance, which is what makes an
+    answer checkable - but they are five lines each, and a reader who wants to
+    know *what was joined to what* had to assemble it themselves. This states
+    it once, in the order it was walked.
+
+    Reads off `route["hops"]`, which the view built from the engine's own path.
+    No traversal, no reordering: hop N's target is hop N+1's subject by
+    construction.
+
+    `plain` drops the markup for use inside a `<summary>`, where nested
+    elements are awkward and a disclosure widget should stay one line.
+    """
+    hops = route["hops"]
+    if not hops:
+        return ""
+
+    if plain:
+        parts = [route["start_name"]]
+        for hop in hops:
+            parts += [hop["relation"], hop["to_name"]]
+        return _e(" \u2192 ".join(parts))
+
+    out = [f'<span class="cnode">{_e(route["start_name"])}</span>']
+    for index, hop in enumerate(hops):
+        rel_class = "rel disputed" if hop["disputed"] else "rel"
+        last = index == len(hops) - 1
+        node_class = "cnode end" if last else "cnode"
+        out.append('<span class="carrow">&rarr;</span>')
+        out.append(f'<span class="{rel_class}">{_e(hop["relation"])}</span>')
+        out.append('<span class="carrow">&rarr;</span>')
+        out.append(f'<span class="{node_class}">{_e(hop["to_name"])}</span>')
+    return f'<p class="chain">{"".join(out)}</p>'
+
+
 def _routes_block(view: dict) -> str:
     """Every hop of every route, each with the cell it was read from."""
     if not view["routes"]:
@@ -654,14 +705,22 @@ def _routes_block(view: dict) -> str:
         hops = "".join(_hop_html(h) for h in route["hops"])
         blocks.append(
             f'<div class="route"><p class="rhead">Route {route["index"]} of '
-            f'{len(view["routes"])} &mdash; {_e(route["start_name"])} '
-            f'&rarr; {_e(route["endpoint_name"])} '
-            f'({len(route["hops"])} hops)</p>{hops}</div>'
+            f'{len(view["routes"])} &mdash; {len(route["hops"])} hops</p>'
+            f"{_chain_line(route)}{hops}</div>"
         )
-    return _details(
-        "Evidence path &mdash; every hop, with its source passage",
-        "".join(blocks),
+
+    # With one route, the whole path fits in the disclosure's own label, so a
+    # reader sees what was joined to what without opening anything. With
+    # fourteen (1b_006) it would not fit and would not help, so the label stays
+    # generic and each route states its own chain inside.
+    routes = view["routes"]
+    title = (
+        f'Evidence path &mdash; <span class="sumchain">'
+        f"{_chain_line(routes[0], plain=True)}</span>"
+        if len(routes) == 1
+        else "Evidence path &mdash; every hop, with its source passage"
     )
+    return _details(title, "".join(blocks))
 
 
 def _documents_block(view: dict) -> str:

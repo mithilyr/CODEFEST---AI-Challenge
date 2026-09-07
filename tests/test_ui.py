@@ -212,7 +212,11 @@ def test_every_required_surface_is_present_for_a_conflicted_answer(views):
         "Answer",                               # 2. final answer
         "Strategy used",                        # 3. strategy
         "Evidence path",                        # 4. every hop
-        "source passage",                       # 5. supporting passages
+        # 5. supporting passages. Asserted as the markup that carries them, not
+        # as the words "source passage": a single-route answer now puts its
+        # chain in that header instead (ADR-039), and the passages are still
+        # there either way. A test that checks a label is testing the label.
+        'class="passage"',
         "Source documents and tiers",           # 6. source tier
         "Conflict, and how it was handled",     # 7. conflicts + handling
         "Evidence sufficiency",                 # 8. sufficiency
@@ -880,3 +884,71 @@ def test_the_checkpoint_footer_is_gone(graph):
     for html in (page_answer(_synth(graph, Q_013)), page_index()):
         assert "Checkpoint 2" not in html
         assert "no LLM in this path" not in html
+
+
+# -- the path, stated once and clearly ---------------------------------------
+
+
+def test_the_evidence_path_states_the_whole_chain_on_one_line(graph):
+    """The hop blocks carry the provenance; this says what was joined to what.
+
+    `1b_013`: Gravemaw Wyrm -> lair_in -> Marrowwell Abbey -> ruled_by ->
+    The Bleeding Crown.
+    """
+    from src.ui.render import _chain_line
+
+    view = _synth(graph, Q_013)
+    route = view["routes"][0]
+    assert _chain_line(route, plain=True) == (
+        "Gravemaw Wyrm \u2192 lair_in \u2192 Marrowwell Abbey \u2192 ruled_by "
+        "\u2192 The Bleeding Crown"
+    )
+
+    html = page_answer(view)
+    assert 'class="chain"' in html
+    # Endpoint marked as the endpoint, so the eye lands on the answer.
+    assert '<span class="cnode end">The Bleeding Crown</span>' in html
+
+
+def test_a_single_route_puts_its_chain_in_the_collapsed_header(graph):
+    """The evidence path is collapsed by default, so the one thing a reader
+    most wants from it - what joined to what - is in the label."""
+    html = page_answer(_synth(graph, Q_013))
+    assert "Gravemaw Wyrm \u2192 lair_in \u2192 Marrowwell Abbey" in html
+    assert 'class="sumchain"' in html
+
+
+def test_many_routes_keep_a_generic_header(graph):
+    """`1b_006` has fourteen routes; fourteen chains would not fit in a label
+    and would not help. Each route states its own chain inside instead."""
+    view = _synth(graph, Q_006)
+    assert len(view["routes"]) == 14
+    html = page_answer(view)
+    assert 'class="sumchain"' not in html
+    assert "every hop, with its source passage" in html
+    assert html.count('class="chain"') == 14
+
+
+def test_the_chain_marks_the_disputed_relation(graph):
+    """`1b_009`: the victor hop is disputed and the member hop is not, and the
+    one-line summary must not flatten that distinction."""
+    from src.ui.render import _chain_line
+
+    view = _synth(graph, Q_009)
+    chain = _chain_line(view["routes"][0])
+    assert '<span class="rel disputed">victor_of</span>' in chain
+    assert '<span class="rel">member_of</span>' in chain
+
+
+def test_the_chain_follows_the_engines_own_hop_order(graph):
+    """Hop N's target is hop N+1's subject by construction - the line is read
+    off `route["hops"]`, never reassembled."""
+    from src.ui.render import _chain_line
+
+    for question in (Q_013, Q_007, Q_009):
+        route = _synth(graph, question)["routes"][0]
+        plain = _chain_line(route, plain=True)
+        expected = [route["start_name"]]
+        for hop in route["hops"]:
+            expected += [hop["relation"], hop["to_name"]]
+        assert plain == escape(" \u2192 ".join(expected), quote=True)

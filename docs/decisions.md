@@ -3826,3 +3826,69 @@ nothing was made conditional - every surface renders exactly as before, one
 *Status: accepted, validated by 9 tests and a live pass over an answered
 question, a conflict and a decline.*
 
+
+---
+
+## ADR-039 - The path, stated once, on one line
+
+**Problem**
+
+The evidence path rendered every hop with its full provenance - document,
+field, row, parsed-by, raw cell, attestations. That is what makes an answer
+checkable and none of it is negotiable. But it is five or six lines per hop,
+and the question a reader asks first is not "which row was this read from", it
+is **what was joined to what**. That was the one thing the section never said;
+you had to assemble it from the hop blocks yourself.
+
+ADR-038 then collapsed the section by default, which made the gap worse: the
+join was now behind a click *and* still had to be reconstructed once you got
+there.
+
+**Decision**
+
+One line per route, in the order the chain was walked:
+
+    Gravemaw Wyrm -> lair_in -> Marrowwell Abbey -> ruled_by -> The Bleeding Crown
+
+Rendered above that route's hop blocks, with the endpoint marked so the eye
+lands on the answer, and the relation pill coloured red where the engine
+flagged that hop disputed - `1b_009`'s `victor_of` is contested and its
+`member_of` is not, and a one-line summary that flattened those together would
+be a worse lie than not having one.
+
+**With exactly one route, the chain also becomes the collapsed header.** The
+section reads `Evidence path - The Purge of Blackport -> victor_of -> The
+Iron-Ring Cartel -> member_of -> Halvard Crowhurst` before anything is opened,
+so the join is visible at a glance and the provenance is one click behind it.
+With fourteen routes (`1b_006`) the header stays generic, because fourteen
+chains in a `<summary>` would not fit and would not help; each route states its
+own chain inside instead.
+
+**It is read, not reassembled.** `_chain_line` walks `route["hops"]`, which the
+view built from the engine's own `Path`. Hop N's target is hop N+1's subject by
+construction, so the line cannot disagree with the blocks beneath it.
+`test_the_chain_follows_the_engines_own_hop_order` rebuilds the expected string
+from the same hops and compares.
+
+**Measured result**
+
+```
+5 new tests, 448 total (was 443).
+
+  1b_013  Gravemaw Wyrm -> lair_in -> Marrowwell Abbey -> ruled_by ->
+          The Bleeding Crown, in the collapsed header and in the route card
+  1b_009  victor_of marked disputed, member_of not
+  1b_006  14 chains, one per route; header stays generic
+```
+
+**One test changed, and why that was right**
+
+`test_every_required_surface_is_present_for_a_conflicted_answer` asserted the
+literal words "source passage" as its proxy for surface 5. A single-route answer
+now puts its chain in that header, so the phrase moved - while every passage was
+still on the page. The test now asserts `class="passage"`, the markup that
+actually carries the surface. A test that checks a label is testing the label.
+
+*Status: accepted, validated by 5 tests and a live pass over an answered
+question, a conflict and a fourteen-route answer.*
+
