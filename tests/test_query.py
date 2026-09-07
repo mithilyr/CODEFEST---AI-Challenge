@@ -680,3 +680,62 @@ def test_unresolvable_entity_in_a_routed_question_returns_no_path_rather_than_gu
         "Whose dominion encompasses the lair of the Caedmon Fellgardd?", graph
     )
     assert not answer.status.is_answerable
+
+
+# -- a cue word inside an entity's own name is part of the name (F-035) ------
+
+
+def test_a_cue_word_inside_an_entity_name_is_not_a_relation_request(graph):
+    """MEASURED: "Who is House Morvain?" cued `housed_in` and "Who is Embercrag
+    Fortress?" cued `serves_at`, both from a word in the entity's *name*. The
+    router chased a relation nobody asked for, found no path, and declined."""
+    from src.graph.build import load_relation_map
+    from src.query.fallback import route_by_cues
+
+    relations = load_relation_map()
+    for name in ("House Morvain", "Embercrag Fortress"):
+        result = route_by_cues(graph, f"Who is {name}?", relations)
+        assert result.cued == (), f"{name}: phantom cue {result.cued}"
+        assert result.profile, f"{name}: an identity question must yield a profile"
+
+
+def test_every_entity_the_front_page_lists_leads_to_an_answer(graph):
+    """The entity list offers 118 links; each must go somewhere.
+
+    Two were dead before F-035 and seven more answered through cue routing
+    instead of the profile path - a relation-routed reply to an identity
+    question, which is a different question than the one asked.
+    """
+    from src.query.evidence import EvidenceStatus
+
+    statuses = {}
+    for node in graph.nodes.values():
+        answer = answer_question(f"Who is {node.name}?", graph, use_planner=False)
+        statuses.setdefault(answer.status, []).append(node.name)
+
+    assert set(statuses) == {EvidenceStatus.PROFILE}, {
+        status.value: names[:5] for status, names in statuses.items()
+    }
+
+
+def test_masking_removes_the_name_and_nothing_else(graph):
+    from src.query.fallback import find_mentions, tokens_outside_mentions
+
+    question = "Which region is Embercrag Fortress in?"
+    mentions = find_mentions(graph, question)
+    remaining = tokens_outside_mentions(question, mentions)
+
+    assert "embercrag" not in remaining and "fortress" not in remaining
+    assert "region" in remaining, "the actual relation word must survive"
+
+
+def test_a_relation_named_outside_the_entity_name_still_cues(graph):
+    """The mask must not disarm the router - only the name is removed."""
+    from src.graph.build import load_relation_map
+    from src.query.fallback import route_by_cues
+
+    result = route_by_cues(
+        graph, "Which region is Embercrag Fortress in?", load_relation_map()
+    )
+    assert "in_region" in result.cued
+    assert result.answered

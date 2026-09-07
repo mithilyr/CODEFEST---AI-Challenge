@@ -157,7 +157,37 @@ def relation_cues(relations: RelationMap) -> dict[str, set[str]]:
     return cues
 
 
-def cued_relations(cues: dict[str, set[str]], question: str) -> set[str]:
+def tokens_outside_mentions(question: str, mentions: list[Mention]) -> list[str]:
+    """The question's tokens with each resolved entity's own name removed.
+
+    MEASURED: "Who is House Morvain?" cued `housed_in`, and "Who is Embercrag
+    Fortress?" cued `serves_at` - in both cases from a word inside the entity's
+    *name*, not from anything the asker requested. The cue scanner read the
+    whole question, so a node whose name happens to contain a relation's
+    vocabulary could never be asked about plainly: the router would chase a
+    relation the question never mentioned, find no path, and decline.
+
+    That made two of the 118 entity links on the front page dead - but the
+    defect is not about those two questions. Any question naming House Morvain
+    would carry a phantom `housed_in` cue.
+
+    A mention's key tokens are exactly what `find_mentions` matched against, so
+    removing that run removes the name and nothing else.
+    """
+    tokens = question_tokens(question)
+    for mention in mentions:
+        key_tokens = mention.key.split("_")
+        width = len(key_tokens)
+        for index in range(len(tokens) - width + 1):
+            if tokens[index : index + width] == key_tokens:
+                tokens = tokens[:index] + tokens[index + width :]
+                break
+    return tokens
+
+
+def cued_relations(
+    cues: dict[str, set[str]], question: str, *, tokens: list[str] | None = None
+) -> set[str]:
     """Relations the question cues, preferring words that name only one.
 
     A word that names exactly one relation is evidence the question asks about
@@ -179,8 +209,9 @@ def cued_relations(cues: dict[str, set[str]], question: str) -> set[str]:
     kept using the word "place" and nothing else. Where unique words name
     nothing, the shared ones are all the evidence there is and are used.
     """
-    tokens = {normalise_cue_word(t) for t in question_tokens(question)}
-    named = {relation for relation, words in cues.items() if tokens & words}
+    words = question_tokens(question) if tokens is None else tokens
+    cue_tokens = {normalise_cue_word(t) for t in words}
+    named = {relation for relation, w in cues.items() if cue_tokens & w}
 
     owners: dict[str, set[str]] = defaultdict(set)
     for relation, words in cues.items():
@@ -188,7 +219,7 @@ def cued_relations(cues: dict[str, set[str]], question: str) -> set[str]:
             owners[word].add(relation)
     unique = {
         next(iter(owners[t]))
-        for t in tokens
+        for t in cue_tokens
         if t in owners and len(owners[t]) == 1
     }
     return unique or named
@@ -382,7 +413,11 @@ def route_by_cues(
         paths = find_paths(graph, start.key, mentions[1].key, max_hops=MAX_HOPS)
         return FallbackRoute(tuple(paths), (), start)
 
-    cued = cued_relations(cues, question)
+    # Scanned over the question *minus* the entity's own name. A cue word
+    # inside a node's name is part of the name (F-035).
+    cued = cued_relations(
+        cues, question, tokens=tokens_outside_mentions(question, mentions)
+    )
     if not cued:
         # No relation named at all. Only an *identity* question earns a
         # profile - see `IDENTITY_QUESTION_RE`.

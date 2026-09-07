@@ -1651,3 +1651,67 @@ that could not fire in production while its test exercised a different branch.
 Both were green suites over a broken page. When a test builds the object under
 test differently from the way the product builds it, it is testing a sibling.
 
+
+---
+
+## F-035 - A cue scanner that read the entity's own name as a request
+
+**Approach.** The cue-based fallback tier (ADR-019) routes a question no
+template matched by scanning it for relation vocabulary: "wielded" cues
+`wields`, "rules" cues `ruled_by`. `cued_relations` tokenised the **whole
+question** and matched every token against the cue table.
+
+**Result.** Asked "Who is House Morvain?" the router cued `housed_in`. Asked
+"Who is Embercrag Fortress?" it cued `serves_at`. Neither question mentions a
+relation - the cue came from a word inside the entity's *name*. Having decided
+a relation was requested, the router took the relation path instead of the
+identity path, found no `housed_in` edge on House Morvain, and declined with
+`no_template_match`.
+
+Found by auditing the front page's entity list rather than by any test: two of
+its 118 links were dead. The audit then showed the visible failure was the small
+half of it.
+
+```
+"Who is X?" over all 118 entities
+
+  before                        after
+    profile             109       profile   118
+    fallback_ambiguous    5       dead        0
+    fallback_sufficient   2
+    no_template_match     2   <- the two dead links
+```
+
+**Nine entities were affected, not two.** Seven were answering through cue
+routing rather than the profile path - a relation-routed reply to an identity
+question. Those looked fine on screen and were answers to a question nobody
+asked, which is the worse failure of the two and the one nothing would have
+caught.
+
+**Why it failed.** The cue table is question vocabulary and the entity list is
+corpus vocabulary, and nothing stopped a word being in both. `House`, `Fortress`
+and `Hold` are ordinary nouns that name places and also appear in the names of
+places. The scanner had no notion that part of the question was already
+*spoken for* by an entity mention, so a name and a request looked identical.
+
+**What changed.** `tokens_outside_mentions` removes each resolved mention's key
+tokens before the cue scan. A mention's key tokens are exactly what
+`find_mentions` matched, so this removes the name and nothing else -
+`test_masking_removes_the_name_and_nothing_else` and
+`test_a_relation_named_outside_the_entity_name_still_cues` pin both halves,
+because a mask that also swallowed the real relation word would fix the symptom
+by disabling the tier.
+
+**It changed no measured result.** `python -m comparison.harness` is
+byte-identical before and after - 34/36/22/31 on the shipped arm, 13
+`no_route_shape` - because none of the 55 frozen questions names an entity whose
+name contains a cue word. That is the honest reading of this fix: it corrects a
+defect the frozen set never sampled, which is exactly why the entity-list audit
+was worth doing and why a suite passing is not the same as a system working.
+
+**The lesson, and it is the third of its shape.** F-028 was a status that could
+not fire in production. F-034 was a check whose test exercised a different
+branch. This is a defect in a code path the frozen set does not reach at all.
+Each was invisible to a green suite, and each was found by looking at what the
+product actually does with real input.
+
