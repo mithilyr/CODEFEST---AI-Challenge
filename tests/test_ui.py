@@ -1143,3 +1143,66 @@ def test_a_single_answer_prompt_does_not_claim_a_set(graph):
     pool = _Pool()
     synthesise(answer_question(Q_013, graph, use_planner=False), graph, pool=pool)
     assert "ALL equally valid" not in pool.prompts[0]
+
+
+# -- navigation and the footer (ADR-043) -------------------------------------
+
+
+def test_every_page_carries_a_visible_way_home(graph):
+    """The title has always linked home and has always rendered as plain text
+    (`color: inherit; text-decoration: none`), so nobody found it. A real nav
+    row is the fix; the title keeps its link but now shows a hover underline so
+    it stops being a hidden trapdoor."""
+    from src.ui.render import page_graph
+
+    for html in (
+        page_index(),
+        page_answer(_synth(graph, Q_013)),
+        page_graph("<svg></svg>", "", 117, 261),
+        page_error("boom"),
+    ):
+        assert '<nav class="nav">' in html
+        assert '<a href="/" class="on">Ask</a>' in html or '<a href="/">Ask</a>' in html
+    assert "h1 a:hover { text-decoration: underline;" in page_index()
+
+
+def test_the_graph_view_is_reachable_by_link(graph):
+    """It was reachable only by typing the URL - a built, tested demo surface
+    that a judge had no way to discover."""
+    for html in (page_index(), page_answer(_synth(graph, Q_013))):
+        assert '<a href="/graph">Graph</a>' in html
+
+
+def test_the_current_page_is_marked_in_the_nav(graph):
+    from src.ui.render import page_graph
+
+    assert '<a href="/" class="on">Ask</a>' in page_index()
+    assert '<a href="/graph" class="on">Graph</a>' in page_graph("<svg></svg>", "", 117, 261)
+
+
+def test_the_tagline_moved_to_the_footer_and_was_reworded(graph):
+    """From the bottom of the page, "every hop below" pointed at nothing."""
+    html = page_answer(_synth(graph, Q_013))
+    assert "<footer>" in html
+    assert "Every hop above cites the infobox row it was read from." in html
+    assert "Every hop below" not in html
+    # It is the last thing on the page, not a second heading at the top.
+    assert html.index("<footer>") > html.index('<h2>Answer</h2>')
+
+
+def test_the_footer_document_count_matches_the_corpus(corpus_root):
+    """A hard-coded number in a page nothing re-runs is how F-026 happened, and
+    the corpus can be reloaded at runtime (ADR-036) - so it is re-derived here,
+    the way `tests/test_docs.py` re-derives graph counts asserted in prose."""
+    from src.ingest.pipeline import ingest
+    from src.ui.render import CORPUS_DOCUMENTS
+
+    result = ingest()
+
+    # `documents`, not the documents that produced evidence units. Measured:
+    # 317 canonical documents, of which only 247 yield any evidence - the other
+    # 70 are image plates with no text layer. The footer's claim is about the
+    # size of the corpus queried, so 317 is the honest number; asserting 247
+    # here would have quietly redefined what the page says.
+    assert CORPUS_DOCUMENTS == len(result.documents)
+    assert f"over {len(result.documents)} documents" in page_index()

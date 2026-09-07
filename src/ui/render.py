@@ -72,6 +72,17 @@ main { max-width: 62rem; margin: 0 auto; }
 h1 { font-size: 1.35rem; margin: 0 0 .25rem; letter-spacing: -.01em; }
 h1 a { color: inherit; text-decoration: none; }
 .sub { color: #5c5c66; font-size: .85rem; margin: 0 0 1.5rem; }
+
+/* The title has always linked home and has always looked like plain text, so
+   nobody found it. The nav row is the real fix; this is so the title stops
+   being a hidden trapdoor. */
+h1 a:hover { text-decoration: underline; text-decoration-thickness: 2px;
+             text-underline-offset: 4px; }
+.nav { display: flex; gap: .2rem; margin: .55rem 0 1.35rem; flex-wrap: wrap; }
+.nav a { font-size: .82rem; font-weight: 600; padding: .32rem .75rem;
+         border-radius: 5px; color: #5c5c66; text-decoration: none; }
+.nav a:hover { background: #ececf2; color: #1b1b1f; }
+.nav a.on { background: #1b1b1f; color: #fff; }
 form { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.25rem;
        align-items: center; }
 button[disabled] { opacity: .65; cursor: progress; }
@@ -185,7 +196,9 @@ td.mono { font-family: ui-monospace, Consolas, monospace; font-size: .82rem; }
 .examples a:hover { background: #dedee8; }
 .examples .qid { font-family: ui-monospace, Consolas, monospace;
                  font-weight: 700; margin-right: .35rem; color: #5c5c66; }
-footer { color: #7a7a86; font-size: .8rem; text-align: center; margin: 1.5rem 0 0; }
+footer { color: #7a7a86; font-size: .8rem; text-align: center;
+         margin: 2rem 0 0; padding-top: 1rem;
+         border-top: 1px solid #e4e4ea; }
 .prose { margin: 0 0 .9rem; padding: .85rem 1rem; background: #f2f6fb;
          border-left: 3px solid #3f6ea8; border-radius: 0 6px 6px 0; }
 .prosetext { margin: 0; font-size: 1.08rem; line-height: 1.6; color: #16233a; }
@@ -1291,15 +1304,45 @@ def _catalogue_block(catalogue: dict | None) -> str:
 # -- pages -------------------------------------------------------------------
 
 
-def _shell(title: str, body: str) -> str:
+#: Canonical document count, stated in the footer of every page. Hard-coded
+#: rather than plumbed through five call sites, and pinned by
+#: `test_the_footer_document_count_matches_the_corpus`, which re-derives it
+#: from `ingest()` - the same idiom `tests/test_docs.py` applies to prose. The
+#: corpus can be reloaded at runtime (ADR-036), so this is exactly the kind of
+#: number that goes stale quietly if nothing re-runs it.
+CORPUS_DOCUMENTS = 317
+
+#: Where a reader can go from any page. `/graph` was previously reachable only
+#: by typing the URL - a built, tested demo surface (117 entities as one static
+#: SVG) that a judge had no way to discover. `#entities` is an anchor on the
+#: front page, so from an answer page the link navigates home and jumps to it.
+_NAV = (
+    ("ask", "/", "Ask"),
+    ("graph", "/graph", "Graph"),
+    ("entities", "/#entities", "Entities"),
+)
+
+
+def _nav(active: str | None) -> str:
+    links = []
+    for key, href, label in _NAV:
+        current = ' class="on"' if key == active else ""
+        links.append(f'<a href="{href}"{current}>{label}</a>')
+    return f'<nav class="nav">{"".join(links)}</nav>'
+
+
+def _shell(title: str, body: str, *, active: str | None = "ask") -> str:
     return (
         "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
         '<meta name="viewport" content="width=device-width, initial-scale=1">'
         f"<title>{_e(title)}</title><style>{CSS}</style></head><body><main>"
         '<h1><a href="/">Ashen Era Intelligence Assistant</a></h1>'
-        '<p class="sub">Deterministic graph query over 317 documents. '
-        "Every hop below cites the infobox row it was read from.</p>"
+        f"{_nav(active)}"
         f"{body}"
+        # The tagline, moved off the top of the page. "below" became "above"
+        # because from down here it would otherwise point at nothing.
+        f"<footer>Deterministic graph query over {CORPUS_DOCUMENTS} documents. "
+        "Every hop above cites the infobox row it was read from.</footer>"
         "</main></body></html>"
     )
 
@@ -1358,7 +1401,7 @@ def page_graph(svg: str, legend: str, node_count: int, edge_count: int) -> str:
         f"background:#faf8f4'>{svg}</div>"
         f"<p class='muted'><a href='/'>Ask a question</a></p>"
     )
-    return _shell("The knowledge graph - Ashen Era", body)
+    return _shell("The knowledge graph - Ashen Era", body, active="graph")
 
 
 def page_answer(view: dict, *, model_phrasing: bool = False) -> str:
@@ -1377,7 +1420,7 @@ def page_answer(view: dict, *, model_phrasing: bool = False) -> str:
         + _documents_block(view)
         + _examples_block()
     )
-    return _shell(f"{view['question'][:60]} - Ashen Era", body)
+    return _shell(f"{view['question'][:60]} - Ashen Era", body, active="ask")
 
 
 def _delta(before: int, after: int) -> str:

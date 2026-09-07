@@ -4156,3 +4156,78 @@ rotation head's noise would be worse than the noise.
 *Status: accepted. Reverses ADR-037's citation-tail decision on the grounds
 that the page, not the sentence, is the unit of checkability.*
 
+
+---
+
+## ADR-043 - A nav row, because the only way home was invisible and /graph had no link at all
+
+**Problem**
+
+Two things, reported and then found:
+
+1. **The title linked home and looked exactly like plain text.** `h1 a` carried
+   `color: inherit; text-decoration: none`, so the one route back to the front
+   page rendered with no affordance of any kind. A user who navigated to an
+   answer had no visible way back.
+
+2. **`/graph` was unreachable by link from anywhere.** Checked across the whole
+   renderer: `href="/graph"` appeared zero times. A built and tested demo
+   surface - all 117 entities as one static SVG, no CDN, no script (ADR-020) -
+   could be reached only by typing the URL. A judge would never see it.
+
+The second was not reported; it was found looking for the first, and it is the
+more serious of the two.
+
+**Decision**
+
+A thin nav row under the title on every page: **Ask &middot; Graph &middot;
+Entities**, with the current page marked. `#entities` is an anchor on the front
+page, so from an answer page that link navigates home *and* jumps to the
+browsable entity list - one link covering both "go back" and "show me what I can
+ask about".
+
+The title keeps its link and gains a hover underline, so it stops being a hidden
+trapdoor even though the nav is now the real route.
+
+**The tagline moves to a footer, and is reworded**
+
+`Deterministic graph query over 317 documents. Every hop below cites the infobox
+row it was read from.` sat between the title and the search box, competing with
+the answer for the top of the page. It is now a footer line - and **"below"
+became "above"**, because from the bottom of the page the original wording
+pointed at nothing.
+
+This re-adds a `<footer>` element, which ADR-038 deleted. That deletion was
+right: the footer then read "Checkpoint 2 - deterministic engine, no LLM in this
+path", which had become false the moment ADR-037 rendered model phrasing. The
+objection was to the claim, not to the element.
+
+**The document count is now pinned by a test**
+
+`CORPUS_DOCUMENTS = 317` is a hard-coded number in a page that nothing re-runs,
+and the corpus can be reloaded at runtime (ADR-036) - precisely the shape of
+F-026. `test_the_footer_document_count_matches_the_corpus` re-derives it from
+`ingest()`, the same idiom `tests/test_docs.py` applies to graph counts in prose.
+
+Writing that test surfaced a distinction worth recording: **317 canonical
+documents, of which only 247 produce any evidence unit.** The other 70 are image
+plates with no text layer. The first version of the test asserted 247, which
+would have quietly redefined the page's claim from "the corpus we query" to "the
+documents that happen to yield text". The footer's claim is about the corpus, so
+317 is the honest number and the test says why.
+
+**Measured result**
+
+```
+5 new tests, 464 total (was 459).
+
+  nav present on index, answer, graph and error pages
+  href="/graph" present on index and answer pages   (was: zero occurrences)
+  current page marked in the nav
+  footer reads "Every hop above"; "Every hop below" appears nowhere
+  CORPUS_DOCUMENTS == len(ingest().documents) == 317
+```
+
+*Status: accepted, validated by 5 tests and a live check of the nav and footer
+on an answered page.*
+
