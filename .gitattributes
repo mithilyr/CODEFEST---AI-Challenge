@@ -7,3 +7,6 @@
 *.pdf binary
 *.docx binary
 *.zip binary
+# The committed baseline index (ADR-047). float32 vectors must not be touched
+# by eol conversion, and `text=auto` above would otherwise get a vote.
+*.npy binary

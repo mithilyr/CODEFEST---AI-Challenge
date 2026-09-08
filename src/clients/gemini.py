@@ -169,14 +169,21 @@ class GeminiPool:
     does not waste a request rediscovering it.
     """
 
+    #: Raised when a request would have to be made and there is no key. One
+    #: string, so construction and request time cannot drift apart.
+    NO_KEY = (
+        "GOOGLE_API_KEY is not set. Get a free key at "
+        "https://aistudio.google.com/apikey and add it to .env"
+    )
+
     def __init__(self, models: tuple[str, ...] = MODEL_ROTATION) -> None:
-        settings = get_settings()
-        if not settings.google_api_key:
-            raise RuntimeError(
-                "GOOGLE_API_KEY is not set. Get a free key at "
-                "https://aistudio.google.com/apikey and add it to .env"
-            )
-        self._api_key = settings.google_api_key
+        # The key is NOT required here (ADR-047). A pool whose every prompt is
+        # already in .cache/responses/ makes no request, and demanding a key to
+        # construct one blocked exactly that: replaying the committed
+        # Checkpoint 1 run from a fresh clone died on this line before reading a
+        # single cache entry. The requirement moved to `generate`, which is
+        # where a key is actually spent.
+        self._api_key = get_settings().google_api_key
         self._models = models
         self.usage = GeminiUsage()
 
@@ -219,6 +226,9 @@ class GeminiPool:
             if cached is not None:
                 self.usage.cache_hits += 1
                 return cached
+
+        if not self._api_key:
+            raise RuntimeError(self.NO_KEY)
 
         client = genai.Client(
             api_key=self._api_key,

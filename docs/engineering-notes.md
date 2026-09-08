@@ -332,14 +332,29 @@ python -m src.clients.openrouter --verify        # are the model rotations still
 complete evidence   0/7 on 1B      0/9 across all scored questions
 ```
 
-> **Reproducing this needs a Voyage key and one index build.** The vector index
-> lives under `.cache/`, which is gitignored, so a fresh clone does not have it —
-> `python -m eval.run_eval --checkpoint baseline` reports the index as missing and
-> stops. Rebuilding embeds 3,392 chunks with `VOYAGE_API_KEY` set (~5 minutes at
-> `VOYAGE_TIER=paid`, ~2 hours without), and the build is not currently exposed as
-> a runnable module — see `docs/TODO.md`. **Nothing else in this README depends on
-> it.** The graph, the query engine and the whole demo are independent of the
-> baseline arm.
+> **This reproduces from a clone with no API key**, verified 8 Sep 2026 with
+> `VOYAGE_API_KEY`, `GOOGLE_API_KEY` and `OPENROUTER_API_KEY` all empty:
+> `calls: none | cache hits: 20`. The prebuilt index ships in the repository —
+> 19 MB under `.cache/index/`, plus the 20 supplied questions' query vectors and
+> 21 cached Gemini answers (ADR-047).
+>
+> **It did not, until 8 Sep, and the correction is worth reading.** The index was
+> gitignored, so a fresh clone had none; `python -m eval.run_eval --checkpoint
+> baseline` reported it missing and pointed at `python -m src.baseline.index`,
+> which **did nothing** — that module had no `__main__` block, and
+> `VectorIndex.build` had no callers anywhere in the repo (F-037). The one
+> instruction between a clone and this number was a command that printed nothing
+> and exited 0. It is now a real entry point, tested, and the index it builds is
+> checked against the live chunker so a committed artefact cannot drift from the
+> code that made it.
+>
+> Rebuilding from scratch — `python -m src.baseline.index --force` — embeds 3,392
+> chunks and does need `VOYAGE_API_KEY` (~5 minutes at `VOYAGE_TIER=paid`, ~2
+> hours without). So does asking the baseline a question outside the supplied
+> twenty: the shipped bundle carries those query vectors, not every possible one.
+>
+> **Nothing else here depends on the baseline arm.** The graph, the query engine
+> and the whole demo are independent of it.
 
 ### Checkpoint 2 — deterministic graph and query layer
 

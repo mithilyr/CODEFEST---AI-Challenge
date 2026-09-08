@@ -1765,3 +1765,60 @@ something no user could use. **A test that inspects an artefact is not a test
 that the artefact works** - and for anything that only executes in a browser,
 the only honest check is to open one.
 
+## F-037 - The one command a fresh clone needs, and it did nothing
+
+**Approach.** `eval/run_eval.py` finds no vector index and stops with a remedy:
+
+    No vector index found. Build it first:
+        python -m src.baseline.index
+
+That message has been there since 29 Aug and reads like every other recovery
+instruction in this repo. It was written from the module's docstring, which says
+the index "persists to .cache/ so a judge who has run the build once ... gets
+instant startup", and the build was assumed to be exposed the way every other
+operator entry point is.
+
+**Result.** `src/baseline/index.py` had no `if __name__ == "__main__":` block.
+Running the command printed nothing, exited **0**, and built nothing. Nor was
+there another path to an index: measured with
+`grep -rn "VectorIndex\|chunk_documents" --include=*.py`, `VectorIndex.build`
+and `chunk_documents` had **no callers anywhere in the repo**. The whole
+Checkpoint 1 build path existed only as functions nothing ran. The index in
+`.cache/` was built interactively on 29 Aug and the build was never committed as
+a command.
+
+`.cache/` is gitignored, so this is exactly and only a fresh-clone defect: on the
+machine where the numbers were produced, everything worked and kept working.
+
+**Why the tests did not catch it.** `src/baseline/` had **no tests at all** -
+the only package in `src/` without any. 479 tests passed. Every one of them
+either used the warm `.cache/` index or never touched the baseline. The suite was
+green about a command that did nothing, on a machine where nobody needed it to do
+anything.
+
+**What changed.** `build_and_save()` plus `main()` and a `__main__` block, so the
+command run_eval names now ingests, chunks, embeds and saves - and refuses to
+re-embed when an index is already on disk. `tests/test_baseline.py` (9 tests) runs
+the whole build against a stubbed embedder and a `tmp_path` cache, so it needs
+neither the corpus nor a Voyage key.
+
+The guard that matters is `test_the_command_run_eval_names_is_actually_runnable`,
+which runs `python -m src.baseline.index --help` in a subprocess. **Verified by
+mutation**: with the `__main__` block commented out it fails on empty stdout,
+which is the original defect's exact signature - exit 0, no output.
+
+**One claim checked and found false.** The report of this defect also said
+run_eval "exits 0 on this failure path, so a script or CI wrapping it would read
+the missing-index case as success". It does not: `raise SystemExit("message")`
+prints the message to stderr and exits **1**. Measured in a subprocess with
+`VectorIndex.load` stubbed to `None` - shell exit 1.
+`test_run_eval_fails_loudly_when_the_index_is_missing` now pins that, because the
+correct behaviour and the broken one look nearly identical at the call site.
+
+**The general lesson, and it is F-036's again from the other side.** F-036 was a
+test that read a script's source instead of running it. This is a *document* that
+read a module's source instead of running it - the error message named a command
+because the function it needed was defined, not because the command existed.
+**An instruction you have never executed from a clean state is a guess.** The
+thing that found it was not a review; it was running the README's own steps in a
+fresh clone.

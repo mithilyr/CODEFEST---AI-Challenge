@@ -8,10 +8,20 @@ data/*
 !data/.gitkeep
 
 # --- Build artifacts / caches ---
-.cache/
+# Derived data stays out, with one deliberate exception: the prebuilt Checkpoint 1
+# baseline bundle (ADR-047). `.cache/index/` and `.cache/responses/` are committed
+# - about 19.7 MB - so `python -m eval.run_eval --checkpoint baseline` reproduces
+# 1B 2/7 and 1C 2/2 from a fresh clone with no API key at all. The rest of
+# `.cache/` is rebuilt on demand; `.cache/embeddings/` alone is 82 MB and is not
+# worth committing to save a five-minute rebuild.
+.cache/*
+!.cache/index/
+!.cache/responses/
 build/
 *.faiss
+# The baseline index's vectors are the one committed .npy - see above.
 *.npy
+!.cache/index/*.npy
 
 # --- Python ---
 __pycache__/

@@ -4441,3 +4441,98 @@ displayed; a second submit event comes back defaultPrevented true.
 
 *Status: accepted. Completes ADR-045's deferred scope.*
 
+## ADR-047 - Commit the prebuilt baseline bundle, so Checkpoint 1 needs no key
+
+**Problem**
+
+Checkpoint 1's numbers - 1B 2/7, 1C 2/2, 4/9 scored, 0/9 with complete evidence -
+could not be reproduced from a fresh clone. Two separate things stood in the way,
+and only the first was known:
+
+1. The command `eval/run_eval.py` names when it finds no index,
+   `python -m src.baseline.index`, did nothing at all (F-037). Fixed first; that
+   fix is what made this decision worth taking.
+2. Even with the build working, reproducing the number needed **two** API keys.
+   `VOYAGE_API_KEY` to build the index and to embed each question,
+   `GOOGLE_API_KEY` because `GeminiPool.__init__` demanded one before reading a
+   single cached response.
+
+The README's claim that "everything else runs offline" was true. This one arm was
+the exception, and it is the arm the whole comparison rests on: every "the graph
+beats vector search" sentence in the report is measured against it.
+
+**What we measured**
+
+| | |
+|---|---|
+| `.cache/index/` | 19.3 MB - 13.9 MB `.npy` (3,392 x 1024 float32) + 5.4 MB chunk metadata |
+| Shipped query vectors | 456 KB - the corpus's own 20 `sample_questions.json`, nothing else |
+| `.cache/responses/` | 25 KB across 21 cached Gemini answers |
+| `.cache/embeddings/` | **82 MB** across 3,417 per-chunk shards |
+| Repository before | 2.1 MB of git history |
+| Rebuild cost | ~5 min at `VOYAGE_TIER=paid`, ~2 hours on the free tier (ADR-008) |
+
+**Options considered**
+
+1. Require `VOYAGE_API_KEY` and document it honestly. Costs nothing, keeps the
+   `.gitignore` policy intact, and leaves a judge five minutes and one signup
+   away from the only number they cannot check.
+2. Commit the index via Git LFS. Keeps history light, and adds an install step
+   whose failure mode is a pointer file that looks like a corrupt index.
+3. Commit the bundle directly.
+
+**Decision**
+
+Option 3. `.cache/index/` and `.cache/responses/` are committed - 24 files, 19 MB.
+`python -m eval.run_eval --checkpoint baseline` now reproduces 1B 2/7 and 1C 2/2
+with **`VOYAGE_API_KEY`, `GOOGLE_API_KEY` and `OPENROUTER_API_KEY` all set to
+empty**, verified 8 Sep: `calls: none | cache hits: 20`.
+
+Three things had to change to make that true, and each is narrower than it sounds.
+
+**The query vectors ship beside the index, not in the embedding cache.** The
+obvious move - un-ignore the shards holding the 20 query embeddings - founders on
+`.gitignore` semantics: those shards are content-addressed and scattered across
+20 of 256 directories inside a tree that must stay ignored, so it would take
+twenty negation rules naming hash prefixes. Instead the build writes
+`.cache/index/{model}.queries.json` and `search` consults it before calling
+Voyage. The committed bundle is then exactly one directory, and the honest
+limitation is legible: **the bundle covers the supplied dev questions, not every
+question.** Ask the baseline something new and it still needs a key.
+
+**`GeminiPool` no longer requires a key to exist.** It required one in
+`__init__`, which meant a run whose every prompt was already cached died before
+reading the cache. The requirement moved to `generate`, immediately before the
+client is constructed - which is where a key is actually spent. The error text is
+one constant shared by both, so the two cannot drift.
+
+**`*.npy binary` in `.gitattributes`.** `* text=auto eol=lf` would otherwise get
+a vote on 13.9 MB of float32.
+
+**What this costs, and the guard against it**
+
+Derived data in git can drift from the code that derives it, and a stale index
+would produce a *wrong number with a citation attached* - the exact failure this
+project exists to prevent. So the drift is tested, not trusted:
+`test_the_committed_index_matches_what_the_chunker_produces_now` re-runs the
+chunker over the live corpus and asserts the committed index has the same chunks,
+by id and in order. It skips where the corpus is absent, like every other
+corpus-dependent test.
+
+Two more guards sit beside it.
+`test_the_bundle_is_not_ignored_by_git` asks `git check-ignore` directly, because
+the vectors survive on a single `!.cache/index/*.npy` negation after a global
+`*.npy`, and that precedence is the part that is easy to break silently. It also
+asserts `.cache/embeddings/` is **still** ignored - un-ignoring `.cache/` too
+broadly would add 82 MB without anyone noticing until the push.
+`test_every_supplied_question_has_a_shipped_query_vector` fails if a question
+would fall through to a live embedding.
+
+**What was rejected and why it is worth naming**
+
+`.gitignore` said `.cache/` under "Build artifacts / caches" since 28 Aug, and
+that comment was right about everything except this one directory. Option 1 was
+the consistent answer and it is the one we did not take, because consistency with
+our own policy is worth less than a judge being able to check the number the
+comparison rests on. The exception is written into `.gitignore` with its reason,
+so the policy still reads as a policy rather than as an oversight.

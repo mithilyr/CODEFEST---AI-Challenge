@@ -305,21 +305,24 @@ line can change it and re-run the build without touching any Python.
 
 ## What we measured
 
-Every figure below can be reproduced with the command beside it. None costs
-money or needs a key, except where marked.
+Every figure below can be reproduced with the command beside it. **None costs
+money or needs an API key** - the corpus is the only download.
 
 | | Result | Command |
 |---|---|---|
 | Documents read | 340 files → 317 documents → 30,553 passages | `python -m src.ingest.pipeline` |
 | Network built | 118 entities and 265 edges, across 15 connections | `python -m src.graph.build` |
 | Independently corroborated | 259 of the 265 connections also appear in other collections | `python -m src.graph.corroborate` |
-| Tests | 490 passing, no network calls | `python -m pytest` |
-| Vector-search baseline | 2 of 7 correct; 0 of 9 with complete evidence | `python -m eval.run_eval --checkpoint baseline` * |
+| Tests | 497 passing, no network calls | `python -m pytest` |
+| Vector-search baseline | 2 of 7 correct; 0 of 9 with complete evidence | `python -m eval.run_eval --checkpoint baseline` |
 | Our answers, development set | 7 of 7 correct, with complete evidence | `python -m pytest tests/test_query.py` |
 | Our answers, 49 frozen questions | 22 correct, 31 with complete evidence | `python -m comparison.harness` |
 | Refusing when it should | 6 of 6 unanswerable questions declined | `python -m comparison.harness` |
 
-\* needs a Voyage key and a one-off index build. Everything else runs offline.
+The baseline's prebuilt index ships with the repository - 19 MB under
+`.cache/index/` - so that row reproduces with no key either. Rebuild it from
+scratch with `python -m src.baseline.index --force`, which needs a Voyage key
+and about five minutes.
 
 **Two caveats, which matter more than the numbers.**
 
