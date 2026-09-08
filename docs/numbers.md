@@ -4,9 +4,11 @@ Every figure the report, the video and the README are allowed to quote, with the
 command that re-derives it. **Re-derive before the report is final and before
 the demo is recorded.** Nothing here may be quoted from memory.
 
-Last re-derived **2026-09-08** at commit `b7aa790`, rewriting the README. The
-test count had moved again (479 -> 490); every other figure held. Two defects in
-this sheet were found and fixed in the same pass — see the two notes below.
+Last re-derived **2026-09-08**, rewriting the README. The test count moved
+twice in one day (479 -> 490 -> 497): first when `docs/engineering-notes.md`
+joined `test_docs.py`'s guarded list, then when ADR-047 committed the baseline
+bundle. Every other figure held. Two defects in this sheet were found and fixed
+in the same pass — see the two notes below.
 
 > **Why this file exists.** Eight stale numbers were found in one afternoon by
 > grepping rather than trusting — including the sentence in `README.md` whose
@@ -164,7 +166,7 @@ Nothing has been relabelled. An AI re-derivation agreed with all nine and does
 
 ## Tests
 
-**490 passing**, 0 network calls. `python -m pytest`.
+**497 passing**, 0 network calls. `python -m pytest`.
 
 ## Before submission
 

@@ -367,6 +367,6 @@ configuration-example/ annotated copies of them, with the reasoning
 eval/                  the answer key, the scoring, and the frozen question sets
 comparison/            the measurement behind the three-method design
 docs/                  architecture, decisions, failures, limitations, numbers
-tests/                 490 tests
+tests/                 497 tests
 ai_usage/              our AI collaboration transcripts, a required deliverable
 ```
