@@ -371,6 +371,7 @@ itself on every run.
 
 | File | What is in it |
 |---|---|
+| [`submission_report.pdf`](submission_report.pdf) | The five-page report required by the challenge document §5.3 |
 | [`docs/engineering-notes.md`](docs/engineering-notes.md) | The detailed technical README this one replaced — every number with its caveats |
 | [`docs/architecture.md`](docs/architecture.md) | The full architecture, with the diagram |
 | [`docs/numbers.md`](docs/numbers.md) | Every figure we allow ourselves to quote, and the command that re-derives it |
