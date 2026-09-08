@@ -208,7 +208,9 @@ stop it.
 
 ## User manual, part 2: using the app
 
-Three pages, linked across the top: **Ask**, **Graph**, and **What you can ask**.
+Three links across the top: **Ask**, **Graph**, and **What you can ask**. The
+first and the last are the same page — "What you can ask" jumps to the
+reference sections underneath the question box. **Graph** is a page of its own.
 
 ### Asking a question
 
@@ -258,7 +260,7 @@ boundary is. It still displays anything it did establish along the way.
 In every case the page names the reason in the engine's own words, rather than
 showing an empty result.
 
-### The other two pages
+### Graph, and What you can ask
 
 **Graph** draws all the entities and their connections as a single picture. It
 is a plain image — no JavaScript, and nothing loaded from the internet.
