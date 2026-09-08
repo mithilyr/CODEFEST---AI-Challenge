@@ -10,10 +10,10 @@ Across Thousands of Pages* — powered by IFS.
 
 ## What this is, and why we built it this way
 
-The Ashen Era Archive is a 317-document collection of invented fantasy lore:
-wiki pages, chronicles, an authoritative codex, and a pile of unreliable
-in-world letters, sermons and contracts. Some questions about it cannot be
-answered from any single page.
+The Ashen Era Archive is a collection of invented fantasy lore: wiki pages,
+chronicles, an authoritative codex, and a pile of unreliable in-world letters,
+sermons and contracts. Some questions about it cannot be answered from any
+single page.
 
 Take a real one: *"Which accord was ultimately won by the faction of which
 Ederon Fellgard is a member?"* Ederon Fellgard's page says which faction he
@@ -48,6 +48,25 @@ Two commitments shape everything else:
   the archive, or asks for a kind of connection we do not track, the system says
   exactly that and shows what it *did* work out. It never invents an answer to
   look useful. A confident wrong answer with citations is worse than no answer.
+
+**On the two document counts.** The challenge document calls the archive "415
+documents"; this README says 317. Both describe the same files, and nothing is
+being quietly dropped. The zip ships 341 files: 339 of content, plus a
+`README.txt` and a `sample_questions.json` at its root. We scan 340 of them —
+everything but `sample_questions.json`, which is a list of questions rather than
+lore — set the archive's own `README.txt` aside as documentation rather than
+evidence, and collapse 22 files into the documents they belong to. Seven of
+those are the same volume shipped twice, as both `.docx` and `.pdf`: 8 chronicle
+files are 4 novels, 21 codex files are 18 documents. The other 15 are standalone
+figure plates, attached to the document each one illustrates rather than counted
+as documents in their own right. 340 − 22 − 1 = **317 distinct documents**
+— 150 wiki articles, 145 pieces of ephemera, 18 codex documents and 4
+chronicle volumes — and that is what every figure below is measured against.
+The hard files are in that count, not excluded from it: the 17 scanned pages
+with no text layer are transcribed and included.
+`python -m src.ingest.integrity` checks all 341 shipped files against a
+committed checksum manifest, so the arithmetic above is verifiable rather than
+asserted.
 
 ---
 
