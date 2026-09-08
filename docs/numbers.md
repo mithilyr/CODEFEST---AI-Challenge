@@ -4,7 +4,9 @@ Every figure the report, the video and the README are allowed to quote, with the
 command that re-derives it. **Re-derive before the report is final and before
 the demo is recorded.** Nothing here may be quoted from memory.
 
-Last re-derived **2026-09-08** at commit `7517413`, whole sheet in one pass, for the report. Only the test count had moved (388 -> 479); every other figure held.
+Last re-derived **2026-09-08** at commit `b7aa790`, rewriting the README. The
+test count had moved again (479 -> 490); every other figure held. Two defects in
+this sheet were found and fixed in the same pass — see the two notes below.
 
 > **Why this file exists.** Eight stale numbers were found in one afternoon by
 > grepping rather than trusting — including the sentence in `README.md` whose
@@ -83,7 +85,7 @@ found 0 real entities (document titles, headings, prose fragments).
 
 | Claim | Value | Command |
 |---|---|---|
-| Templates, dev 1B | **7/7** correct, 7/7 complete evidence | `python -m comparison.harness` |
+| Templates, dev 1B | **7/7** correct, 7/7 complete evidence | `python -m pytest tests/test_query.py` |
 | Templates, frozen 49 | no route shape on **36**; 10 correct / 11 routed = **91%** | ″ |
 | Shipped three tiers | **22 correct / 31 complete evidence** | ″ |
 | Ambiguous / unnecessary depth | 4 / 0 | ″ |
@@ -102,6 +104,23 @@ supplied ones, and is not two-person verified.
 **Never quote 7/7 without 36/49 beside it.** 7/7 measures fit to seven
 development questions; 36/49 measures routing capability on questions written
 independently and frozen before either router ran.
+
+> **Defect found 8 Sep, fixed above.** This row named `comparison.harness` as
+> the command that re-derives the dev 7/7. It does not. The harness runs one
+> frozen set — `--set` defaults to `eval/robustness/routing_robustness_v1.json`
+> — and prints the 49-question comparison only; nothing in its output is the dev
+> figure. The dev 7/7 is pinned end-to-end by `tests/test_query.py`, which
+> answers all seven and asserts the answer, both hops, the evidence and the
+> status. A sheet whose whole purpose is "re-derive, never remember" pointing at
+> a command that cannot produce the number is the same failure it exists to
+> prevent, so it is recorded rather than quietly corrected.
+
+> **Second defect, NOT fixed — needs the author.** The query-layer note below
+> reads "Complete evidence fell 31 → 29 while correct rose 19 → 21", which
+> contradicts this table's own `22 correct / 31 complete evidence`. The table
+> matches a fresh `python -m comparison.harness` at `b7aa790`; the sentence does
+> not match anything measured today. Whoever wrote the ADR-033 note should say
+> which arm and which commit those four numbers describe, or delete them.
 
 **This number has moved five times**, in both directions, for five legitimate
 reasons — ADR-019 (35) → ADR-021 (33) → ADR-025 (35) → ADR-029 (36), with
@@ -145,7 +164,7 @@ Nothing has been relabelled. An AI re-derivation agreed with all nine and does
 
 ## Tests
 
-**479 passing**, 0 network calls. `python -m pytest`.
+**490 passing**, 0 network calls. `python -m pytest`.
 
 ## Before submission
 

@@ -61,6 +61,11 @@ LIVE_DOCS = (
     "README.md",
     "docs/architecture.md",
     "ai_usage/ai-usage-disclosure.md",
+    # Was README.md until 8 Sep, when the README became a plain-English
+    # introduction and the evidence moved here. It still describes the system as
+    # it is now, so it is scanned - a document does not stop needing a guard
+    # because it was renamed.
+    "docs/engineering-notes.md",
     # The number sheet exists so the report can be checked against one file.
     # A stale sheet is worse than no sheet - it would launder a wrong figure
     # into every document that trusts it - so it is scanned like the rest.

@@ -1,441 +1,367 @@
-# Ashen Era Intelligence Assistant
+# Ashen Era Archive Assistant
 
-A document assistant that answers questions whose answers live in **more than one
-document**, over the Ashen Era Archive — 317 documents of fictional fantasy lore.
+**Ask a question whose answer is spread across several documents, and get the
+answer with every source it was built from.**
 
-Built for **SLIIT Codefest 2026, AI Competition sub-track 1B — Connecting Facts
-Across Thousands of Pages**, powered by IFS.
-
----
-
-## The problem, and why the obvious solution does not work
-
-Ask *"Which accord was ultimately won by the faction of which Ederon Fellgard is a
-member?"* and no single page answers it. `wiki/ederon_fellgard.md` records his
-membership and never mentions an accord. The page naming the accord's victor never
-mentions Ederon Fellgard. The two share no vocabulary, and the second hop is a
-*reverse* lookup — given a faction, find the conflict it won.
-
-We measured what conventional semantic retrieval does with this. A competent
-Voyage-embedding vector RAG baseline over the deduplicated corpus, on the seven
-development 1B questions:
-
-```
-1B answer correctness      2 / 7
-complete evidence          0 / 7      <- the number that matters
-```
-
-Not one question retrieved every document its answer needs. **Three of seven
-reached neither required document** (recall 0.00), so the join never got a chance
-to fail. Both questions it scored "correct" reached exactly one required document
-— of the three and two they respectively needed. Right answers by the wrong route.
-
-Raising `k` cannot manufacture a join. So the system is **graph-first**: parse
-the explicit relationships the corpus states structurally, traverse them
-deterministically, and keep every hop's evidence attached.
-
-ADR-001 planned a *vector* fallback for questions the graph could not route.
-That is **not what shipped, and this line used to say otherwise.** The fallback
-that exists is deterministic cue routing (ADR-019), adopted because it was
-measured to recover more than the vector arm for a fraction of the machinery;
-the vector index remains as the Checkpoint 1 comparison arm and is not on the
-answer path. Nothing in `src/query/` or `src/ui/` imports `src/baseline/`.
+Built for SLIIT Codefest 2026, AI Competition sub-track 1B — *Connecting Facts
+Across Thousands of Pages* — powered by IFS.
 
 ---
 
-## Quickstart
+## What this is, and why we built it this way
 
-Python 3.11+. Windows paths shown; substitute `source .venv/bin/activate` and
-`.venv/bin/python` on macOS or Linux.
+The Ashen Era Archive is a 317-document collection of invented fantasy lore:
+wiki pages, chronicles, an authoritative codex, and a pile of unreliable
+in-world letters, sermons and contracts. Some questions about it cannot be
+answered from any single page.
 
-### Run the demo
+Take a real one: *"Which accord was ultimately won by the faction of which
+Ederon Fellgard is a member?"* Ederon Fellgard's page says which faction he
+belongs to and never mentions an accord. The page naming the accord's winner
+never mentions Ederon Fellgard. You have to read one page, carry a fact across
+to another, and join them.
 
-From a clean clone to a working UI at **http://127.0.0.1:8000**.
-**No API key is needed for any of this** — the answer path is deterministic
-Python over committed caches, and the model tiers are off by default.
+The usual approach is to turn every document into vectors and retrieve the
+passages most similar to the question. We built that first and measured it, so
+we would be comparing against something real rather than a straw man. On the
+seven development questions it answered 2 of 7 — and more tellingly, it never
+once retrieved *all* the documents an answer needed. Three of the seven
+retrieved neither required document. The two pages share no vocabulary, so no
+amount of similarity search brings them together, and retrieving more passages
+cannot manufacture a connection that similarity cannot see.
+
+So we do something different. Most wiki pages carry a small fact table — an
+infobox — with rows like `Member of | The Iron-Ring Cartel`. We read those rows
+and turn them into a network of named connections between people, factions,
+places, wars and artifacts. Answering a question then means walking that
+network: find the person, follow "member of" to their faction, follow "victor
+of" to the war that faction won. Every step records which document and which row
+it came from, so the answer arrives with its evidence attached.
+
+Two commitments shape everything else:
+
+- **Ordinary code first, AI only where it is needed.** The part that actually
+  produces an answer is plain Python walking a data structure. No AI model is
+  involved in it. Models are used in three narrow places, all optional, and the
+  system counts how often each is used so we can report it honestly.
+- **Say "I don't know" rather than guess.** If a question names something not in
+  the archive, or asks for a kind of connection we do not track, the system says
+  exactly that and shows what it *did* work out. It never invents an answer to
+  look useful. A confident wrong answer with citations is worse than no answer.
+
+---
+
+## What it is built with
+
+**Language:** Python 3.11.
+
+**No web framework, and no AI framework.** The web interface is Python's
+built-in `http.server`. There is no Django, Flask, FastAPI, LangChain, or vector
+database. The competition requires every team member to be able to explain and
+change any part of the submission on demand, so a dependency nobody on the team
+could defend is a liability rather than a shortcut.
+
+The entire dependency list is eight packages:
+
+| Package | Used for |
+|---|---|
+| `numpy` | The comparison baseline's similarity search — one matrix multiply |
+| `pdfplumber` | Reading text out of PDFs |
+| `python-docx` | Reading Word documents |
+| `PyYAML` | Loading the two configuration files |
+| `python-dotenv` | Loading settings from `.env` |
+| `pytest` | The test suite |
+| `google-genai` | Google Gemini — reading 17 scanned pages, done once, results saved |
+| `voyageai` | Voyage AI — embeddings, used only by the comparison baseline |
+| *(OpenRouter)* | Called over plain HTTP, no package needed. Optional, off by default |
+
+**Outside services.** All three are optional, and none is needed to run the app:
+
+| Service | What it does here | Needed to run the app? |
+|---|---|---|
+| [Google AI Studio](https://aistudio.google.com/apikey) (Gemini) | Read 17 scanned PDF pages that have no text layer | No — the transcripts are saved in the repository |
+| [Voyage AI](https://dashboard.voyageai.com) | Embeddings, for the comparison baseline only | No — only to rebuild that baseline |
+| [OpenRouter](https://openrouter.ai) | Optional AI help with unusual questions, and with wording answers | No — off by default |
+
+---
+
+## User manual, part 1: getting it running
+
+You need **Python 3.11 or newer** and a few hundred MB of disk space. **You do
+not need an API key, an account with anyone, or an internet connection** once
+the files are downloaded.
+
+Windows commands are shown. On macOS or Linux use `source .venv/bin/activate`
+and `.venv/bin/python` instead.
+
+**1. Download the code.**
 
 ```bash
 git clone https://github.com/mithilyr/CODEFEST---AI-Challenge.git
+```
+
+```bash
 cd CODEFEST---AI-Challenge
+```
+
+**2. Create a private Python environment and install the eight packages.**
+
+```bash
 python -m venv .venv
+```
+
+```bash
 .venv\Scripts\activate
+```
+
+```bash
 pip install -r requirements.txt
 ```
 
-Get the corpus (~123 MB, not committed):
+**3. Download the archive.** It is about 123 MB, and is not stored in the code
+repository.
 
 ```bash
 curl -o Ashen_Era_Archive.zip https://benchdata792fda32.blob.core.windows.net/codefest2026/Ashen_Era_Archive.zip
 ```
 
-Extract it so that **`data/Ashen_Era_Archive/` is the directory that directly
-contains** `chronicles/`, `codex/`, `ephemera/`, `images/` and `wiki/`. If your
-unzip tool adds an extra nesting level, move the inner folder up — or put the
-archive anywhere you like and point `CORPUS_PATH` at it instead. Then:
+Unzip it so that the folder `data/Ashen_Era_Archive` is the one **directly
+containing** `chronicles`, `codex`, `ephemera`, `images` and `wiki`. If your
+unzip tool adds an extra folder in between, move the inner one up. You can also
+put the archive anywhere else and point `CORPUS_PATH` at it in the next step.
+
+**4. Create the settings file.**
 
 ```bash
 cp .env.example .env
 ```
 
-Leave every key blank. The only line that matters is `CORPUS_PATH`, which already
-defaults to `data/Ashen_Era_Archive`. Now start the demo — **from the repository
-root**, using the project's own interpreter:
+**Leave every key blank.** The only setting that matters is `CORPUS_PATH`, and
+it already points at `data/Ashen_Era_Archive`. See
+[`configuration-example/`](configuration-example/) for an annotated copy
+explaining what each optional key would buy you.
+
+**5. Check it worked.** This confirms the archive is complete and unmodified:
 
 ```bash
-.venv\Scripts\python.exe -m src.ui.server
+python -m src.ingest.integrity
 ```
 
-Startup takes about six seconds (ingest 5.0s, graph 0.2s, cross-collection
-attestation 1.2s). It prints the graph size, confirms
-`model tiers: off - fully deterministic`, and serves on
-**http://127.0.0.1:8000**. Four surfaces:
+It should end with `corpus matches the shipped archive.` If it does not, a file
+has been altered or is missing — re-extract the archive.
 
-| URL | What it shows |
+**6. Start the app.**
+
+```bash
+python -m src.ui.server
+```
+
+It prints a short summary and then a web address:
+
+```
+building the graph ...
+  118 entities, 265 edges, 30553 evidence units
+  model tiers: off - fully deterministic (pass --with-model to enable)
+
+  Ashen Era assistant on http://127.0.0.1:8000
+```
+
+Open **http://127.0.0.1:8000** in a browser. Press `Ctrl-C` in the terminal to
+stop it.
+
+### If something goes wrong
+
+| What you see | What it means |
 |---|---|
-| `/` | The seven development 1B questions, an entity/relation catalogue, and the reindex control |
-| `/ask?q=...` | One answer, with every hop's source document, row and authority tier |
-| `/graph` | All 118 entities as one static SVG — no CDN, no JavaScript |
-| `/reload` | Re-reads the corpus from disk and reports what changed (see below) |
+| `corpus matches the shipped archive` never appears | The archive is in the wrong folder, or a file was edited. Check `CORPUS_PATH`, then re-extract |
+| `ModuleNotFoundError` | The environment is not active. Run `.venv\Scripts\activate` again |
+| The page will not load | Check the terminal is still running. If the port is in use, run `python -m src.ui.server --port 8001` |
+| It complains about an API key | It should not. The demo needs none — check you did not pass `--with-model` |
 
-#### If `python -m src.ui.server` fails
+---
 
-```
-No module named 'src'
-```
+## User manual, part 2: using the app
 
-means one of two things, and both are worth checking before anything else:
+Three pages, linked across the top: **Ask**, **Graph**, and **What you can ask**.
 
-- **You are not in the repository root.** `src/` sits beside `README.md`. Run
-  `cd` into the directory containing this file first.
-- **`python` is not this project's interpreter.** On a machine with several
-  Python installations, a bare `python` can resolve to an unrelated virtual
-  environment that has none of these dependencies. Writing
-  `.venv\Scripts\python.exe` explicitly, as above, removes the ambiguity
-  whether or not you ran `activate`.
+### Asking a question
 
-#### Picking up a document added while the server is running
+Type a question into the box and press **Ask**. If you would rather start from
+something known to work, the front page lists seven example questions — click
+any one to run it.
 
-The graph is read from disk at startup and held, so a file added to the corpus
-afterwards is invisible until something rebuilds. Click **Reindex corpus** on
-the front page (or `POST /reload`). It re-reads the corpus and reports the
-before/after entity, edge and evidence-unit counts, plus any infobox field name
-the corpus uses that `config/relations.yaml` does not map — that last one is a
-relation the graph is not reading, and the fix is a line of config, not code.
+An answered question shows, in order:
 
-There is deliberately no file watcher: a rebuild is about six seconds, and an
-explicit control that shows you what changed is easier to trust, and to
-explain, than a background thread (ADR-036).
+1. **The answer** — usually a name.
+2. **Evidence sufficiency** — `sufficient` means every step the question needed
+   was found and sourced.
+3. **Strategy used** — which question pattern matched, which connections were
+   followed, and which name it started from.
+4. **The evidence path** — the important part. Every step is listed with the
+   document it came from, the exact infobox row, and how trustworthy that source
+   is. You can check the answer yourself without trusting the system.
+5. **Source documents and tiers** — every document involved, with its ranking.
 
-To answer one question without the browser:
+For example, *"Which war did Ravena Stormwell's own faction ultimately win?"*
+answers **The War of Drowned Light** and shows the two steps behind it: Ravena
+Stormwell is a member of The Silent Choir (from her own page, row 3), and The
+Silent Choir is the victor of The War of Drowned Light (from the war's page,
+row 5).
+
+### When it will not answer — and why that is the point
+
+The system refuses rather than guesses, and every refusal explains itself. There
+are three kinds you will meet.
+
+**The name is not in the archive.** Ask about something the archive never
+mentions and it says so plainly, instead of returning something vaguely related.
+
+**The name is nearly right.** Ask about "Isolde Mournvail" and it replies that
+this is not a name in the corpus, offers `Isolde Mournvale` at 0.938 similarity
+and `Isolde Thornwald` at 0.750, and **does not pick one for you**. Click a
+suggestion to ask again using that name. It behaves this way because the archive
+contains two different real people whose names are 0.839 similar — any system
+loose enough to fix your typo automatically is also loose enough to quietly
+answer about the wrong person.
+
+**The question needs a connection we do not track.** The system follows 15 kinds
+of connection, all listed on the **What you can ask** page. A question outside
+that list is declined, and the page shows the full list so you can see where the
+boundary is. It still displays anything it did establish along the way.
+
+In every case the page names the reason in the engine's own words, rather than
+showing an empty result.
+
+### The other two pages
+
+**Graph** draws all the entities and their connections as a single picture. It
+is a plain image — no JavaScript, and nothing loaded from the internet.
+
+**What you can ask** is the honest boundary of the system: every entity it knows
+grouped by type, and all 15 connections it can follow, each listed with the
+infobox field names it reads and the everyday words a question might use
+instead. If you want to know what this system can and cannot do, read this page.
+
+**Reindex corpus**, a button on the front page, re-reads the archive from disk
+in about six seconds. Use it if you add or edit a document while the app is
+running.
+
+### Asking from the command line
 
 ```bash
-python -m src.query.engine "Which accord was ultimately won by the faction of which Ederon Fellgard is a member?"
+python -m src.query.engine "Which war did Ravena Stormwell's own faction ultimately win?"
 ```
 
-With no argument it runs the `1b_013` vertical slice. `python -m src.ui.server
---with-model` enables the LLM planner and model phrasing; it needs
-`OPENROUTER_API_KEY` and is **off by default** on purpose (F-025), so an
-unattended demo cannot spend quota or break on a cold network.
+Same answer, same evidence, printed as text.
 
-### Configure
+---
 
-`.env` is gitignored and must never be committed. Every key is optional;
-`configuration-example/env.example` is an annotated copy explaining what each one
-buys.
+## How it works
 
-| Variable | Needed for | Free tier |
+Full detail, with a diagram, is in [`docs/architecture.md`](docs/architecture.md).
+In outline, four stages:
+
+**1. Read the archive.** 340 files are found and duplicates collapsed — the same
+work often ships as both `.docx` and `.pdf` — leaving 317 distinct documents,
+broken into 30,553 individually citable passages. Each passage remembers where
+it came from and how reliable that source is. Seventeen scanned pages have no
+text layer; those were read once by Gemini and the transcripts are saved in the
+repository, so this stage needs no API key.
+
+**2. Build the network.** Every wiki infobox row becomes a connection. The
+result is **118 entities and 265 edges** across 15 kinds of connection — small
+enough to be a plain Python dictionary, which is why there is no graph database.
+Names are matched exactly, never approximately.
+
+**3. Answer the question.** Three methods are tried in order, each handing over
+only if it declines:
+
+| | Method | What it does |
 |---|---|---|
-| `CORPUS_PATH` | everything — the only variable the demo path reads | — |
-| `GOOGLE_API_KEY` | **re**-transcribing the 17 scanned PDFs, and the Checkpoint 1 baseline's generation. All 17 transcripts are committed under `ocr_cache/`, so OCR completes 17/17 from cache with this blank | [aistudio.google.com](https://aistudio.google.com/apikey) |
-| `VOYAGE_API_KEY` | building the Checkpoint 1 vector index, which is **not** committed (`.cache/` is gitignored). See the caveat under *Measured results* | [voyageai.com](https://dashboard.voyageai.com) |
-| `VOYAGE_TIER` | set to `paid` once a card is added — removes a throttle that turns a 5-minute index build into 2 hours | — |
-| `OPENROUTER_API_KEY` | the tier-3 LLM planner and model phrasing — both off by default | [openrouter.ai](https://openrouter.ai) |
+| 1 | Templates | Recognises known question shapes and follows a fixed route. Precise, but narrow |
+| 2 | Keyword cues | Matches everyday words in the question against the connection vocabulary. Wider reach, less precise |
+| 3 | AI planner | Asks a model to *propose a route*, which is then checked against the real network. It never writes an answer. **Off by default** |
 
-### Verify the setup
+If all three decline, the question is refused with a named reason. That is a
+result, not an error, and the app displays it as one.
 
-```bash
-python -m src.ingest.integrity   # is your corpus the corpus we measured against?
-python -m pytest                 # 479 tests
-python -m src.ingest.pipeline    # 340 files -> 317 docs -> 30,553 evidence units
-python -m src.graph.build        # 118 entities, 265 edges, 15 relations
-```
+**4. Show it.** The answer is rendered with its full evidence trail. The
+interface adds no reasoning of its own — it only displays what the engine
+returned, and tests exist purely to keep it that way, failing if the display
+code so much as imports the reasoning code.
 
-All four run with no API key and no network.
+### Two files that are deliberately not code
 
-The integrity check exists because our corpus once silently drifted from the
-shipped bytes — a text editor rewrote 36 files and left an empty note behind that
-ingested as a real document (`docs/failures.md`, F-016). It compares every file
-against a committed manifest of 341 SHA-256 hashes and exits non-zero on any
-difference.
+`config/authority.yaml` ranks how far each kind of source is to be trusted, and
+`config/relations.yaml` records which infobox field names mean the same
+connection — `Member of`, `Membership`, `Affiliation` and `Allegiance` are all
+one thing. Both are plain text with comments, so a reader who disagrees with a
+line can change it and re-run the build without touching any Python.
+[`configuration-example/`](configuration-example/) explains both.
 
 ---
 
-## Architecture
+## What we measured
 
-**[`docs/architecture.md`](docs/architecture.md) is the architecture**, with the
-diagram at [`docs/diagrams/architecture.svg`](docs/diagrams/architecture.svg) —
-hand-authored, no toolchain, self-contained (ADR-022). Every number in that
-diagram is re-derived from the live corpus by `tests/test_diagram.py`, so the
-picture cannot go stale without the suite going red.
+Every figure below can be reproduced with the command beside it. None costs
+money or needs a key, except where marked.
 
-The short version. One pipeline, four stages:
-
-1. **Corpus → evidence units** (`src/ingest/`) — discover, deduplicate, assign
-   authority, load. 340 files become 317 canonical documents and 30,553
-   `EvidenceUnit`s. Provenance is attached once, here, so nothing downstream
-   reconstructs it and disagrees.
-2. **Evidence units → graph** (`src/graph/`) — wiki infobox rows parsed one row at
-   a time into 118 entities and 265 edges across 15 relations, held as a Python
-   dict of lists.
-3. **Question → answer** (`src/query/`) — three routing tiers, below.
-4. **Answer → prose → screen** (`src/query/synthesis.py`, `src/ui/`) — the model
-   rewords an already-verified chain; it never selects one.
-
-### The three routing tiers
-
-Each tier runs **only if the one before it declined**, and each declines rather
-than guesses. A question no tier can route ends at a named `EvidenceStatus`,
-never at an empty result and never at an invented answer.
-
-| Tier | Module | Measured |
+| | Result | Command |
 |---|---|---|
-| 1 — templates | `route.py` | **7/7** on the dev 1B questions (ADR-017); matches no route shape on **36 of 49** independently written questions |
-| 2 — cue fallback | `fallback.py` | **22 correct / 31 complete evidence** of 49, against templates-alone's 10 / 11 (ADR-019; counts updated by ADR-024, ADR-029, ADR-031, ADR-033) — at 40% precision against templates' 91% |
-| 3 — LLM plan | `planner.py` | Emits a validated *plan*, never an answer. **Off by default**, and deliberately unmeasured on the frozen set |
+| Documents read | 340 files → 317 documents → 30,553 passages | `python -m src.ingest.pipeline` |
+| Network built | 118 entities and 265 edges, across 15 connections | `python -m src.graph.build` |
+| Independently corroborated | 259 of the 265 connections also appear in other collections | `python -m src.graph.corroborate` |
+| Tests | 490 passing, no network calls | `python -m pytest` |
+| Vector-search baseline | 2 of 7 correct; 0 of 9 with complete evidence | `python -m eval.run_eval --checkpoint baseline` * |
+| Our answers, development set | 7 of 7 correct, with complete evidence | `python -m pytest tests/test_query.py` |
+| Our answers, 49 frozen questions | 22 correct, 31 with complete evidence | `python -m comparison.harness` |
+| Refusing when it should | 6 of 6 unanswerable questions declined | `python -m comparison.harness` |
 
-**Never quote the 7/7 without the 36/49 beside it.** 7/7 measures fit to seven
-development questions; 36/49 measures routing capability on questions written
-independently and frozen before either router ran. Reporting the first alone
-would misrepresent the system. Reproduce both with `python -m comparison.harness`.
+\* needs a Voyage key and a one-off index build. Everything else runs offline.
 
-**Deterministic-first. An LLM is a fallback, not a default — and every fallback is
-counted.** Ingestion, deduplication, authority ranking, cell parsing, graph
-construction, traversal, conflict extraction and scoring are all ordinary Python.
-Models are confined to four isolated call sites, none of them in the traversal
-that produces an answer: OCR (ingest-time, cached, zero calls at query time), the
-Checkpoint 1 baseline arm, the tier-3 planner, and prose phrasing — the last two
-off by default.
+**Two caveats, which matter more than the numbers.**
 
-### Deliberately not used
+**The 7 of 7 is not the headline.** Those seven are the questions we developed
+against, so they measure fit, not ability. The honest measure is the second set:
+49 questions written by teammates who had not seen the code, and frozen before
+either method ran against them. On those, the narrow template method recognises
+no question shape at all in 36 of 49. The three-method system answers 22. Never
+quote the 7/7 without the 36/49 beside it.
 
-- **No graph database.** 118 entities and 265 edges is a dict of lists.
-- **No vector database.** 3,392 chunks is a NumPy matrix multiply in milliseconds.
-- **No agent framework.** LangChain/LangGraph/CrewAI would be code we did not write.
-
-The competition requires every team member to explain and modify any part of the
-submission on demand. A dependency nobody on the team can defend to a judge is a
-liability, not a feature.
-
----
-
-## Repository layout
-
-```
-src/ingest/            discovery, dedup, OCR, authority, evidence units, integrity
-src/clients/           Gemini rotation, Voyage embeddings, OpenRouter, retry/timeout
-src/baseline/          Checkpoint 1: chunker, vector index, naive RAG
-src/graph/             cell parsers, entity keys, schema + provenance, build, traversal
-src/query/             the three routing tiers — resolution, routing, traversal,
-                       evidence sufficiency, conflict detection, synthesis
-src/ui/                the demo: stdlib http.server, HTML rendering, graph SVG
-eval/                  answer key, deterministic scorer, harness, corpus probes,
-                       completeness check, the frozen routing-robustness set
-comparison/            the router comparison and guard ablations behind ADR-019
-config/                authority.yaml, relations.yaml, corpus_manifest.sha256
-configuration-example/ annotated copies of the above, readable without the tree
-docs/                  ADRs, failure log, limitations, architecture, diagram, TODO
-tests/                 479 tests
-ai_usage/              exported AI collaboration transcripts (deliverable §4.1)
-ocr_cache/             the 17 scan transcripts, committed so OCR needs no key
-data/                  where the corpus goes; gitignored, ships empty
-```
-
-Two configuration files are deliberately *not* code, so a judge can disagree with
-a line without touching Python: `config/authority.yaml` ranks source
-trustworthiness, and `config/relations.yaml` declares which infobox field names
-carry which relation — 67 field names across 15 relations, plus 43 names declared
-non-relational so that a genuinely new one is *reported* rather than silently
-ignored. `configuration-example/README.md` explains both at length.
+**Every score is provisional.** The answer key was reviewed by one person, not
+the two we required of ourselves. Automated checks found no gaps in it, but no
+second human reviewer was available before the deadline, and we have not
+relabelled anything to look better. The evaluation harness prints this warning
+itself on every run.
 
 ---
 
-## Commands
+## Where to read more
 
-Everything here runs **with no API key**, from the committed caches, unless the
-line says otherwise.
+| File | What is in it |
+|---|---|
+| [`docs/engineering-notes.md`](docs/engineering-notes.md) | The detailed technical README this one replaced — every number with its caveats |
+| [`docs/architecture.md`](docs/architecture.md) | The full architecture, with the diagram |
+| [`docs/numbers.md`](docs/numbers.md) | Every figure we allow ourselves to quote, and the command that re-derives it |
+| [`docs/decisions.md`](docs/decisions.md) | Why each choice was made, including those later proved wrong |
+| [`docs/failures.md`](docs/failures.md) | Approaches tried and abandoned, with the measurement that killed each one |
+| [`docs/limitations.md`](docs/limitations.md) | What this system cannot do |
+| [`TEAM.md`](TEAM.md) | Who did what |
 
-```bash
-# Setup and verification
-python -m src.ingest.integrity                   # verify corpus against the manifest
-python -m src.ingest.pipeline                    # ingest, print summary
-python -m src.ingest.ocr                         # transcribe scans (17/17 from cache)
-python -m src.graph.build                        # build graph, print coverage
-python -m pytest                                 # 479 tests
-
-# Answering
-python -m src.ui.server                          # the demo, http://127.0.0.1:8000
-python -m src.ui.server --with-model             # + LLM planner and phrasing (needs a key)
-python -m src.query.engine "<question>"          # one question end-to-end
-
-# Reproducing the measurements
-python -m eval.probes.corpus_shape               # every ADR-009..013 number
-python -m comparison.harness                     # ADR-019's router comparison (36/49, 22/31)
-python -m comparison.ablations                   # ADR-019's guard ablations
-python -m eval.completeness                      # is the answer key narrower than the corpus?
-python -m eval.verify_key                        # regenerate the answer-key review pack
-python -m eval.run_eval --checkpoint baseline    # Checkpoint 1 — needs VOYAGE_API_KEY, see below
-python -m src.clients.openrouter --verify        # are the model rotations still live?
-```
-
----
-
-## Measured results
-
-> **All scores below are PROVISIONAL.** The answer key has cleared independent
-> *completeness* checking — `python -m eval.completeness` reports **0 recall
-> defects** across all 9 scoreable questions, corroborating `1b_006`'s fourteen
-> answers by a route independent of the graph. *Precision* review (is each answer
-> right?) is still outstanding, so the harness continues to warn and we are not
-> quoting these numbers as final. Per-entry state, from `python -m
-> eval.verify_key`: **`single_review` ×7, `draft` ×2**, and **0 of 9 confirmed by two
-> reviewers** — every entry names the same single human reviewer, which is the
-> failure mode `docs/failures.md` F-015 records.
->
-> On 6 Sep an **AI re-derivation** worked all nine answers from the primary
-> documents without reading the recorded answer first. It agreed with every
-> one, and found two defects in the 1C conflict inventories (F-028). Recorded
-> per entry under `verification.independent_recheck`. It does **not** advance
-> any status: it was not a second human, and not blind — the same agent had
-> seen the key earlier in the session. Corroboration, not confirmation.
-
-### Checkpoint 1 — vector RAG baseline
+### How the code is organised
 
 ```
-1B  2/7      1C  2/2      all scored  4/9      not scored  11
-complete evidence   0/7 on 1B      0/9 across all scored questions
+src/ingest/            reading the archive, removing duplicates, ranking sources
+src/graph/             turning infobox rows into the network
+src/query/             the three answering methods
+src/ui/                the web app
+src/baseline/          the vector-search comparison
+src/clients/           talking to Gemini, Voyage and OpenRouter
+config/                the two editable configuration files
+configuration-example/ annotated copies of them, with the reasoning
+eval/                  the answer key, the scoring, and the frozen question sets
+comparison/            the measurement behind the three-method design
+docs/                  architecture, decisions, failures, limitations, numbers
+tests/                 490 tests
+ai_usage/              our AI collaboration transcripts, a required deliverable
 ```
-
-> **Reproducing this needs a Voyage key and one index build.** The vector index
-> lives under `.cache/`, which is gitignored, so a fresh clone does not have it —
-> `python -m eval.run_eval --checkpoint baseline` reports the index as missing and
-> stops. Rebuilding embeds 3,392 chunks with `VOYAGE_API_KEY` set (~5 minutes at
-> `VOYAGE_TIER=paid`, ~2 hours without), and the build is not currently exposed as
-> a runnable module — see `docs/TODO.md`. **Nothing else in this README depends on
-> it.** The graph, the query engine and the whole demo are independent of the
-> baseline arm.
-
-### Checkpoint 2 — deterministic graph and query layer
-
-```
-entities 117  (95 page-backed, 22 edge-only, 0 isolated)
-edges    261  across 15 relations, 3 direction overrides, 6 self-references skipped
-```
-
-On the seven dev 1B questions the query layer answers **7 of 7 correctly**
-through four generic templates — entity resolution, routing, bounded traversal,
-type filtering and same-tier conflict detection, none of the seven hard-coded
-(ADR-017). It also touches every required document for 7 of 7, against the
-baseline's 0 of 7.
-
-**Read those numbers with the routing measurement beside them.** On 49
-independently authored questions, frozen before either router ran, the templates
-match no route shape on **36**. The shipped three-tier system answers **21
-correctly with 31 complete evidence**, against templates-alone's **10 / 11** — at
-40% precision where templates hold 91%. It declines all **6 of 6** questions
-whose answer the corpus does not contain. 7/7 measures fit; 36/49 measures
-routing capability, and the second is the honest headline. Reproduce with
-`python -m comparison.harness`.
-
----
-
-## What this system does not do
-
-Honesty about limits is part of the design, not an apology for it. See
-`docs/limitations.md` for the full account.
-
-- **Prose relations are invisible to the graph.** It reads infoboxes only. That is
-  deliberate for this checkpoint — it keeps the measurement clean about what
-  *structure* alone recovers.
-- **One conflict question is not representable from infoboxes.** For `1b_009`, the
-  Iron-Ring Cartel's page omits the Purge of Blackport from its `Victor of` row.
-  Under our own rule that **silence is not denial**, an omission is not a
-  contradiction — the actual denial is in prose and needs the claim extractor. The
-  graph holds one assertion and one silence, and must not be read as having
-  captured the disagreement.
-- **Some scanned tables are clipped in the source images.** A system that guessed
-  at the missing text would fabricate evidence, which is the failure this project
-  exists to prevent. We transcribe what is visible.
-- **Entity resolution is exact-match only.** It will abstain on a misspelled
-  question where a fuzzy matcher would have guessed right. That trade is
-  deliberate: `caedmon_fellgard` and `ederon_fellgard` are 0.839 similar and any
-  threshold loose enough to be useful merges them. A near miss is *reported* at
-  ≥0.90 similarity and resolved by nobody but the user (ADR-021, ADR-025).
-- **The tier-3 planner is unmeasured on the frozen set.** Running it there would
-  spend daily quota and produce a number that moves with the provider's free
-  lineup. We report it as unmeasured rather than quote a figure we cannot
-  reproduce.
-
----
-
-## How this project works
-
-Three of our assumptions were overturned by five-minute checks, and the record of
-that is a deliverable rather than an embarrassment.
-
-- **`docs/decisions.md`** — ADR-001..025. Where a measurement overturned an earlier
-  decision, the original stays in the record with the correction beside it.
-- **`docs/failures.md`** — F-001..027. Every approach tried and rejected, with the
-  number that killed it. Nothing is removed after being fixed.
-- **`docs/limitations.md`** — what the system does not do, and defects in the source
-  material we cannot fix from our side.
-- **`docs/architecture.md`** — the architecture in full, with the diagram.
-
-Three entries worth reading if you want the flavour of the project: **F-015**,
-where one careful reviewer reported "high confidence" on an answer with two valid
-values and the corpus turned out to have fourteen; **F-019**, where a textbook
-BFS returned a correct-looking two-hop path sourced from one document instead of
-the two the question needed, decided by nothing more principled than filename
-ordering; and **F-025**, where a schema-valid, name-checked, hop-bounded LLM plan
-answered a question nobody had asked — confidently, and with citations.
-
-### Working rules
-
-- Atomic commits whose messages say *why* and cite the measurement that drove them.
-- Measure before asserting. If a claim is going into a doc, the report or the
-  video, run the check first and show the evidence.
-- Never commit API keys, `.env`, or the corpus archive.
-- A component is not done because it executes — it is done when it has tests, its
-  failure cases are covered, its provenance is preserved, and the docs are updated.
-
----
-
-## Status
-
-Ingestion, OCR, authority ranking, the Checkpoint 1 baseline, the deterministic
-graph, the query layer and the demo UI are built and measured.
-
-Since the query layer landed, the work has been measuring what it cannot do and
-correcting what it got wrong. Every one of these moved a *diagnosis* rather than a
-score, which is the point:
-
-- **ADR-019** — routing robustness measured on 49 frozen questions. The templates
-  match no route shape on 35 of them. A cue-based second tier was adopted from
-  that comparison, not from an assumption about what would help.
-- **ADR-020** — OpenRouter as a second provider, and a third tier that emits a
-  validated plan and never an answer. Off by default (F-025).
-- **ADR-021** — question *shape* is a routing failure of its own; a near-miss
-  spelling is reported, never resolved.
-- **ADR-022** — the architecture diagram, hand-authored and pinned by tests that
-  re-derive every number in it from the live corpus.
-- **ADR-023 / F-027** — when a cell's own verb contradicts the field name, the
-  cell wins. Three of 267 edges pointed backwards; fixing it changed no score.
-- **ADR-024** — a relation's *question* vocabulary is declared in config
-  separately from its corpus field names.
-- **ADR-025 / F-026** — the typo reporter no longer calls a correctly spelled
-  apostrophe-less possessive a misspelling. Suppress, don't widen.
-
-The query engine remains **Checkpoint 2, not a finished reasoning system**. The
-gating work is unchanged and is not code: answer-key precision review by a second
-human. Every number here stays provisional until that lands.
-
-See `docs/TODO.md` for the current sprint.
