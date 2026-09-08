@@ -9,7 +9,7 @@ report's team section.
 
 | Name | Role | Where the work is visible |
 |---|---|---|
-| **Mithil** | Implementation lead; author of record on the git history; answer-key reviewer | All 117 commits (`mithilyr <mithilrajapakse11@gmail.com>`); the repository at `github.com/mithilyr/CODEFEST---AI-Challenge` |
+| **Mithil** | Implementation lead; author of record on the git history; answer-key reviewer | Every commit (`mithilyr <mithilrajapakse11@gmail.com>`); the repository at `github.com/mithilyr/CODEFEST---AI-Challenge` |
 | **Yasiru** | Parallel prototype; source of the adopted cue-router design | `github.com/YasiruRF/delphi` — its cue-based router was measured against ours and partially adopted (ADR-019, `comparison/cue_router.py`, `comparison/REPORT.md`) |
 | **Tatiana** | Question authoring; code review | The independently authored question sets (below); review passes on the implementation |
 | **Kenolee** | Question authoring; code review | The independently authored question sets (below); review passes on the implementation |
@@ -54,7 +54,7 @@ any part on demand.]*
 
 ## A note on the commit history, stated plainly
 
-**All 117 commits in this repository carry a single author,
+**Every commit in this repository carries a single author,
 `mithilyr <mithilrajapakse11@gmail.com>`, although the team is four people.**
 
 We are stating this rather than leaving a judge to discover it, because the
