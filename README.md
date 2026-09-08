@@ -93,10 +93,15 @@ You need **Python 3.11 or newer** and a few hundred MB of disk space. **You do
 not need an API key, an account with anyone, or an internet connection** once
 the files are downloaded.
 
-Windows commands are shown. On macOS or Linux use `source .venv/bin/activate`
-and `.venv/bin/python` instead.
+Windows commands are shown. On macOS or Linux use `source .venv/bin/activate`,
+`.venv/bin/python`, and `cp` in place of `copy`.
 
-**1. Download the code.**
+**1. Get the code.** If you are reading this from inside the submitted ZIP,
+the code is already on disk: extract the archive, `cd` into the extracted
+folder, and go to step 2.
+
+From the git repository instead — note it is **not public**, so this needs
+access to have been granted to you:
 
 ```bash
 git clone https://github.com/mithilyr/CODEFEST---AI-Challenge.git
@@ -135,7 +140,7 @@ put the archive anywhere else and point `CORPUS_PATH` at it in the next step.
 **4. Create the settings file.**
 
 ```bash
-cp .env.example .env
+copy .env.example .env
 ```
 
 **Leave every key blank.** The only setting that matters is `CORPUS_PATH`, and
