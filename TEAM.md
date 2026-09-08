@@ -9,7 +9,7 @@ report's team section.
 
 | Name | Role | Where the work is visible |
 |---|---|---|
-| **Mithil** | Implementation lead; author of record on the git history | All 117 commits (`mithilyr <mithilrajapakse11@gmail.com>`); the repository at `github.com/mithilyr/CODEFEST---AI-Challenge` |
+| **Mithil** | Implementation lead; author of record on the git history; answer-key reviewer | All 117 commits (`mithilyr <mithilrajapakse11@gmail.com>`); the repository at `github.com/mithilyr/CODEFEST---AI-Challenge` |
 | **Yasiru** | Parallel prototype; source of the adopted cue-router design | `github.com/YasiruRF/delphi` — its cue-based router was measured against ours and partially adopted (ADR-019, `comparison/cue_router.py`, `comparison/REPORT.md`) |
 | **Tatiana** | Question authoring; code review | The independently authored question sets (below); review passes on the implementation |
 | **Kenolee** | Question authoring; code review | The independently authored question sets (below); review passes on the implementation |
@@ -86,7 +86,7 @@ here because it is real, and because the report needs it.
 |---|---|---|
 | The frozen 55-question robustness set (`eval/robustness/routing_robustness_v1.json`) | Authored by someone with **no access** to either router, to `src/query/`, or to `config/relations.yaml` — that isolation is the whole reason the number means anything (ADR-019). Committed by the implementer, authored by someone else | Tatiana, Kenolee |
 | Code review of the implementation | Review leaves no commit unless it produces one; the reviewer's name is not in the log even when the fix is | Tatiana, Kenolee |
-| Answer-key review (`eval/answer_key.json`) | Review is a judgement recorded in a JSON field, not a code change. Currently **7 `single_review`, 2 `draft`, 0 confirmed**, all by one reviewer — the F-015 failure mode, and why every eval number is still marked PROVISIONAL | *[TO BE COMPLETED — who was the single reviewer?]* |
+| Answer-key review (`eval/answer_key.json`) | Review is a judgement recorded in a JSON field, not a code change. Currently **7 `single_review`, 2 `draft`, 0 confirmed**, all by one reviewer — the F-015 failure mode, and why every eval number is still marked PROVISIONAL | Mithil |
 | Corpus analysis that produced the ADR-009..013 findings | Measurement runs, not commits | *[TO BE COMPLETED]* |
 | Sister-prototype comparison (ADR-019) | A second repository, `github.com/YasiruRF/delphi` | Yasiru |
 

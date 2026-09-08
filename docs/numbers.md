@@ -4,7 +4,7 @@ Every figure the report, the video and the README are allowed to quote, with the
 command that re-derives it. **Re-derive before the report is final and before
 the demo is recorded.** Nothing here may be quoted from memory.
 
-Last re-derived **2026-09-06** at commit `c573865`, whole sheet in one pass.
+Last re-derived **2026-09-08** at commit `7517413`, whole sheet in one pass, for the report. Only the test count had moved (388 -> 479); every other figure held.
 
 > **Why this file exists.** Eight stale numbers were found in one afternoon by
 > grepping rather than trusting — including the sentence in `README.md` whose
@@ -145,7 +145,7 @@ Nothing has been relabelled. An AI re-derivation agreed with all nine and does
 
 ## Tests
 
-**388 passing**, 0 network calls. `python -m pytest`.
+**479 passing**, 0 network calls. `python -m pytest`.
 
 ## Before submission
 

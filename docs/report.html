@@ -1,0 +1,514 @@
+<!doctype html><html><head><meta charset='utf-8'><title>Ashen Era Intelligence Assistant - Submission Report</title><style>
+@page { size: A4; margin: 14mm 15mm; }
+* { box-sizing: border-box; }
+body { font: 9.6pt/1.42 "Segoe UI", -apple-system, Roboto, sans-serif;
+       color: #16161a; margin: 0; }
+h1 { font-size: 17pt; margin: 0 0 .15em; letter-spacing: -.01em; }
+h2 { font-size: 11.5pt; margin: 1.1em 0 .35em; padding-bottom: .18em;
+     border-bottom: 1.5px solid #16161a; page-break-after: avoid; }
+h3 { font-size: 10pt; margin: .85em 0 .3em; color: #33333c;
+     page-break-after: avoid; }
+p, li { margin: .38em 0; }
+ul { margin: .35em 0; padding-left: 1.1em; }
+strong { color: #000; }
+em { color: #33333c; }
+code { font-family: Consolas, ui-monospace, monospace; font-size: .87em;
+       background: #f1f1f4; padding: .05em .28em; border-radius: 3px; }
+table { border-collapse: collapse; width: 100%; margin: .5em 0;
+        font-size: 8.9pt; page-break-inside: avoid; }
+th, td { text-align: left; padding: .26em .5em; border: 1px solid #d6d6de;
+         vertical-align: top; }
+th { background: #f1f1f4; font-weight: 600; }
+hr { border: 0; border-top: 1px solid #d6d6de; margin: .9em 0; }
+blockquote { margin: .5em 0; padding-left: .8em; border-left: 3px solid #c8c8d2;
+             color: #33333c; }
+.diagram { text-align: center; margin: .5em 0; page-break-inside: avoid; }
+.diagram svg { max-width: 100%; height: auto; max-height: 132mm; }
+a { color: #16161a; }
+</style></head><body><h1>Ashen Era Intelligence Assistant</h1>
+<p><strong>SLIIT Codefest 2026 — AI Competition, powered by IFS</strong>
+<strong>Sub-track 1B — Connecting Facts Across Thousands of Pages</strong></p>
+<p><strong>Demonstration video:</strong> <em>[UNLISTED YOUTUBE LINK — paste before submitting]</em>
+<strong>Repository:</strong> <code>github.com/mithilyr/CODEFEST---AI-Challenge</code></p>
+<p>Every figure in this report was re-derived from the live corpus on 2026-09-08.
+The command that reproduces each one is in <code>docs/numbers.md</code>.</p>
+<hr />
+<h2>1. The problem, and why the obvious solution fails</h2>
+<p>Sub-track 1B asks for answers that no single document contains. Dev question
+<code>1b_007</code> — <em>"Which accord was ultimately won by the faction of which Ederon
+Fellgard is a member?"</em> — is the shape of the whole track:</p>
+<ul>
+<li><code>wiki/ederon_fellgard.md</code> records his membership and never mentions an accord.</li>
+<li>The page naming that accord's victor never mentions Ederon Fellgard.</li>
+</ul>
+<p>The two documents share no linking vocabulary, and hop 2 is a <em>reverse</em> lookup:
+given a faction, find the conflict it won. Similarity search has a mechanism for
+neither.</p>
+<p>We did not assume this. We built the obvious solution first and measured it. A
+competent Voyage-embedding vector RAG baseline over the deduplicated corpus:</p>
+<table>
+<thead>
+<tr>
+<th>Checkpoint 1 — vector RAG baseline</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1B answer correctness</td>
+<td><strong>2 / 7</strong></td>
+</tr>
+<tr>
+<td><strong>Complete evidence</strong></td>
+<td><strong>0 / 9</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Not one question retrieved every document its answer needs. <strong>Three of seven
+reached neither required document</strong> (recall 0.00), so the join never got a chance
+to fail. Both questions scored "correct" reached one document of the two or three
+they needed — right answers by the wrong route.</p>
+<p>Raising <code>k</code> retrieves more passages. It cannot manufacture a join between two
+documents that share no vocabulary. That is a structural failure, not a tuning
+problem, and it is why this system is graph-first.</p>
+<p><em>The challenge document describes 415 documents; the shipped archive contains
+341 files, deduplicated to 317 canonical documents and 30,553 evidence units. We
+report what we measured.</em></p>
+<hr />
+<h2>2. Solution overview and architecture</h2>
+<div class="diagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 1100" width="1140" height="1100"
+     font-family="Segoe UI, Helvetica Neue, Arial, sans-serif">
+  <title>Ashen Era Intelligence Assistant — architecture</title>
+  <desc>Deterministic-first pipeline: read-only corpus, ingestion to evidence units, graph
+        construction from infobox rows, three declining query tiers, synthesis and UI. External
+        model calls are isolated at four points, two of which are off by default.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7"
+            orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#2f4a6d"/>
+    </marker>
+    <marker id="arrow-muted" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8a8a8a"/>
+    </marker>
+  </defs>
+
+  <rect width="1140" height="1100" fill="#ffffff"/>
+
+  <!-- ============================ heading ============================ -->
+  <text x="20" y="36" font-size="21" font-weight="600" fill="#16202c">Ashen Era Intelligence Assistant — architecture</text>
+  <text x="20" y="58" font-size="12" fill="#5a6672">Codefest 2026 sub-track 1B. Deterministic-first: every stage resolves without a model, and escalates only on a named, testable failure.</text>
+  <text x="20" y="74" font-size="12" fill="#5a6672">Every number below is re-derived from the live corpus by <tspan font-family="Consolas, monospace">tests/test_diagram.py</tspan>, so this diagram cannot go stale silently.</text>
+
+  <!-- ============================ corpus ============================= -->
+  <rect x="345" y="98" width="460" height="56" rx="4" fill="#f0ecf9" stroke="#54388f" stroke-width="1.5"/>
+  <text x="575" y="120" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">Ashen Era Archive — read-only, and not committed</text>
+  <text x="575" y="139" font-size="10.5" text-anchor="middle" fill="#5a6672">341 files verified · 0 modified · <tspan font-family="Consolas, monospace">src/ingest/integrity.py</tspan> (F-016)</text>
+
+  <!-- ============================ ingest ============================= -->
+  <rect x="305" y="194" width="540" height="92" rx="4" fill="#eef3f9" stroke="#2f4a6d" stroke-width="1.5"/>
+  <text x="575" y="216" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">src/ingest/ — discover → deduplicate → assign authority → load</text>
+  <text x="575" y="238" font-size="10.5" text-anchor="middle" fill="#3c4a5a">340 documents scanned → 317 canonical · 22 duplicates collapsed</text>
+  <text x="575" y="256" font-size="10.5" text-anchor="middle" fill="#5a6672">Deduplication is collection-dependent: chronicles/codex similarity 1.000 and 0.989,</text>
+  <text x="575" y="272" font-size="10.5" text-anchor="middle" fill="#5a6672">but ephemera same-stem files score 0.019–0.048 and are different documents (ADR-003)</text>
+
+  <!-- ========================= evidence units ======================== -->
+  <rect x="345" y="326" width="460" height="56" rx="4" fill="#eaf4ec" stroke="#2c6e49" stroke-width="1.5"/>
+  <text x="575" y="348" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">EvidenceUnit × 30,553</text>
+  <text x="575" y="367" font-size="10.5" text-anchor="middle" fill="#5a6672">canonical document id · locator · authority tier — provenance attached once, here</text>
+
+  <!-- =========================== graph build ========================= -->
+  <rect x="305" y="422" width="540" height="84" rx="4" fill="#eef3f9" stroke="#2f4a6d" stroke-width="1.5"/>
+  <text x="575" y="444" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">src/graph/ — cells.py · entities.py · build.py</text>
+  <text x="575" y="464" font-size="10.5" text-anchor="middle" fill="#3c4a5a">651 infobox cells → 12 closed templates (ADR-010) · 109 field names → 15 relations · 0 unmapped</text>
+  <text x="575" y="481" font-size="10.5" text-anchor="middle" fill="#5a6672">the infobox is the first pipe table, not the ## Infobox heading (ADR-009)</text>
+  <text x="575" y="498" font-size="10.5" text-anchor="middle" fill="#5a6672">rows are a sequence, not a mapping (F-018) · exact-match entity keys only (ADR-011)</text>
+
+  <!-- ============================= graph ============================= -->
+  <rect x="345" y="538" width="460" height="56" rx="4" fill="#eaf4ec" stroke="#2c6e49" stroke-width="1.5"/>
+  <text x="575" y="560" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">Graph — 118 entities, 265 edges</text>
+  <text x="575" y="579" font-size="10.5" text-anchor="middle" fill="#5a6672">plain dicts and lists · every edge carries its document and explains itself (ADR-016)</text>
+
+  <!-- ========================== routing tiers ======================== -->
+  <text x="20" y="632" font-size="11.5" font-weight="600" fill="#5a6672">Query — each tier runs only if the previous one declined</text>
+
+  <rect x="290" y="638" width="150" height="110" rx="4" fill="#eef3f9" stroke="#2f4a6d" stroke-width="1.5"/>
+  <text x="365" y="659" font-size="12" font-weight="600" text-anchor="middle" fill="#16202c">Tier 1 — templates</text>
+  <text x="365" y="678" font-size="9.8" text-anchor="middle" fill="#5a6672" font-family="Consolas, monospace">src/query/route.py</text>
+  <text x="365" y="697" font-size="9.8" text-anchor="middle" fill="#3c4a5a">7/7 dev 1B (ADR-017)</text>
+  <text x="365" y="713" font-size="9.8" text-anchor="middle" fill="#3c4a5a">no route shape on</text>
+  <text x="365" y="729" font-size="9.8" text-anchor="middle" fill="#3c4a5a">36 of 49 (ADR-029)</text>
+
+  <rect x="500" y="638" width="150" height="110" rx="4" fill="#eef3f9" stroke="#2f4a6d" stroke-width="1.5"/>
+  <text x="575" y="659" font-size="12" font-weight="600" text-anchor="middle" fill="#16202c">Tier 2 — cue fallback</text>
+  <text x="575" y="678" font-size="9.8" text-anchor="middle" fill="#5a6672" font-family="Consolas, monospace">src/query/fallback.py</text>
+  <text x="575" y="697" font-size="9.8" text-anchor="middle" fill="#3c4a5a">17 correct / 27 complete</text>
+  <text x="575" y="713" font-size="9.8" text-anchor="middle" fill="#3c4a5a">evidence on 49 (ADR-024)</text>
+  <text x="575" y="729" font-size="9.8" text-anchor="middle" fill="#3c4a5a">40% precision vs 91%</text>
+
+  <rect x="710" y="638" width="150" height="110" rx="4" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="785" y="659" font-size="12" font-weight="600" text-anchor="middle" fill="#16202c">Tier 3 — LLM plan</text>
+  <text x="785" y="678" font-size="9.8" text-anchor="middle" fill="#5a6672" font-family="Consolas, monospace">src/query/planner.py</text>
+  <text x="785" y="697" font-size="9.8" text-anchor="middle" fill="#3c4a5a">emits a plan, never an</text>
+  <text x="785" y="713" font-size="9.8" text-anchor="middle" fill="#3c4a5a">answer · validated, then</text>
+  <text x="785" y="729" font-size="9.8" text-anchor="middle" fill="#8a5a08" font-weight="600">walked · OFF BY DEFAULT</text>
+
+  <text x="470" y="688" font-size="9.5" text-anchor="middle" fill="#5a6672">declines</text>
+  <text x="680" y="688" font-size="9.5" text-anchor="middle" fill="#5a6672">declines</text>
+
+  <!-- ============================ answer ============================= -->
+  <rect x="345" y="808" width="460" height="56" rx="4" fill="#eaf4ec" stroke="#2c6e49" stroke-width="1.5"/>
+  <text x="575" y="830" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">Answer — status · values · evidence paths · documents</text>
+  <text x="575" y="849" font-size="10.5" text-anchor="middle" fill="#5a6672">a miss returns a named EvidenceStatus, never an empty result</text>
+
+  <!-- =========================== synthesis =========================== -->
+  <rect x="345" y="884" width="460" height="64" rx="4" fill="#eef3f9" stroke="#2f4a6d" stroke-width="1.5"/>
+  <text x="575" y="906" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">src/query/synthesis.py — prose from an already-verified chain</text>
+  <text x="575" y="925" font-size="10.5" text-anchor="middle" fill="#3c4a5a">phrasing: model | template | none — counted, and the template path needs no API key</text>
+  <text x="575" y="941" font-size="10.5" text-anchor="middle" fill="#5a6672">the model rewords retrieved evidence; it never selects it</text>
+
+  <!-- =============================== ui ============================== -->
+  <rect x="345" y="988" width="460" height="64" rx="4" fill="#eef3f9" stroke="#2f4a6d" stroke-width="1.5"/>
+  <text x="575" y="1010" font-size="13" font-weight="600" text-anchor="middle" fill="#16202c">src/ui/ — stdlib http.server, no new dependency</text>
+  <text x="575" y="1029" font-size="10.5" text-anchor="middle" fill="#3c4a5a">nine demo surfaces · /graph renders all 118 entities as one static SVG, no CDN, no JS</text>
+  <text x="575" y="1045" font-size="10.5" text-anchor="middle" fill="#5a6672">adds no reasoning of its own — thinness pinned by three architectural tests (ADR-018)</text>
+
+  <!-- ======================== left gutter: config ==================== -->
+  <rect x="20" y="194" width="250" height="92" rx="4" fill="#f4f4f4" stroke="#8a8a8a" stroke-width="1.3"/>
+  <text x="145" y="216" font-size="11.5" font-weight="600" text-anchor="middle" fill="#16202c">config/ — claims, not code</text>
+  <text x="145" y="236" font-size="10" text-anchor="middle" fill="#5a6672" font-family="Consolas, monospace">authority.yaml · relations.yaml</text>
+  <text x="145" y="252" font-size="10" text-anchor="middle" fill="#5a6672" font-family="Consolas, monospace">corpus_manifest.sha256</text>
+  <text x="145" y="272" font-size="10" text-anchor="middle" fill="#5a6672">a judge can disagree with one line (ADR-005)</text>
+
+  <!-- ======================== left gutter: caches ==================== -->
+  <rect x="20" y="326" width="250" height="100" rx="4" fill="#f4f4f4" stroke="#8a8a8a" stroke-width="1.3"/>
+  <text x="145" y="348" font-size="11.5" font-weight="600" text-anchor="middle" fill="#16202c">.cache/ · ocr_cache/</text>
+  <text x="145" y="368" font-size="10" text-anchor="middle" fill="#5a6672" font-family="Consolas, monospace">corpus.v1.json · embeddings</text>
+  <text x="145" y="384" font-size="10" text-anchor="middle" fill="#5a6672" font-family="Consolas, monospace">index · responses</text>
+  <text x="145" y="404" font-size="10" text-anchor="middle" fill="#5a6672">reruns cost no quota;</text>
+  <text x="145" y="418" font-size="10" text-anchor="middle" fill="#8a5a08" font-weight="600">never demo on a cold cache</text>
+
+  <!-- ==================== right gutter: model calls ================== -->
+  <text x="880" y="182" font-size="11.5" font-weight="600" fill="#5a6672">External model calls — all four, isolated</text>
+
+  <rect x="880" y="194" width="240" height="76" rx="4" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.4"/>
+  <text x="1000" y="216" font-size="11.5" font-weight="600" text-anchor="middle" fill="#16202c">Gemini — OCR</text>
+  <text x="1000" y="235" font-size="10" text-anchor="middle" fill="#5a6672">17 scans, transcribed once,</text>
+  <text x="1000" y="250" font-size="10" text-anchor="middle" fill="#5a6672">cache committed to the repo</text>
+  <text x="1000" y="264" font-size="10" text-anchor="middle" fill="#5a6672">ingest-time only · 0 at query time</text>
+
+  <rect x="880" y="326" width="240" height="122" rx="4" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.4"/>
+  <text x="1000" y="348" font-size="11.5" font-weight="600" text-anchor="middle" fill="#16202c">Checkpoint 1 baseline</text>
+  <text x="1000" y="367" font-size="10" text-anchor="middle" fill="#5a6672">Voyage embeddings + Gemini</text>
+  <text x="1000" y="382" font-size="10" text-anchor="middle" fill="#5a6672">3,392 chunks · NumPy matmul,</text>
+  <text x="1000" y="396" font-size="10" text-anchor="middle" fill="#5a6672">no vector database</text>
+  <text x="1000" y="416" font-size="10" text-anchor="middle" fill="#3c4a5a" font-weight="600">1B 2/7 · 0/9 complete evidence</text>
+  <text x="1000" y="434" font-size="10" text-anchor="middle" fill="#5a6672">comparison arm, not the answer path</text>
+
+  <rect x="880" y="638" width="240" height="110" rx="4" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="1000" y="660" font-size="11.5" font-weight="600" text-anchor="middle" fill="#16202c">OpenRouter — planner</text>
+  <text x="1000" y="679" font-size="10" text-anchor="middle" fill="#8a5a08" font-weight="600">off by default (F-025)</text>
+  <text x="1000" y="697" font-size="10" text-anchor="middle" fill="#5a6672">a validated plan was once</text>
+  <text x="1000" y="712" font-size="10" text-anchor="middle" fill="#5a6672">well-formed and about nothing;</text>
+  <text x="1000" y="727" font-size="10" text-anchor="middle" fill="#5a6672">three guards added</text>
+  <text x="1000" y="742" font-size="10" text-anchor="middle" fill="#5a6672">unmeasured on the frozen set</text>
+
+  <rect x="880" y="884" width="240" height="64" rx="4" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.4" stroke-dasharray="6 4"/>
+  <text x="1000" y="906" font-size="11.5" font-weight="600" text-anchor="middle" fill="#16202c">OpenRouter — phrasing</text>
+  <text x="1000" y="925" font-size="10" text-anchor="middle" fill="#8a5a08" font-weight="600">off by default</text>
+  <text x="1000" y="941" font-size="10" text-anchor="middle" fill="#5a6672">template phrasing needs no key</text>
+
+  <!-- ============================= arrows ============================ -->
+  <g stroke="#2f4a6d" stroke-width="1.6" fill="none" marker-end="url(#arrow)">
+    <path d="M575,154 V194"/>
+    <path d="M575,286 V326"/>
+    <path d="M575,382 V422"/>
+    <path d="M575,506 V538"/>
+    <path d="M575,594 V616 H365 V638"/>
+    <path d="M440,693 H500"/>
+    <path d="M650,693 H710"/>
+    <path d="M575,780 V808"/>
+    <path d="M575,864 V884"/>
+    <path d="M575,948 V988"/>
+  </g>
+  <g stroke="#2f4a6d" stroke-width="1.6" fill="none">
+    <path d="M365,748 V780"/>
+    <path d="M575,748 V780"/>
+    <path d="M785,748 V780"/>
+    <path d="M365,780 H785"/>
+  </g>
+
+  <!-- dashed connectors: configuration, caches, model calls -->
+  <g stroke="#8a8a8a" stroke-width="1.3" fill="none" stroke-dasharray="5 4" marker-end="url(#arrow-muted)">
+    <path d="M270,240 H305"/>
+    <path d="M270,276 H288 V464 H305"/>
+    <path d="M845,232 H880"/>
+    <path d="M805,354 H852 V387 H880"/>
+    <path d="M860,693 H880"/>
+    <path d="M805,916 H880"/>
+  </g>
+  <g stroke="#8a8a8a" stroke-width="1.3" fill="none" stroke-dasharray="5 4"
+     marker-start="url(#arrow-muted)" marker-end="url(#arrow-muted)">
+    <path d="M270,354 H345"/>
+  </g>
+
+  <!-- ============================= legend ============================ -->
+  <g font-size="10.5" fill="#5a6672">
+    <rect x="20" y="1064" width="18" height="12" rx="2" fill="#eef3f9" stroke="#2f4a6d" stroke-width="1.3"/>
+    <text x="45" y="1074">deterministic code</text>
+
+    <rect x="175" y="1064" width="18" height="12" rx="2" fill="#eaf4ec" stroke="#2c6e49" stroke-width="1.3"/>
+    <text x="200" y="1074">data structure</text>
+
+    <rect x="310" y="1064" width="18" height="12" rx="2" fill="#f4f4f4" stroke="#8a8a8a" stroke-width="1.3"/>
+    <text x="335" y="1074">configuration / cache</text>
+
+    <rect x="480" y="1064" width="18" height="12" rx="2" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.3"/>
+    <text x="505" y="1074">external model call</text>
+
+    <rect x="645" y="1064" width="18" height="12" rx="2" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.3" stroke-dasharray="4 3"/>
+    <text x="670" y="1074">dashed = off by default; no test or eval sweep can reach it (F-025)</text>
+  </g>
+</svg></div>
+<p>One pipeline, four stages, with a rule running through all of them: <strong>each stage
+resolves deterministically first and escalates to a model only on an explicit,
+testable failure condition.</strong> Nothing escalates because it "might do better."</p>
+<p><strong>Ingest.</strong> SHA-256 integrity check → discover → deduplicate → assign authority
+→ load. 317 canonical documents, <strong>30,553 evidence units</strong>, each carrying its
+document id, locator and authority tier. Provenance is attached <strong>once, here</strong>,
+so every downstream consumer inherits it rather than reconstructing it three
+times and disagreeing.</p>
+<p><strong>Graph.</strong> Wiki infobox rows → <strong>118 entities, 265 edges</strong>, 15 relations, <strong>0
+unmapped field names</strong> — a plain Python dict of lists.</p>
+<p><strong>Query — three declining tiers</strong>, each running only if the previous declined,
+each declining rather than guessing:</p>
+<table>
+<thead>
+<tr>
+<th>Tier</th>
+<th>Mechanism</th>
+<th>Measured</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>Four deterministic templates</td>
+<td>7/7 dev 1B; no route shape on <strong>36 of 49</strong> frozen questions</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Deterministic cue routing</td>
+<td>40% precision, against templates' 91%</td>
+</tr>
+<tr>
+<td>3</td>
+<td>LLM emits a validated <em>plan</em>, never an answer</td>
+<td><strong>Off by default</strong>; unmeasured</td>
+</tr>
+</tbody>
+</table>
+<p>A question no tier can route ends at a <strong>named <code>EvidenceStatus</code></strong> — never an empty
+result, never an invented answer — and the page renders the partial evidence it
+did establish, with citations.</p>
+<p><strong>Cross-collection attestation.</strong> For every pair of entities the graph connects,
+non-wiki passages naming <em>both</em> ends attach with document, locator, collection and
+tier: <strong>259 of 265 edges (97.7%)</strong> — 421 codex, 115 chronicle, 26 ephemera
+attestations. Co-mention is <strong>not</strong> proof, and the page says "also attested in",
+never "confirms"; a test forbids the words <em>confirms</em> and <em>proves</em> in the output.</p>
+<p><strong>Deliberately not used:</strong> no graph database (265 edges is a dict), no vector
+database (a NumPy matmul), no agent framework. The binding reason is not
+performance: §4.1 requires every team member to explain, justify and modify any
+part on demand, and a dependency nobody on the team can defend is a liability
+regardless of what it saves.</p>
+<hr />
+<h2>3. Key technical decisions</h2>
+<p><strong>Traversal is constrained to a named relation per hop.</strong> Measured: an
+unconstrained two-hop search returns <strong>5–87 candidate paths</strong>, and the shortest
+path landing on the right answer is frequently wrong about <em>why</em>. Three dev
+questions ask which conflict a faction won; the shortest route runs through
+<code>belligerent_in</code> — the faction <em>fought in</em> it — where the truth requires
+<code>victor_of</code>. Both edges exist, both are two hops, both end on the same node.
+Constraining collapses 5–87 candidates to 1–14 and makes the relation sequence
+<em>be</em> the claim being audited. Fighting in a war is not winning it.</p>
+<p><strong>Entity resolution is exact-match only.</strong> <code>caedmon_fellgard</code> and
+<code>ederon_fellgard</code> are 0.839 similar, are different people, and the second is the
+subject of <code>1b_007</code>. No fuzzy threshold may silently pick a winner; a near-miss at
+≥0.90 is <em>reported</em> and resolved by nobody but the user.</p>
+<p><strong>Configuration is not code.</strong> <code>config/relations.yaml</code> maps 109 infobox field
+names onto 15 relations <em>and</em> declares which collections build the graph. Adding
+vocabulary is a YAML edit — verified live, two new field names took a test graph
+from 12 to 14 edges with no code change. A build matching no collection now
+raises an error naming what the corpus contains; it previously produced zero
+edges in silence.</p>
+<p><strong>Scoring is deterministic, not an LLM judge.</strong> Three reasons: quota (~20
+requests/day/model), reproducibility (a judge that scores differently across runs
+turns a baseline into an estimate), and defensibility (a teammate can defend 40
+lines of matching rules; nobody can defend a model's opinion). It carries a
+negation guard, because <em>"there is no mention of who the victors were"</em> contains
+the phrase "the victors were" and a naive substring match scores it correct.</p>
+<p><strong>Ground truth is validated independently.</strong> <code>eval/completeness.py</code> imports
+nothing from <code>src/graph/</code>: ground truth validated by the system under test is not
+ground truth.</p>
+<hr />
+<h2>4. What works, what does not, and what we got wrong</h2>
+<h3>What works</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Dev 1B questions</td>
+<td><strong>7 / 7</strong> correct, with complete evidence</td>
+</tr>
+<tr>
+<td>Shipped three tiers, 49 frozen questions</td>
+<td><strong>22 correct / 31 complete evidence</strong> (templates alone: 10 / 11)</td>
+</tr>
+<tr>
+<td>Unanswerable questions</td>
+<td><strong>6 of 6</strong> honestly refused</td>
+</tr>
+<tr>
+<td>Cross-collection attestation</td>
+<td>259 of 265 edges</td>
+</tr>
+<tr>
+<td>Entities the corpus treats as first-class with no graph node</td>
+<td><strong>0</strong></td>
+</tr>
+<tr>
+<td>Tests</td>
+<td><strong>479</strong>, zero network calls</td>
+</tr>
+</tbody>
+</table>
+<h3>The number that matters more than 7/7</h3>
+<p><strong>The four templates match no route shape on 36 of 49 independently authored
+questions. On the 21 novel ones, they match one.</strong></p>
+<p>Those 55 questions were written by team members with <strong>no access</strong> to either
+router, to <code>src/query/</code>, or to <code>config/relations.yaml</code> — that last withheld
+specifically because it is the cue router's vocabulary source, and an author who
+read it would have tested the vocabulary rather than the router. The set was
+frozen with its sha256 recorded <em>before either router ran</em>.</p>
+<p>So <strong>7/7 measures fit to seven development questions; 36/49 measures routing
+capability.</strong> We do not quote the first without the second. A judge can verify
+the freeze date and hash independently of anything we assert.</p>
+<h3>Limitations</h3>
+<ul>
+<li><strong>The graph reads wiki infobox pipe tables only.</strong> The other three collections
+  are ingested and corroborate edges but build none. A wiki using YAML
+  frontmatter or HTML tables would build zero edges.</li>
+<li><strong>Every acceptable path in the answer key is two hops.</strong> A three-hop set we
+  wrote ourselves answers 3 of 3 — but through the cue tier, at 40% precision,
+  and it is not two-person verified.</li>
+<li><strong>The LLM planner tier is unmeasured</strong> on the frozen set. Measuring it spends
+  daily quota and yields a number that drifts with a provider's free lineup.</li>
+<li><strong>It does not update automatically.</strong> A document added while the server runs is
+  invisible until a reindex — about six seconds, reported with before/after
+  counts.</li>
+<li><strong>No authentication, audit log, persistence or observability.</strong> Single process,
+  in-memory. Appropriate for a prototype; not for a plant-maintenance deployment.</li>
+</ul>
+<h3>Every evaluation number here is PROVISIONAL</h3>
+<p><code>eval/answer_key.json</code>: <strong>0 of 9 entries confirmed</strong> — 7 <code>single_review</code> by a
+single reviewer (Mithil, who also implemented the system), 2 <code>draft</code>. No second
+human reviewer was available before the deadline. Independent enumeration
+(<code>eval/completeness.py</code>) reports <strong>0 recall risks</strong>, which is strong evidence the
+key is not too <em>narrow</em>; it is weak evidence that each answer is <em>right</em>. An AI
+re-derivation agreed with all nine and does not count — not a second human, not
+blind. The harness prints the warning itself on every run. Nothing has been
+relabelled to look better.</p>
+<h3>Approaches we tried and rejected</h3>
+<p>33 failures are logged in <code>docs/failures.md</code> with the measurement that killed
+each. Five that changed the design:</p>
+<ul>
+<li><strong>F-025 — a validated plan, relevant to nothing.</strong> The LLM planner returned a
+  schema-valid, name-checked, hop-bounded plan for <em>"What color is the sky in the
+  Ashen Era?"</em> by latching onto the word "Ashen", and the engine walked it into a
+  confident, fully cited answer to a question nobody asked. Three guards followed
+  and the tier became opt-in.</li>
+<li><strong>F-016 — trusting that a read-only corpus stayed read-only.</strong> An editor
+  rewrote 36 files and left a phantom document that ingested as real. The SHA-256
+  integrity check exists because of this.</li>
+<li><strong>F-015 — a single careful reviewer.</strong> A reviewer read <code>1b_006</code>, reported
+  <code>confidence: high</code>, and listed two valid answers. The corpus documents
+  <strong>fourteen</strong> — membership is recorded in two disjoint places with zero overlap,
+  and a human reading from one direction sees one half. The mitigation is not
+  another reviewer; it is enumeration that reads both directions by construction.</li>
+<li><strong>F-008 — structural claim extraction without stripping emphasis.</strong> The
+  ephemera wrap competing values in <code>**bold**</code>. An extractor that ignores it finds
+  <strong>zero</strong> conflicts corpus-wide and reports full confidence — silent failure.</li>
+<li><strong>ADR-013 CORRECTION — our own conclusion, overturned.</strong> We predicted the 1C
+  conflict questions would defeat a naive baseline. They did not: the codex
+  announces its own authority in prose, and the model follows that signal without
+  our tier model. We kept the measurement and deleted the claim.</li>
+</ul>
+<hr />
+<h2>5. AI Usage Disclosure</h2>
+<p>Full detail in <code>ai_usage/ai-usage-disclosure.md</code>; complete conversation logs are
+exported as plain text in <code>ai_usage/</code>.</p>
+<p><strong>Tools.</strong> Claude Code as the coding assistant throughout. Gemini for OCR of the
+17 scanned ephemera (ingest-time only; transcripts committed, <strong>0 calls at query
+time</strong>). Voyage embeddings and Gemini for the Checkpoint 1 baseline — the
+comparison arm, not the answer path. OpenRouter for the opt-in planner and
+phrasing tiers, both off by default.</p>
+<p>AI used to <strong>build</strong> the system is disclosed above; AI used <strong>inside</strong> the
+answer path is confined to ambiguous entity resolution, unmatched question shapes,
+and rewording evidence already retrieved. Traversal — the part that produces the
+answer — is plain Python.</p>
+<p><strong>Decisions the team made, not the assistant.</strong> Recorded across 36 ADRs, with the
+overturned assumption left visible each time: collection-dependent deduplication
+(ADR-003); exact-match-only entity resolution, refusing fuzzy matching (ADR-011);
+making the LLM tier opt-in after F-025; keeping the fourteen-name answer set and
+marking the entry unresolved after F-015; and reversing our own published
+conclusion in the ADR-013 correction. The deterministic-first rule and the
+measure-before-asserting rule were written into <code>CLAUDE.md</code> by the team before the
+assistant was pointed at the problem.</p>
+<hr />
+<h2>6. Team, roles and contributions</h2>
+<p>Full detail in <code>TEAM.md</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Role</th>
+<th>Where the work is visible</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mithil</strong></td>
+<td>Implementation lead; author of record on the git history; answer-key reviewer</td>
+<td>All 117 commits; <code>github.com/mithilyr/CODEFEST---AI-Challenge</code></td>
+</tr>
+<tr>
+<td><strong>Yasiru</strong></td>
+<td>Parallel prototype; source of the adopted cue-router design</td>
+<td><code>github.com/YasiruRF/delphi</code> — measured against ours and partially adopted (ADR-019)</td>
+</tr>
+<tr>
+<td><strong>Tatiana</strong></td>
+<td>Question authoring; code review</td>
+<td>The frozen 55-question robustness set; review passes on the implementation</td>
+</tr>
+<tr>
+<td><strong>Kenolee</strong></td>
+<td>Question authoring; code review</td>
+<td>The frozen 55-question robustness set; review passes on the implementation</td>
+</tr>
+</tbody>
+</table>
+<p><strong>On the commit history, stated rather than left to be found.</strong> All commits in
+this repository carry a single author, although the team is four people. We have
+not rewritten or backdated the log to distribute authorship: §5.2 asks the history
+to reflect the team's actual working process, and a redistributed log would
+satisfy the letter of that line while defeating its point. The log is accurate and
+incomplete as a record of who contributed what; <code>TEAM.md</code> is the correction.</p>
+<p>The independently authored question set is the clearest case of work that leaves
+no commit behind — and it is the reason the 36/49 figure is worth anything at all.</p></body></html>
