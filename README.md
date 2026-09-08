@@ -61,7 +61,9 @@ database. The competition requires every team member to be able to explain and
 change any part of the submission on demand, so a dependency nobody on the team
 could defend is a liability rather than a shortcut.
 
-The entire dependency list is eight packages:
+We depend on eight packages directly. (Installing them pulls in their own
+dependencies too, so `pip list` will show more — those are Google's and Voyage's
+choices, not ours.)
 
 | Package | Used for |
 |---|---|
@@ -104,7 +106,7 @@ git clone https://github.com/mithilyr/CODEFEST---AI-Challenge.git
 cd CODEFEST---AI-Challenge
 ```
 
-**2. Create a private Python environment and install the eight packages.**
+**2. Create a private Python environment and install the dependencies.**
 
 ```bash
 python -m venv .venv
