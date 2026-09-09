@@ -30,7 +30,7 @@ a { color: #16161a; }
 <strong>Sub-track 1B — Connecting Facts Across Thousands of Pages</strong></p>
 <p><strong>Demonstration video:</strong> <em>[UNLISTED YOUTUBE LINK — paste before submitting]</em>
 <strong>Repository:</strong> <code>github.com/mithilyr/CODEFEST---AI-Challenge</code></p>
-<p>Every figure in this report was re-derived from the live corpus on 2026-09-08.
+<p>Every figure in this report was re-derived from the live corpus on 2026-09-09.
 The command that reproduces each one is in <code>docs/numbers.md</code>.</p>
 <hr />
 <h2>1. The problem, and why the obvious solution fails</h2>
@@ -72,8 +72,8 @@ they needed — right answers by the wrong route.</p>
 documents that share no vocabulary. That is a structural failure, not a tuning
 problem, and it is why this system is graph-first.</p>
 <p><em>The challenge document describes 415 documents; the shipped archive contains
-341 files, deduplicated to 317 canonical documents and 30,553 evidence units. We
-report what we measured.</em></p>
+340 files (341 including <code>sample_questions.json</code>), deduplicated to 317 canonical
+documents and 30,553 evidence units. We report what we measured.</em></p>
 <hr />
 <h2>2. Solution overview and architecture</h2>
 <div class="diagram"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1140 1100" width="1140" height="1100"
@@ -212,7 +212,7 @@ report what we measured.</em></p>
   <text x="1000" y="697" font-size="10" text-anchor="middle" fill="#5a6672">a validated plan was once</text>
   <text x="1000" y="712" font-size="10" text-anchor="middle" fill="#5a6672">well-formed and about nothing;</text>
   <text x="1000" y="727" font-size="10" text-anchor="middle" fill="#5a6672">three guards added</text>
-  <text x="1000" y="742" font-size="10" text-anchor="middle" fill="#5a6672">unmeasured on the frozen set</text>
+  <text x="1000" y="742" font-size="10" text-anchor="middle" fill="#5a6672">fires on 4/55, all correct (ADR-048)</text>
 
   <rect x="880" y="884" width="240" height="64" rx="4" fill="#fdf3e3" stroke="#b06d10" stroke-width="1.4" stroke-dasharray="6 4"/>
   <text x="1000" y="906" font-size="11.5" font-weight="600" text-anchor="middle" fill="#16202c">OpenRouter — phrasing</text>
@@ -305,7 +305,7 @@ each declining rather than guessing:</p>
 <tr>
 <td>3</td>
 <td>LLM emits a validated <em>plan</em>, never an answer</td>
-<td><strong>Off by default</strong>; unmeasured</td>
+<td><strong>Off by default</strong>; measured once (ADR-048): fires on 4/55, all correct</td>
 </tr>
 </tbody>
 </table>
@@ -371,6 +371,10 @@ ground truth.</p>
 <td><strong>22 correct / 31 complete evidence</strong> (templates alone: 10 / 11)</td>
 </tr>
 <tr>
+<td>With the opt-in planner tier also on</td>
+<td><strong>26 correct / 35 complete evidence</strong> — fires on 4/55, all correct (ADR-048)</td>
+</tr>
+<tr>
 <td>Unanswerable questions</td>
 <td><strong>6 of 6</strong> honestly refused</td>
 </tr>
@@ -384,7 +388,7 @@ ground truth.</p>
 </tr>
 <tr>
 <td>Tests</td>
-<td><strong>479</strong>, zero network calls</td>
+<td><strong>497</strong>, zero network calls</td>
 </tr>
 </tbody>
 </table>
@@ -407,8 +411,11 @@ the freeze date and hash independently of anything we assert.</p>
 <li><strong>Every acceptable path in the answer key is two hops.</strong> A three-hop set we
   wrote ourselves answers 3 of 3 — but through the cue tier, at 40% precision,
   and it is not two-person verified.</li>
-<li><strong>The LLM planner tier is unmeasured</strong> on the frozen set. Measuring it spends
-  daily quota and yields a number that drifts with a provider's free lineup.</li>
+<li><strong>The LLM planner tier's contribution is narrow, measured once.</strong> Off by
+  default; the one measured sweep (ADR-048) changed the outcome on 4 of 55
+  frozen questions — real signal that it recovers <em>something</em> the deterministic
+  tiers miss, not evidence of a general improvement. Not re-run routinely: it
+  spends daily OpenRouter quota and drifts with the provider's free lineup.</li>
 <li><strong>It does not update automatically.</strong> A document added while the server runs is
   invisible until a reindex — about six seconds, reported with before/after
   counts.</li>
@@ -425,7 +432,7 @@ re-derivation agreed with all nine and does not count — not a second human, no
 blind. The harness prints the warning itself on every run. Nothing has been
 relabelled to look better.</p>
 <h3>Approaches we tried and rejected</h3>
-<p>33 failures are logged in <code>docs/failures.md</code> with the measurement that killed
+<p>38 failures are logged in <code>docs/failures.md</code> with the measurement that killed
 each. Five that changed the design:</p>
 <ul>
 <li><strong>F-025 — a validated plan, relevant to nothing.</strong> The LLM planner returned a
@@ -462,7 +469,7 @@ phrasing tiers, both off by default.</p>
 answer path is confined to ambiguous entity resolution, unmatched question shapes,
 and rewording evidence already retrieved. Traversal — the part that produces the
 answer — is plain Python.</p>
-<p><strong>Decisions the team made, not the assistant.</strong> Recorded across 36 ADRs, with the
+<p><strong>Decisions the team made, not the assistant.</strong> Recorded across 48 ADRs, with the
 overturned assumption left visible each time: collection-dependent deduplication
 (ADR-003); exact-match-only entity resolution, refusing fuzzy matching (ADR-011);
 making the LLM tier opt-in after F-025; keeping the fourteen-name answer set and
@@ -485,7 +492,7 @@ assistant was pointed at the problem.</p>
 <tr>
 <td><strong>Mithil</strong></td>
 <td>Implementation lead; author of record on the git history; answer-key reviewer</td>
-<td>All 117 commits; <code>github.com/mithilyr/CODEFEST---AI-Challenge</code></td>
+<td>Every commit; <code>github.com/mithilyr/CODEFEST---AI-Challenge</code></td>
 </tr>
 <tr>
 <td><strong>Yasiru</strong></td>

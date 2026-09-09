@@ -116,14 +116,17 @@ are done: `origin` is configured
 - [x] Rotate all API keys — done **5 Sep**, before the log export, not 8 Sep as
       planned. Do not rotate again unless a *new* key reaches a transcript.
 - [x] Export AI chat logs to `ai_usage/` as work happens — 12 exported; rerun before submission (see above).
-- [ ] Write the ≤5-page PDF report. Numbers come from `docs/numbers.md`, which
-      is re-derived in one pass and guarded by `tests/test_docs.py` — do not
-      quote a figure from memory or from an ADR. Include F-031, but tell it as
-      **found and fixed the same day** (ADR-029), which reads better than the
-      open version: the first guard was measured before being wired in and
-      would have cost three correct answers. If §4 needs a defect that is still
-      **open**, use the planner's unmeasured status or the single-reviewer key
-      (F-015) — F-026, F-027 and F-031 are all closed.
+- [x] Write the ≤5-page PDF report. Numbers come from `docs/numbers.md`.
+      **Regenerated 2026-09-09**: `submission_report.pdf` (built 8 Sep 11:09)
+      predated three fixes made later that same day — test count 490→497, the
+      415/317 document-count reconciliation, and the README rewrite — and was
+      quoting all three stale. `docs/report.md` brought current (497 tests,
+      340/341/317, 48 ADRs, 38 failures, "every commit" not a stale count, the
+      planner sweep row and limitation rewritten for ADR-048), rebuilt via
+      `python docs/build_report.py` then Edge headless print-to-PDF. Still 5
+      pages. `docs/diagrams/architecture.svg` had its own stale "unmeasured on
+      the frozen set" label fixed to match. **Still open:** the video link on
+      page 1 is a placeholder — paste the real one in after recording.
 - [x] Fix F-031 (a template consuming a two-hop shape inside a three-hop
       question). Done 6 Sep, ADR-029, **ahead of its own condition** — the
       entry said to wait for the report, video and team-roles items, and that

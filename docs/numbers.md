@@ -10,6 +10,14 @@ joined `test_docs.py`'s guarded list, then when ADR-047 committed the baseline
 bundle. Every other figure held. Two defects in this sheet were found and fixed
 in the same pass — see the two notes below.
 
+**Re-checked 2026-09-09, submission day.** `python -m src.ingest.integrity`
+(341/341, 0 drift), `python -m src.graph.build` (118 entities, 265 edges) and
+`python -m pytest` (497 passed) all still match this sheet — no re-derivation
+needed on those. What changed: the planner-tier row below is new (ADR-048),
+and `submission_report.pdf` was regenerated from `docs/report.md` to carry
+every number here, including the 490/497 and 415/317 fixes it had missed
+before (it was built at 8 Sep 11:09, ahead of both later fixes).
+
 > **Why this file exists.** Eight stale numbers were found in one afternoon by
 > grepping rather than trusting — including the sentence in `README.md` whose
 > entire job is to stop a stale number being quoted, which was itself quoting

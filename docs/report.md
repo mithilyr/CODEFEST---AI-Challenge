@@ -6,7 +6,7 @@
 **Demonstration video:** *[UNLISTED YOUTUBE LINK — paste before submitting]*
 **Repository:** `github.com/mithilyr/CODEFEST---AI-Challenge`
 
-Every figure in this report was re-derived from the live corpus on 2026-09-08.
+Every figure in this report was re-derived from the live corpus on 2026-09-09.
 The command that reproduces each one is in `docs/numbers.md`.
 
 ---
@@ -42,8 +42,8 @@ documents that share no vocabulary. That is a structural failure, not a tuning
 problem, and it is why this system is graph-first.
 
 *The challenge document describes 415 documents; the shipped archive contains
-341 files, deduplicated to 317 canonical documents and 30,553 evidence units. We
-report what we measured.*
+340 files (341 including `sample_questions.json`), deduplicated to 317 canonical
+documents and 30,553 evidence units. We report what we measured.*
 
 ---
 
@@ -71,7 +71,7 @@ each declining rather than guessing:
 |---|---|---|
 | 1 | Four deterministic templates | 7/7 dev 1B; no route shape on **36 of 49** frozen questions |
 | 2 | Deterministic cue routing | 40% precision, against templates' 91% |
-| 3 | LLM emits a validated *plan*, never an answer | **Off by default**; unmeasured |
+| 3 | LLM emits a validated *plan*, never an answer | **Off by default**; measured once (ADR-048): fires on 4/55, all correct |
 
 A question no tier can route ends at a **named `EvidenceStatus`** — never an empty
 result, never an invented answer — and the page renders the partial evidence it
@@ -135,10 +135,11 @@ ground truth.
 |---|---|
 | Dev 1B questions | **7 / 7** correct, with complete evidence |
 | Shipped three tiers, 49 frozen questions | **22 correct / 31 complete evidence** (templates alone: 10 / 11) |
+| With the opt-in planner tier also on | **26 correct / 35 complete evidence** — fires on 4/55, all correct (ADR-048) |
 | Unanswerable questions | **6 of 6** honestly refused |
 | Cross-collection attestation | 259 of 265 edges |
 | Entities the corpus treats as first-class with no graph node | **0** |
-| Tests | **479**, zero network calls |
+| Tests | **497**, zero network calls |
 
 ### The number that matters more than 7/7
 
@@ -163,8 +164,11 @@ the freeze date and hash independently of anything we assert.
 - **Every acceptable path in the answer key is two hops.** A three-hop set we
   wrote ourselves answers 3 of 3 — but through the cue tier, at 40% precision,
   and it is not two-person verified.
-- **The LLM planner tier is unmeasured** on the frozen set. Measuring it spends
-  daily quota and yields a number that drifts with a provider's free lineup.
+- **The LLM planner tier's contribution is narrow, measured once.** Off by
+  default; the one measured sweep (ADR-048) changed the outcome on 4 of 55
+  frozen questions — real signal that it recovers *something* the deterministic
+  tiers miss, not evidence of a general improvement. Not re-run routinely: it
+  spends daily OpenRouter quota and drifts with the provider's free lineup.
 - **It does not update automatically.** A document added while the server runs is
   invisible until a reindex — about six seconds, reported with before/after
   counts.
@@ -184,7 +188,7 @@ relabelled to look better.
 
 ### Approaches we tried and rejected
 
-33 failures are logged in `docs/failures.md` with the measurement that killed
+38 failures are logged in `docs/failures.md` with the measurement that killed
 each. Five that changed the design:
 
 - **F-025 — a validated plan, relevant to nothing.** The LLM planner returned a
@@ -226,7 +230,7 @@ answer path is confined to ambiguous entity resolution, unmatched question shape
 and rewording evidence already retrieved. Traversal — the part that produces the
 answer — is plain Python.
 
-**Decisions the team made, not the assistant.** Recorded across 36 ADRs, with the
+**Decisions the team made, not the assistant.** Recorded across 48 ADRs, with the
 overturned assumption left visible each time: collection-dependent deduplication
 (ADR-003); exact-match-only entity resolution, refusing fuzzy matching (ADR-011);
 making the LLM tier opt-in after F-025; keeping the fourteen-name answer set and
@@ -243,7 +247,7 @@ Full detail in `TEAM.md`.
 
 | Name | Role | Where the work is visible |
 |---|---|---|
-| **Mithil** | Implementation lead; author of record on the git history; answer-key reviewer | All 117 commits; `github.com/mithilyr/CODEFEST---AI-Challenge` |
+| **Mithil** | Implementation lead; author of record on the git history; answer-key reviewer | Every commit; `github.com/mithilyr/CODEFEST---AI-Challenge` |
 | **Yasiru** | Parallel prototype; source of the adopted cue-router design | `github.com/YasiruRF/delphi` — measured against ours and partially adopted (ADR-019) |
 | **Tatiana** | Question authoring; code review | The frozen 55-question robustness set; review passes on the implementation |
 | **Kenolee** | Question authoring; code review | The frozen 55-question robustness set; review passes on the implementation |
