@@ -4,7 +4,10 @@ Challenge requirement (CLAUDE.md, §5.2): **≤10 minutes total, with ≥3–4
 minutes of unedited, continuous live demo, recorded against a warm cache —
 never a cold one.** Everything below is written against what the app actually
 does today; every number and every UI string quoted here was checked live
-against this build on 2026-09-09, not remembered.
+against this build on 2026-09-09, not remembered — re-verified after Yasiru's
+final pull (`15bba36`, one-command setup + Docker, ADR-049) confirmed that
+pull touched only setup tooling and docs, not `src/` or `eval/`: corpus
+integrity, 118 entities / 265 edges all re-ran clean at that commit.
 
 Two segments are marked **[EDITED OK]** and **[LIVE — DO NOT CUT]**. Only one
 continuous take needs to be unedited; the rest can have cuts, retakes, and a
@@ -198,7 +201,7 @@ continuous take.
 
 ---
 
-## 4. Close [EDITED OK], ~30s
+## 4. Close [EDITED OK], ~40s
 
 **Say:**
 - The headline number, always paired: "Seven of seven on the dev questions is
@@ -210,6 +213,9 @@ continuous take.
   still marked provisional — the answer key has one human reviewer, not the
   two we set out to require, and we say so on every single run rather than
   quietly dropping the caveat."
+- Reproducibility, one sentence: "Anyone judging this can stand it up with one
+  command — `setup.sh` on Linux/macOS, `setup.exe` on Windows, or
+  `docker compose up --build` — same steps, no manual venv wrangling."
 - Where to read more: `submission_report.pdf`, and the repository at
   `github.com/mithilyr/CODEFEST---AI-Challenge`.
 

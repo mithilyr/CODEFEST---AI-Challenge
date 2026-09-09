@@ -1,6 +1,6 @@
 {
   "set": "eval/robustness/routing_robustness_v1.json",
-  "measured_at": "2026-09-09T06:06:00+00:00",
+  "measured_at": "2026-09-09T12:49:11+00:00",
   "note": "One measured sweep per docs/TODO.md ('Measure the planner tier'). arm_c_shipped is comparison.harness's Arm C (use_planner=False), recomputed here for a same-run comparison. arm_d_with_planner adds use_planner=True; the planner tier only fires where arm_c already declined.",
   "arm_c_shipped": {
     "per_question": [

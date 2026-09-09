@@ -1,6 +1,6 @@
 # Planner tier sweep
 
-Measured 2026-09-09T06:06:00+00:00. Frozen set: `eval/robustness/routing_robustness_v1.json` (55 questions, 49 answerable).
+Measured 2026-09-09T12:49:11+00:00. Frozen set: `eval/robustness/routing_robustness_v1.json` (55 questions, 49 answerable).
 
 Arm C is the shipped system (templates -> cue tier, no planner). Arm D adds the opt-in planner tier (`use_planner=True`) on top of the same shipped code path.
 
