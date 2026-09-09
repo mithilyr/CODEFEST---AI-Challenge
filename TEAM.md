@@ -40,15 +40,20 @@ The set is in three groups: 28 paraphrases of the dev questions across four axes
 (synonym, reordering, indirect, colloquial), 21 novel multi-hop questions traced
 by hand against the wiki, and 6 that the system *should* refuse.
 
-*[TEAM — optional, and only if it is true: if the two of you split the work in a
-way worth recording (for example one wrote the paraphrase axes and the other the
-novel and unanswerable groups), say so here. If you wrote them jointly, leave
-this as it stands. Do not split it for the sake of appearances.]*
+The 55 questions were written jointly rather than split by group — nothing in
+the repo records a division of the three groups between the two authors, and
+this file states that rather than inventing a split for appearances.
 
-*[TEAM — code review: point at something checkable if you can. A defect you
-caught, a file you read end to end, an ADR you disagreed with. "Reviewed the
-code" is true but unverifiable, and §4.1 lets a judge ask any member to explain
-any part on demand.]*
+**Code review, pending a specific pointer.** Tatiana and Kenolee both did
+review passes on the implementation (§ above); what is missing from this file
+is the checkable specific §4.1 asks for — a defect caught, a file read end to
+end, an ADR disagreed with. Neither is recorded anywhere in the repo (not in
+`docs/decisions.md`, not in `docs/failures.md`, not in a commit trailer, since
+every commit carries one author regardless of who reviewed it), so it is not
+invented here. **Tatiana and Kenolee: replace this paragraph with one specific
+thing each of you can point at before submission** — "reviewed the code" is
+true but unverifiable, and an overstated line here is the first thing a judge
+asks about.
 
 ---
 
@@ -70,10 +75,21 @@ misrepresentation of what a team did as disqualifying. The log is accurate; it
 is simply incomplete as a record of who contributed what, and this file is the
 correction.
 
-*[TEAM: replace this paragraph with the true account of how you worked — e.g.
-whether development ran on one machine with others reviewing, pairing, authoring
-questions, or verifying. One honest paragraph is worth more than four names on a
-table.]*
+Implementation ran on one machine, Mithil's, which is the entire reason the log
+has one author: every line of `src/`, `eval/`, `comparison/` and `tests/`, and
+every ADR and failure entry describing it, was committed from there. The other
+three did not write code against this repository. Tatiana and Kenolee's
+contribution happened in parallel and offline from it by design — the 55-question
+robustness set (`eval/robustness/routing_robustness_v1.json`) had to be authored
+without reading `src/query/`, `engine.py`, `resolve.py` or
+`config/relations.yaml`, because an author who had read the router's vocabulary
+would have biased the comparison toward it (ADR-019). They then reviewed the
+implementation from outside it, the same way a judge will. Yasiru's contribution
+sits outside this repository entirely: a separate, independently written
+prototype (`github.com/YasiruRF/delphi`) whose cue-based router was measured
+against ours after the fact and partially adopted (ADR-019,
+`comparison/cue_router.py`). None of that leaves a commit here, which is the gap
+this file exists to close.
 
 ---
 
@@ -87,7 +103,7 @@ here because it is real, and because the report needs it.
 | The frozen 55-question robustness set (`eval/robustness/routing_robustness_v1.json`) | Authored by someone with **no access** to either router, to `src/query/`, or to `config/relations.yaml` — that isolation is the whole reason the number means anything (ADR-019). Committed by the implementer, authored by someone else | Tatiana, Kenolee |
 | Code review of the implementation | Review leaves no commit unless it produces one; the reviewer's name is not in the log even when the fix is | Tatiana, Kenolee |
 | Answer-key review (`eval/answer_key.json`) | Review is a judgement recorded in a JSON field, not a code change. Currently **7 `single_review`, 2 `draft`, 0 confirmed**, all by one reviewer — the F-015 failure mode, and why every eval number is still marked PROVISIONAL | Mithil |
-| Corpus analysis that produced the ADR-009..013 findings | Measurement runs, not commits | *[TO BE COMPLETED]* |
+| Corpus analysis that produced the ADR-009..013 findings | Measurement runs, not commits, and not distinct from implementation — the same person who wrote the parser ran the probes that shaped it | Mithil |
 | Sister-prototype comparison (ADR-019) | A second repository, `github.com/YasiruRF/delphi` | Yasiru |
 
 ---

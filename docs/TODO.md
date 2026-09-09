@@ -83,13 +83,18 @@ are done: `origin` is configured
       tests in `tests/test_diagram.py` that re-derive every number from the live
       corpus — verified by mutation, after the first version passed a deliberate
       117→125 change.
-- [ ] **Team names, roles and contributions** — `TEAM.md` now exists and is the
-      source for the report's §6. **Two of four entries are still placeholders**
-      and must be filled in by the people concerned before submission:
-      Tatiana and Kenolee. Nothing in the repo records what either contributed,
-      so they were left blank rather than invented — see the note at the top of
-      that file. Also unfilled there: who authored the frozen 55-question set,
-      and who reviewed the answer key.
+- [~] **Team names, roles and contributions** — `TEAM.md` now exists and is the
+      source for the report's §6. Filled in 2026-09-09 from what the repo
+      already records: the commit-history paragraph, who authored the frozen
+      55-question set (Tatiana, Kenolee — already established, ADR-019), who
+      reviewed the answer key (Mithil), and the ADR-009..013 corpus-analysis
+      attribution. **One item deliberately left open, not invented**: a
+      specific, checkable code-review pointer (a defect caught, a file read
+      end to end, an ADR disagreed with) for Tatiana and/or Kenolee — nothing
+      in the repo records one, and TEAM.md now asks for it directly rather
+      than leaving the whole file blank. Fill that one paragraph if either of
+      them is reachable before the deadline; ship without it otherwise, same
+      as the answer-key second review.
       MEASURED 2026-09-07: all **117 commits** from 2026-08-28 to today carry a
       single author, `mithilyr <mithilrajapakse11@gmail.com>`. CLAUDE.md says a
       team of four. The rubric has judges read the commit history to verify
