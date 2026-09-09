@@ -334,11 +334,13 @@ def test_a_missing_key_fails_with_an_actionable_message(monkeypatch, tmp_path):
 
 
 def test_planner_models_are_a_subset_of_what_advertises_structured_output():
-    """Pins the split that the live 2026-09-01 verification produced: only 4 of
-    18 free models honour a schema, and the planner may only use those. This
-    test does not hit the network - `--verify` does that."""
+    """Pins the split that the live verification produced: only a handful of
+    free models honour a schema, and the planner may only use those. Re-pinned
+    2026-09-09 after `--verify` found `z-ai/glm-5.2:free` delisted and
+    `nex-agi/nex-n2.5-mini:free` put in its place. This test does not hit the
+    network - `--verify` does that."""
     assert set(openrouter.PLANNER_MODELS) <= {
-        "z-ai/glm-5.2:free",
+        "nex-agi/nex-n2.5-mini:free",
         "nvidia/nemotron-3-super-120b-a12b:free",
         "dots-studio/dots-3-note-preview:free",
         "liquid/lfm-2.5-2.6b:free",

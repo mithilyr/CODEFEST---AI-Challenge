@@ -36,3 +36,9 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# --- Team teaching notes: internal, not a deliverable. ---
+# docs/INTERNALS.md is a from-scratch walkthrough of the whole codebase written
+# for the team. It is NOT scanned by tests/test_docs.py, so its numbers can go
+# stale; re-derive with the commands in its section 17 before teaching from it.
+docs/INTERNALS.md

@@ -59,8 +59,12 @@ are done: `origin` is configured
       set — running it there spends daily quota and gives a number that moves
       with OpenRouter's free lineup. Decide whether to spend one measured
       sweep (and cache it) before the report, or to report it as unmeasured.
-- [ ] Re-verify the OpenRouter model rotations before the demo:
-      `python -m src.clients.openrouter --verify`.
+- [x] Re-verify the OpenRouter model rotations before the demo:
+      `python -m src.clients.openrouter --verify`. Run 2026-09-09 — it was
+      not clean: `z-ai/glm-5.2:free` and `minimax/minimax-m3:free` had been
+      delisted, both first-choice entries in `PHRASING_MODELS`/
+      `PLANNER_MODELS` (F-038). Fixed; `--verify` now reports clean and
+      `python -m pytest` is still 497/497.
 - [ ] Compare the sister repo's conflict detector against `src/query/conflict.py`
       (Phase 2 of the comparison; not yet measured — F-024 showed ours
       over-fires when used as a general per-edge filter).

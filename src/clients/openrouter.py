@@ -53,19 +53,27 @@ from src.settings import get_settings
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 MODELS_URL = "https://openrouter.ai/api/v1/models"
 
-#: Verified live 2026-09-01. Order is preference, not capability ranking.
+#: Verified live 2026-09-01. Re-verified 2026-09-09 with `--verify`: OpenRouter
+#: had delisted `z-ai/glm-5.2:free` and `minimax/minimax-m3:free` (both gone
+#: from the live models endpoint entirely, not merely dropped from free tier).
+#: Replaced with `nex-agi/nex-n2.5-pro:free` and `thinkingmachines/inkling:free`,
+#: the two live free models `--verify` reported that were not already in
+#: either rotation. Order is preference, not capability ranking.
 PHRASING_MODELS: tuple[str, ...] = (
-    "z-ai/glm-5.2:free",
+    "nex-agi/nex-n2.5-pro:free",
     "google/gemma-4-31b-it:free",
     "nvidia/nemotron-3-super-120b-a12b:free",
-    "minimax/minimax-m3:free",
+    "thinkingmachines/inkling:free",
 )
 
-#: Verified live 2026-09-01 as advertising `structured_outputs`. A planner
-#: whose output is not schema-checkable is a planner whose output we would have
-#: to trust, and this project does not trust model output it cannot check.
+#: Verified live 2026-09-01 as advertising `structured_outputs`. Re-verified
+#: 2026-09-09: `z-ai/glm-5.2:free` delisted (see PHRASING_MODELS); replaced
+#: with `nex-agi/nex-n2.5-mini:free`, confirmed structured-output-capable in
+#: the same `--verify` run. A planner whose output is not schema-checkable is
+#: a planner whose output we would have to trust, and this project does not
+#: trust model output it cannot check.
 PLANNER_MODELS: tuple[str, ...] = (
-    "z-ai/glm-5.2:free",
+    "nex-agi/nex-n2.5-mini:free",
     "nvidia/nemotron-3-super-120b-a12b:free",
     "dots-studio/dots-3-note-preview:free",
     "liquid/lfm-2.5-2.6b:free",

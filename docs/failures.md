@@ -1822,3 +1822,38 @@ because the function it needed was defined, not because the command existed.
 **An instruction you have never executed from a clean state is a guess.** The
 thing that found it was not a review; it was running the README's own steps in a
 fresh clone.
+
+## F-038 - The rotation ADR-020 called "re-verifiable" had not been re-verified in eight days
+
+**Approach.** The pre-demo checklist (`docs/TODO.md`) names
+`python -m src.clients.openrouter --verify` as the command to run "before the
+demo", and ADR-020 says the same: the rotation is a live claim, checked against
+`https://openrouter.ai/api/v1/models`, not a fact frozen at commit time. It was
+last actually run on 2026-09-01.
+
+**Result.** Run on 2026-09-09, it failed: `z-ai/glm-5.2:free` and
+`minimax/minimax-m3:free` had both been delisted from OpenRouter entirely -
+not moved out of the free tier, gone from the models endpoint. Both were
+first-choice entries: `z-ai/glm-5.2:free` led `PHRASING_MODELS` *and*
+`PLANNER_MODELS`. Every phrasing or planner call would have spent its first
+retry attempt on a guaranteed 4xx before falling through to a live model
+(`retry.py`'s `ATTEMPTS_WHILE_ALTERNATIVES_REMAIN` budget spent on nothing),
+and had the demo run before this check, the first planner or phrasing call in
+front of judges would have burned real latency on a dead model before
+recovering silently.
+
+**What changed.** Re-ran `--verify`'s own live query (18 free models, 5 now
+advertising `structured_outputs`, up from 4) and replaced both dead ids:
+`nex-agi/nex-n2.5-pro:free` and `thinkingmachines/inkling:free` into
+`PHRASING_MODELS`, `nex-agi/nex-n2.5-mini:free` (confirmed structured-capable)
+into `PLANNER_MODELS`. `--verify` now reports all three checks clean.
+`test_planner_models_are_a_subset_of_what_advertises_structured_output`
+pinned the dead set and was updated alongside it - a test that pins a live
+external fact needs to move when the fact does, and this is why the pin names
+the verification date rather than just asserting the set.
+
+**The general lesson.** A command documented as "run before the demo" is a
+guess until it is actually run before *this* demo, on *this* day - a rotation
+verified 2026-09-01 telling ADR-020 "re-verify with `--verify`" is not the
+same claim as one re-verified 2026-09-09, and eight days was enough for two of
+four first-choice models to disappear.
