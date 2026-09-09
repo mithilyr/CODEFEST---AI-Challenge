@@ -24,7 +24,7 @@ The excerpts below come from the ingestion pipeline - the same text the system s
 
 **Question.** To which shadowed redoubt must one journey to examine the relic long borne by Cerys Sablewood the Ashen since 356 AS?
 
-**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `Gloamreach`
 
@@ -80,7 +80,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which war was won by the organization that included Isolde Mournvale as one of its members?
 
-**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `The War of Drowned Light` (also accepted: `War of Drowned Light`)
 
@@ -135,7 +135,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which individual was a member of the faction that ultimately won the War of Drowned Light?
 
-**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key accepts any of 14 answers** (`answer_cardinality: any_of`). Check that the set is **complete** as well as that its members are right - an incomplete set marks correct answers wrong.
 
@@ -206,7 +206,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 ### Tracer's notes
 
-> FOURTEEN valid answers, and membership is recorded in TWO DISJOINT places with zero overlap: 6 names on the faction page's 'Members' row, 8 more on individual character pages. Both directions are required; either alone loses more than half the members. Re-verified against the corpus on 2026-08-29 by enumerating both directions. NOTE ON REVIEW: the 2026-08-29 human review reported only two valid answers (Ravena Stormwell, Isolde Mournvale). That is incomplete - it missed the faction page's Members row entirely and six of the eight character pages. The fourteen-name set is the corpus-verified one and is retained. Recorded rather than quietly corrected, because it is the clearest evidence for why ADR-014 requires two independent reviewers.
+> FOURTEEN valid answers, and membership is recorded in TWO DISJOINT places with zero overlap: 6 names on the faction page's 'Members' row, 8 more on individual character pages. Both directions are required; either alone loses more than half the members. Re-verified against the corpus on 2026-08-29 by enumerating both directions. NOTE ON REVIEW: the 2026-08-29 human review reported only two valid answers (Ravena Stormwell, Isolde Mournvale). That is incomplete - it missed the faction page's Members row entirely and six of the eight character pages. The fourteen-name set is the corpus-verified one and is retained. Recorded rather than quietly corrected, because it is the clearest evidence for why ADR-014 requires two independent reviewers. Tatiana and Kenolee independently confirmed the fourteen-name set on 2026-09-09.
 
 ### Reviewer sign-off
 
@@ -230,7 +230,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which accord was ultimately won by the faction of which Ederon Fellgard is a member?
 
-**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `The Leaden Accord` (also accepted: `Leaden Accord`)
 
@@ -311,7 +311,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** In what way is Halvard Crowhurst connected to the victors of the Purge of Blackport?
 
-**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `He is a recorded member of The Iron-Ring Cartel, which the Purge of Blackport's own article names as victor - though the Cartel's own article disputes that it won.` (also accepted: `member of the Iron-Ring Cartel`, `member of The Iron-Ring Cartel`, `Iron-Ring Cartel member`)
 
@@ -381,7 +381,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Whose dominion encompasses the lair of the Gravemaw Wyrm?
 
-**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `The Bleeding Crown` (also accepted: `Bleeding Crown`)
 
@@ -435,7 +435,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** Which war did Ravena Stormwell's own faction ultimately win?
 
-**Status.** `single_review` - reviewed by teammate_review_2026_08_29
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `The War of Drowned Light` (also accepted: `War of Drowned Light`)
 
@@ -490,9 +490,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** State the precise year in the Age of Shadows that marks the true founding of Gloamreach.
 
-**Status.** `draft` - not yet reviewed
-
-> **OPEN DISCREPANCY.** The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `246 AS` (also accepted: `246`)
 
@@ -530,7 +528,7 @@ same tier: **False**  |  resolution: **authority**  |  must surface: **False**
 
 ### Tracer's notes
 
-> The planted decoy. The wiki abstains and names the authority to consult; an ephemeral contract states a confident wrong year with its value in Markdown emphasis. Tier separates the two cleanly here, unlike 1b_009. NOT independently reviewed - the 2026-08-29 review covered 1B only.
+> The planted decoy. The wiki abstains and names the authority to consult; an ephemeral contract states a confident wrong year with its value in Markdown emphasis. Tier separates the two cleanly here, unlike 1b_009. Independently reviewed by Tatiana and Kenolee, 2026-09-09.
 
 ### Reviewer sign-off
 
@@ -554,9 +552,7 @@ If the two reviewers disagree, the verdict is `unresolved`. Investigate and reco
 
 **Question.** In which year was the 'Gauntlet of Sorrowfell' actually forged?
 
-**Status.** `draft` - not yet reviewed
-
-> **OPEN DISCREPANCY.** The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.
+**Status.** `confirmed` - reviewed by Tatiana, Kenolee
 
 **Key says the answer is.** `391 AS` (also accepted: `391`)
 
@@ -609,7 +605,7 @@ same tier: **False**  |  resolution: **authority**  |  must surface: **False**
 
 ### Tracer's notes
 
-> Three sources, three positions. The regression test for the authority model. The competing claim is anaphoric ('Its forged year') and emphasis-wrapped, so extraction must handle both - see ADR-012. NOT independently reviewed.
+> Three sources, three positions. The regression test for the authority model. The competing claim is anaphoric ('Its forged year') and emphasis-wrapped, so extraction must handle both - see ADR-012. Independently reviewed by Tatiana and Kenolee, 2026-09-09.
 
 ### Reviewer sign-off
 

@@ -1,20 +1,13 @@
 # Checkpoint: baseline
 
-> ### PROVISIONAL - ground truth is not fully verified
+> ### Verified
 >
-> 9 of 9 scoreable questions are not yet `confirmed`.
-> ADR-014 requires **two independent reviewers** per entry; the breakdown below
-> shows where each one stands.
->
-> Key status: **2 draft**, **7 single_review**
->
-> Every number below is provisional. Do not quote it in the report, the video,
-> or a decision until the entries are confirmed - see `eval/verification/` for
-> the review pack.
+> All 9 scoreable questions have been independently confirmed by two
+> reviewers. These numbers may be quoted.
 
 
-- run at `2026-09-08T12:58:30` in 0.8s
-- commit `21deaf7`, Python 3.11.16
+- run at `2026-09-09T23:08:46` in 2.2s
+- commit `389ad01`, Python 3.11.15
 - schema version 2
 - **0 LLM call(s)**, 20 served from cache
 
@@ -53,15 +46,15 @@ Mean evidence precision: **0.281** (ceiling is `len(expected)/k`, not 1.0 - see 
 
 | qid | key status | correct | category | answers | conflict | ev. recall | ev. prec |
 |---|---|---|---|---|---|---|---|
-| `1b_007` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
-| `1b_006` | single_review | yes | correct | 14 (any_of) | n/a | 0.33 | 0.25 |
-| `1b_022` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
-| `1b_013` | single_review | no | partial_retrieval | 1 (single) | n/a | 0.50 | 0.50 |
-| `1b_005` | single_review | yes | correct | 1 (single) | n/a | 0.50 | 0.20 |
-| `1b_009` | single_review | no | negated_gold | 1 (single) | n/a (answer wrong) | 0.50 | 0.33 |
-| `1b_003` | single_review | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
-| `1c_000` | draft | yes | correct | 1 (single) | n/a | 0.67 | 0.50 |
-| `1c_003` | draft | yes | correct | 1 (single) | n/a | 0.75 | 0.75 |
+| `1b_007` | confirmed | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
+| `1b_006` | confirmed | yes | correct | 14 (any_of) | n/a | 0.33 | 0.25 |
+| `1b_022` | confirmed | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
+| `1b_013` | confirmed | no | partial_retrieval | 1 (single) | n/a | 0.50 | 0.50 |
+| `1b_005` | confirmed | yes | correct | 1 (single) | n/a | 0.50 | 0.20 |
+| `1b_009` | confirmed | no | negated_gold | 1 (single) | n/a (answer wrong) | 0.50 | 0.33 |
+| `1b_003` | confirmed | no | retrieval_miss | 1 (single) | n/a | 0.00 | 0.00 |
+| `1c_000` | confirmed | yes | correct | 1 (single) | n/a | 0.67 | 0.50 |
+| `1c_003` | confirmed | yes | correct | 1 (single) | n/a | 0.75 | 0.75 |
 
 ### Conflict handling
 

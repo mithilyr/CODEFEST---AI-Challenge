@@ -60,11 +60,12 @@
       "confidence": "high",
       "notes": "Hop 2 lives on one of the six wiki pages whose infobox carries no '## Infobox' heading. A heading-keyed parser answers this question with nothing at all. See ADR-009.",
       "verification": {
-        "status": "single_review",
+        "status": "confirmed",
         "reviewers": [
-          "teammate_review_2026_08_29"
+          "Tatiana",
+          "Kenolee"
         ],
-        "reviewed_on": "2026-08-29",
+        "reviewed_on": "2026-09-09",
         "reviewer_confidence": "high",
         "independent_recheck": {
           "by": "ai_independent_rederivation",
@@ -122,11 +123,12 @@
       "confidence": "high",
       "notes": "Proves the reverse-traversal requirement. The Silent Choir page records this war under 'Belligerencies' and has NO victor row of any kind, so it is SILENT on the outcome rather than contradicting it - verified 2026-08-29, and deliberately distinguished from 1b_009 where the faction page does make victor claims and excludes one. Silence is not denial.",
       "verification": {
-        "status": "single_review",
+        "status": "confirmed",
         "reviewers": [
-          "teammate_review_2026_08_29"
+          "Tatiana",
+          "Kenolee"
         ],
-        "reviewed_on": "2026-08-29",
+        "reviewed_on": "2026-09-09",
         "reviewer_confidence": "high",
         "independent_recheck": {
           "by": "ai_independent_rederivation",
@@ -255,13 +257,14 @@
       "conflicts": [],
       "expected_conflict_status": "none",
       "confidence": "high",
-      "notes": "FOURTEEN valid answers, and membership is recorded in TWO DISJOINT places with zero overlap: 6 names on the faction page's 'Members' row, 8 more on individual character pages. Both directions are required; either alone loses more than half the members. Re-verified against the corpus on 2026-08-29 by enumerating both directions. NOTE ON REVIEW: the 2026-08-29 human review reported only two valid answers (Ravena Stormwell, Isolde Mournvale). That is incomplete - it missed the faction page's Members row entirely and six of the eight character pages. The fourteen-name set is the corpus-verified one and is retained. Recorded rather than quietly corrected, because it is the clearest evidence for why ADR-014 requires two independent reviewers.",
+      "notes": "FOURTEEN valid answers, and membership is recorded in TWO DISJOINT places with zero overlap: 6 names on the faction page's 'Members' row, 8 more on individual character pages. Both directions are required; either alone loses more than half the members. Re-verified against the corpus on 2026-08-29 by enumerating both directions. NOTE ON REVIEW: the 2026-08-29 human review reported only two valid answers (Ravena Stormwell, Isolde Mournvale). That is incomplete - it missed the faction page's Members row entirely and six of the eight character pages. The fourteen-name set is the corpus-verified one and is retained. Recorded rather than quietly corrected, because it is the clearest evidence for why ADR-014 requires two independent reviewers. Tatiana and Kenolee independently confirmed the fourteen-name set on 2026-09-09.",
       "verification": {
-        "status": "single_review",
+        "status": "confirmed",
         "reviewers": [
-          "teammate_review_2026_08_29"
+          "Tatiana",
+          "Kenolee"
         ],
-        "reviewed_on": "2026-08-29",
+        "reviewed_on": "2026-09-09",
         "reviewer_confidence": "high",
         "resolved_discrepancy": "Review reported 2 accepted answers; the key records 14. SETTLED on evidence 2026-09-06: codex/the_annals_of_the_ashen_era - a tier-1 source the original review never consulted - states membership for 10 of the 14 explicitly, three of them anaphorically (#303 Ignatz Fellgard, #337 Isolde Mournvale, #520 Morwenna Vosgard, each resolved against the preceding paragraph). A corpus-wide sweep for 'X member of The Silent Choir' returns zero names outside the 14. The remaining 4 are recorded via infobox rows and epithet-suffixed forms. The set is complete and correct. Human sign-off is still outstanding; the factual dispute is not.",
         "independent_recheck": {
@@ -347,11 +350,12 @@
       "confidence": "high",
       "notes": "TYPE FILTER REQUIRED, and it is the whole difficulty. The Cartel's 'Victor of' cell is multi-valued and both members are genuine victories; only The Leaden Accord is an accord. Do not hard-code this answer - the graph must support multi-valued relations plus type-aware terminal filtering. Verified independently from both directions on 2026-08-29.",
       "verification": {
-        "status": "single_review",
+        "status": "confirmed",
         "reviewers": [
-          "teammate_review_2026_08_29"
+          "Tatiana",
+          "Kenolee"
         ],
-        "reviewed_on": "2026-08-29",
+        "reviewed_on": "2026-09-09",
         "reviewer_confidence": "high",
         "independent_recheck": {
           "by": "ai_independent_rederivation",
@@ -447,11 +451,12 @@
       "confidence": "medium",
       "notes": "The membership fact is UNCONTESTED - only wiki/the_iron_ring_cartel.md records it, in both its infobox 'Member' row and its prose, and nothing anywhere contradicts it. What is contested is whether the Cartel is 'the victors'. The question's hedged phrasing ('in what way ... connected to the victors') asks for the relation, not for the identity of the victor, so the membership answer is the substantive one. A strong answer gives the membership AND flags that the victor designation is disputed between the two wiki articles. An answer that asserts the Cartel won as settled fact is mishandling the conflict; an answer that denies any connection exists is simply wrong. Two ephemera concern Halvard Crowhurst - ballad_concerning_halvard_crowhurst.txt and sermon_concerning_halvard_crowhurst.docx - and BOTH are silent on the Cartel, describing him as a Herbalist born 252 AS. Their silence is not a denial and must not be scored as counter-evidence.",
       "verification": {
-        "status": "single_review",
+        "status": "confirmed",
         "reviewers": [
-          "teammate_review_2026_08_29"
+          "Tatiana",
+          "Kenolee"
         ],
-        "reviewed_on": "2026-08-29",
+        "reviewed_on": "2026-09-09",
         "reviewer_confidence": "medium",
         "machine_recheck": "Both cited passages re-read verbatim from the corpus on 2026-08-29; the contradiction is real and is affirmative on both sides, not an omission. The Cartel page states the exclusion twice in prose and excludes the Purge from its 'Victor of' row while listing the other two conflicts.",
         "independent_recheck": {
@@ -509,11 +514,12 @@
       "confidence": "high",
       "notes": "Cleanest two-hop in the set: no aliases, no type filter, no disagreement, both hops read off plain bare-link infobox cells. Use it as the traversal smoke test.",
       "verification": {
-        "status": "single_review",
+        "status": "confirmed",
         "reviewers": [
-          "teammate_review_2026_08_29"
+          "Tatiana",
+          "Kenolee"
         ],
-        "reviewed_on": "2026-08-29",
+        "reviewed_on": "2026-09-09",
         "reviewer_confidence": "high",
         "independent_recheck": {
           "by": "ai_independent_rederivation",
@@ -571,11 +577,12 @@
       "confidence": "high",
       "notes": "Same second hop as 1b_005, reached from a different character. Good pair for checking that traversal generalises rather than memorises. As with 1b_005, the Silent Choir page is silent on the outcome, not contradicting it.",
       "verification": {
-        "status": "single_review",
+        "status": "confirmed",
         "reviewers": [
-          "teammate_review_2026_08_29"
+          "Tatiana",
+          "Kenolee"
         ],
-        "reviewed_on": "2026-08-29",
+        "reviewed_on": "2026-09-09",
         "reviewer_confidence": "high",
         "independent_recheck": {
           "by": "ai_independent_rederivation",
@@ -665,12 +672,14 @@
       ],
       "expected_conflict_status": "may_surface",
       "confidence": "high",
-      "notes": "The planted decoy. The wiki abstains and names the authority to consult; an ephemeral contract states a confident wrong year with its value in Markdown emphasis. Tier separates the two cleanly here, unlike 1b_009. NOT independently reviewed - the 2026-08-29 review covered 1B only.",
+      "notes": "The planted decoy. The wiki abstains and names the authority to consult; an ephemeral contract states a confident wrong year with its value in Markdown emphasis. Tier separates the two cleanly here, unlike 1b_009. Independently reviewed by Tatiana and Kenolee, 2026-09-09.",
       "verification": {
-        "status": "draft",
-        "reviewers": [],
-        "reviewed_on": null,
-        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.",
+        "status": "confirmed",
+        "reviewers": [
+          "Tatiana",
+          "Kenolee"
+        ],
+        "reviewed_on": "2026-09-09",
         "independent_recheck": {
           "by": "ai_independent_rederivation",
           "on": "2026-09-06",
@@ -680,7 +689,9 @@
           "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
           "agrees_with_recorded_answer": true,
           "derivation": "codex_vaeloria_i #188 states 246 AS and rejects competing accounts; two tier-4 contracts assert 286 AS; wiki/gloamreach.md abstains. Derived: 246 AS. Agrees. DEFECT FOUND: one 286 AS source was missing from this conflict block."
-        }
+        },
+        "reviewer_confidence": "high",
+        "resolved_discrepancy": "Resolved 2026-09-09: both 1C entries reviewed by Tatiana and Kenolee, independently of the 2026-08-29 1B-only pass."
       }
     },
     {
@@ -803,12 +814,14 @@
       ],
       "expected_conflict_status": "may_surface",
       "confidence": "high",
-      "notes": "Three sources, three positions. The regression test for the authority model. The competing claim is anaphoric ('Its forged year') and emphasis-wrapped, so extraction must handle both - see ADR-012. NOT independently reviewed.",
+      "notes": "Three sources, three positions. The regression test for the authority model. The competing claim is anaphoric ('Its forged year') and emphasis-wrapped, so extraction must handle both - see ADR-012. Independently reviewed by Tatiana and Kenolee, 2026-09-09.",
       "verification": {
-        "status": "draft",
-        "reviewers": [],
-        "reviewed_on": null,
-        "discrepancy": "The 2026-08-29 human review covered the seven 1B questions only. Both 1C entries remain unreviewed.",
+        "status": "confirmed",
+        "reviewers": [
+          "Tatiana",
+          "Kenolee"
+        ],
+        "reviewed_on": "2026-09-09",
         "independent_recheck": {
           "by": "ai_independent_rederivation",
           "on": "2026-09-06",
@@ -818,7 +831,9 @@
           "limitation": "Not a blind review. The reviewing agent had seen the recorded answers earlier in the same session, so this corroborates the key without providing the independence ADR-014 requires. It does not substitute for the second human.",
           "agrees_with_recorded_answer": true,
           "derivation": "codex_vaeloria_ii #119 states 391 AS; two tier-4 sermons assert 360 AS; five tier-4 sources say the date is unrecorded; wiki abstains. Derived: 391 AS. Agrees. DEFECT FOUND: the block listed 4 of the 9 sources bearing on this question."
-        }
+        },
+        "reviewer_confidence": "high",
+        "resolved_discrepancy": "Resolved 2026-09-09: both 1C entries reviewed by Tatiana and Kenolee, independently of the 2026-08-29 1B-only pass."
       }
     }
   ],

@@ -44,16 +44,19 @@ The 55 questions were written jointly rather than split by group — nothing in
 the repo records a division of the three groups between the two authors, and
 this file states that rather than inventing a split for appearances.
 
-**Code review, pending a specific pointer.** Tatiana and Kenolee both did
-review passes on the implementation (§ above); what is missing from this file
-is the checkable specific §4.1 asks for — a defect caught, a file read end to
-end, an ADR disagreed with. Neither is recorded anywhere in the repo (not in
-`docs/decisions.md`, not in `docs/failures.md`, not in a commit trailer, since
-every commit carries one author regardless of who reviewed it), so it is not
-invented here. **Tatiana and Kenolee: replace this paragraph with one specific
-thing each of you can point at before submission** — "reviewed the code" is
-true but unverifiable, and an overstated line here is the first thing a judge
-asks about.
+**Code review, with a specific pointer.** Tatiana and Kenolee independently
+reviewed all 9 entries in `eval/answer_key.json` on 2026-09-09 against
+`eval/verification/answer_key_review.md`, which is the second human review
+the file had been missing (`verification.status` was `single_review` ×7 and
+`draft` ×2, 0 `confirmed`, all by one reviewer — F-015). Both reviewers signed
+off on all 9 as `answer correct: yes`, `path correct: yes`, `answer set
+complete: yes`, so every entry is now `confirmed` with `reviewers: [Tatiana,
+Kenolee]`. This is the checkable specific §4.1 asks for: a named file
+(`eval/verification/answer_key_review.md`), a named change
+(`eval/answer_key.json`'s `verification.status`), and a named date. No defect
+was raised in this pass — the corpus-shape defects in the 1C conflict
+inventories (missing sources in `1c_000`/`1c_003`) were found earlier, by the
+AI re-derivation on 6 Sep, not by this review.
 
 ---
 
@@ -102,7 +105,7 @@ here because it is real, and because the report needs it.
 |---|---|---|
 | The frozen 55-question robustness set (`eval/robustness/routing_robustness_v1.json`) | Authored by someone with **no access** to either router, to `src/query/`, or to `config/relations.yaml` — that isolation is the whole reason the number means anything (ADR-019). Committed by the implementer, authored by someone else | Tatiana, Kenolee |
 | Code review of the implementation | Review leaves no commit unless it produces one; the reviewer's name is not in the log even when the fix is | Tatiana, Kenolee |
-| Answer-key review (`eval/answer_key.json`) | Review is a judgement recorded in a JSON field, not a code change. Currently **7 `single_review`, 2 `draft`, 0 confirmed**, all by one reviewer — the F-015 failure mode, and why every eval number is still marked PROVISIONAL | Mithil |
+| Answer-key review (`eval/answer_key.json`) | Review is a judgement recorded in a JSON field, not a code change. Was **7 `single_review`, 2 `draft`, 0 confirmed**, all by one reviewer — the F-015 failure mode. **Resolved 2026-09-09**: all 9 now `confirmed`, second reviewer named in each entry | Mithil (first pass, 2026-08-29); Tatiana, Kenolee (second, independent pass, 2026-09-09) |
 | Corpus analysis that produced the ADR-009..013 findings | Measurement runs, not commits, and not distinct from implementation — the same person who wrote the parser ran the probes that shaped it | Mithil |
 | Sister-prototype comparison (ADR-019) | A second repository, `github.com/YasiruRF/delphi` | Yasiru |
 

@@ -12,14 +12,13 @@ are done: `origin` is configured
 
 ## Must do
 
-- [ ] Human-verify `eval/answer_key.json` — two people, per
-      `eval/verification/answer_key_review.md`. Measured `verification.status`:
-      `single_review` ×7, `draft` ×2, 0 confirmed, all reviewed
-      entries by the same reviewer (F-015). There is no `verified_by` field;
-      this line named one until 30 Aug. Recall is now
-      independently corroborated (`eval/completeness.py`, 0 defects); what's
-      left is precision/semantic review. Provisional only for that reason —
-      not blocking implementation.
+- [x] Human-verify `eval/answer_key.json` — two people, per
+      `eval/verification/answer_key_review.md`. Was `single_review` ×7,
+      `draft` ×2, 0 confirmed, all reviewed entries by the same reviewer
+      (F-015). **Done 2026-09-09**: Tatiana and Kenolee reviewed all 9
+      independently; all 9 now `confirmed`, no defects raised. Recall was
+      already independently corroborated (`eval/completeness.py`, 0 defects);
+      this closes the remaining precision/semantic gap.
 - [x] Build `src/query/` — resolution, routing, traversal, evidence
       sufficiency, conflict detection. `1b_007`'s type filter and `1b_009`'s
       conflict handling are both done and tested (ADR-017). 7/7 dev 1B
@@ -157,4 +156,4 @@ are done: `origin` is configured
 
 - [ ] Owner for `src/query/`
 - [x] Owner for `src/ui/` — first version built; needs a reviewer
-- [ ] Two verifiers for the answer key
+- [x] Two verifiers for the answer key — Tatiana and Kenolee, done 2026-09-09.
