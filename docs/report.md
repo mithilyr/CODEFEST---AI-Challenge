@@ -3,7 +3,7 @@
 **SLIIT Codefest 2026 — AI Competition, powered by IFS**
 **Sub-track 1B — Connecting Facts Across Thousands of Pages**
 
-**Demonstration video:** <https://youtu.be/fJPmEngxAak>
+**Demonstration video:** <https://youtu.be/un0-69hIMBM>
 **Repository:** `github.com/mithilyr/CODEFEST---AI-Challenge`
 
 Every figure in this report was re-derived from the live corpus on 2026-09-09.
