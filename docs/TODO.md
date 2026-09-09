@@ -55,10 +55,13 @@ are done: `origin` is configured
       the gate. Built as a third tier emitting a validated plan, never an
       answer, off by default. F-025 records the live fabrication it produced
       before the grounding guard existed.
-- [ ] **Measure the planner tier.** It is currently unmeasured on the frozen
-      set — running it there spends daily quota and gives a number that moves
-      with OpenRouter's free lineup. Decide whether to spend one measured
-      sweep (and cache it) before the report, or to report it as unmeasured.
+- [x] **Measure the planner tier.** Decision taken 2026-09-09: spend one
+      measured sweep (ADR-048), `python -m comparison.planner_sweep`, result
+      cached at `comparison/results/planner_sweep.{json,md}`. Fires on 4 of 55
+      (all previously `no_template_match`); correct 22→**26**, complete
+      evidence 31→**35**; refusals unaffected, 6/6. Do not re-run unless
+      `src/query/planner.py`, `config/relations.yaml` or the frozen set
+      changes — see `docs/numbers.md`.
 - [x] Re-verify the OpenRouter model rotations before the demo:
       `python -m src.clients.openrouter --verify`. Run 2026-09-09 — it was
       not clean: `z-ai/glm-5.2:free` and `minimax/minimax-m3:free` had been

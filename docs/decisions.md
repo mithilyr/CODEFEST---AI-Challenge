@@ -4536,3 +4536,68 @@ the consistent answer and it is the one we did not take, because consistency wit
 our own policy is worth less than a judge being able to check the number the
 comparison rests on. The exception is written into `.gitignore` with its reason,
 so the policy still reads as a policy rather than as an oversight.
+
+---
+
+## ADR-048 - The planner tier's one measured sweep
+
+**Problem**
+
+ADR-020 built `src/query/planner.py` as an opt-in third routing tier and left
+it unmeasured on the frozen 55-question set on principle: running it there
+spends OpenRouter's daily free-tier quota and produces a number that drifts
+with the provider's free lineup rather than with this project's own code.
+`docs/TODO.md` named the decision explicitly and left it open - spend one
+measured sweep and cache it, or report the tier as unmeasured in the report.
+
+**Decision**
+
+Spend the sweep. `comparison/planner_sweep.py`, run once, 2026-09-09, result
+committed at `comparison/results/planner_sweep.json` /
+`.md`. It is deliberately a separate script, not a third arm added to
+`comparison/harness.py` - that file's own docstring states the reason its
+default run must stay reproducible and quota-free, and this sweep is the
+opposite of that by design.
+
+**What it measures, and how**
+
+Two runs over the same 55 questions: the shipped system exactly as
+`comparison.harness`'s Arm C measures it (`use_planner=False`), and the same
+call with `use_planner=True` added. `answer_question` only reaches the planner
+when both deterministic tiers have already declined, so the second run is not
+an independent "planner-only" number - it is what `--with-model` actually
+gives a user, and the diff against Arm C is what the planner tier is
+contributing on top of what already ships without it.
+
+**Result**
+
+The planner tier fired on 4 of 55 questions - `rb_001`, `rb_022`, `rb_027`,
+`rb_036`, all previously `no_template_match` - and reached `planned_sufficient`
+on all four, all correct, all with complete evidence. Answer-correct moved
+22 -> **26**; complete evidence moved 31 -> **35**. It changed nothing else: the
+6 unanswerable questions still refuse 6/6, and no question the deterministic
+tiers already answered was touched, which is the "third tier, tried only if
+the first two declined" contract holding under measurement rather than only in
+the docstring.
+
+**Why this number is safe to quote once and not re-derive on every run**
+
+The persistent response cache (`src/clients/openrouter.py`) makes a second run
+free in quota but not in meaning: caching an LLM call and re-reporting it is not
+re-measurement, it is replay. The number is only worth re-deriving if
+`src/query/planner.py`, `config/relations.yaml`, or the frozen set itself
+changes - `docs/numbers.md` says so directly, so a future re-run does not get
+mistaken for routine housekeeping the way `comparison.harness` is.
+
+**Trade-off named plainly**
+
+Four questions is a small sample, and "fired on 4 of 55" is itself evidence that
+the planner's marginal contribution over the two deterministic tiers is narrow
+on this corpus - which is consistent with ADR-020's own framing of the planner
+as a fallback for what is left over, not a general improvement. Do not read
++4/+4 as "the planner adds 8%"; read it as "on this frozen set, on this day,
+against these live models, four questions that had nothing were answered
+correctly and nothing that had an answer already was made worse."
+
+*Status: accepted. Full suite unaffected - this sweep adds no test, changes no
+production code path, and its numbers are additive documentation only.*

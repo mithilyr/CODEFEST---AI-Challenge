@@ -94,6 +94,7 @@ found 0 real entities (document titles, headings, prose fragments).
 | Honest refusal | **6 of 6** unanswerable questions declined | ″ |
 | Cue tier precision | 40% (ADR-019), against templates' 91% | `python -m comparison.ablations` |
 | Three-hop set | **3 of 3** correct | `eval/multihop_3hop_draft.json` |
+| Planner tier (opt-in), frozen 55 | fires on 4 of 55; **22→26 correct, 31→35 complete evidence**; refusals unchanged at 6/6 | `python -m comparison.planner_sweep` |
 
 **Never quote 3 of 3 without naming the tier.** All three three-hop questions
 are answered by the **cue fallback tier, not by a template** — no template
@@ -132,6 +133,18 @@ it; do not average remembered values.
 **Complete evidence fell 31 → 29 while correct rose 19 → 21**, and that is
 deliberate: three questions had been earning complete evidence by walking chains
 the question never asked for (ADR-033). The lower number is the more honest one.
+
+**The planner tier's 22→26 was measured once, 2026-09-09, and cached** (ADR-048).
+`comparison/planner_sweep.py` runs the frozen 55 twice — once as the shipped
+system (`use_planner=False`, identical to `comparison.harness`'s Arm C), once
+with the opt-in tier on (`use_planner=True`) — and reports where the two
+disagree. It fired on 4 questions (all previously `no_template_match`), all
+four `planned_sufficient` and correct: `rb_001`, `rb_022`, `rb_027`, `rb_036`.
+It never touched the 6 unanswerable questions or any question the deterministic
+tiers already answered, which is what "third tier, tried only if the first two
+declined" means operationally. **Re-run only if `src/query/planner.py`,
+`config/relations.yaml`, or the frozen set changes** — otherwise this is spent
+quota buying an unchanged number.
 
 ## Baseline (Checkpoint 1)
 
