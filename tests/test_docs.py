@@ -70,6 +70,10 @@ LIVE_DOCS = (
     # A stale sheet is worse than no sheet - it would launder a wrong figure
     # into every document that trusts it - so it is scanned like the rest.
     "docs/numbers.md",
+    # The recording script quotes the server's own boot-time banner - a live
+    # claim read aloud on camera is exactly the kind of number this test
+    # exists to keep honest, more so than one that only sits in a file.
+    "docs/video-script.md",
 )
 
 #: Documents whose figures are historical by design. Listed rather than merely
