@@ -1,0 +1,17 @@
+services:
+  ashen-era:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      # Named volume so the ~123 MB archive is downloaded once and survives
+      # `docker compose down` / rebuilds.
+      - archive-data:/app/data
+    # Optional: set GOOGLE_API_KEY / VOYAGE_API_KEY / OPENROUTER_API_KEY here
+    # (or in a .env file next to this compose file) to enable the optional
+    # model tiers. None are required to run the app.
+    environment:
+      - VOYAGE_TIER=free
+
+volumes:
+  archive-data:

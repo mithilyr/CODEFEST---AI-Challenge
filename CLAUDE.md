@@ -111,6 +111,7 @@ that moves with the provider's free lineup.
 | `src/ui/graphview.py` | Done — all 118 entities as one static SVG, no CDN, no JS, deterministic (ADR-020) |
 | `docs/architecture.md` | Done — the architecture, with `docs/diagrams/architecture.svg`. Hand-authored SVG, no toolchain, self-contained (ADR-022). **Every number in it is re-derived from the live corpus by `tests/test_diagram.py`** and fails the suite if the picture goes stale |
 | `src/ui/` | Done — stdlib `http.server`, no new dependency; nine demo surfaces; thinness enforced by three architectural tests (ADR-018). **Every declining status renders the partial evidence the engine established, with citations** (ADR-026) — resolved entities and their records, near-miss suggestions the user confirms, how far a traversal got, and the declared relation vocabulary. `/` carries a 118-name autocomplete and a browsable entity + relation list |
+| `setup.sh` / `setup.exe` / `Dockerfile` | Done (ADR-049) — one-command setup on Linux/macOS, Windows (a cross-compiled Go binary, no Wine needed to build it), and Docker. All three do the same manual steps `README.md` part 1 documents, idempotently. `scripts/setup-windows/` has its own Go test suite for the archive-extraction logic — the one piece not runnable on this Linux dev machine. Usage: `docs/HOW_TO_USE.md` |
 
 ### Checkpoint 1 results (reproducible, not just measured)
 
@@ -234,6 +235,12 @@ python -m eval.completeness        # independent answer-key completeness check
 python -m eval.verify_key          # regenerate the answer-key review pack
 python -m comparison.harness       # reproduce ADR-019's router comparison
 python -m comparison.ablations     # reproduce ADR-019's guard ablations
+
+# One-command setup (ADR-049) - see docs/HOW_TO_USE.md
+./setup.sh                         # Linux/macOS: venv, deps, archive, integrity, run
+setup.exe                          # Windows: same, as a standalone Go binary
+docker compose up --build          # containerised: same, archive in a named volume
+scripts/build-setup-exe.sh         # rebuild setup.exe after editing scripts/setup-windows/
 ```
 
 Use the project venv: `.venv/Scripts/python.exe` on Windows.

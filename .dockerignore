@@ -1,0 +1,15 @@
+.git
+.venv
+venv
+__pycache__
+*.pyc
+.pytest_cache
+data
+*.zip
+setup.exe
+setup.sh
+.env
+.env.*
+!.env.example
+.DS_Store
+eval/results

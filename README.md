@@ -112,6 +112,24 @@ You need **Python 3.11 or newer** and a few hundred MB of disk space. **You do
 not need an API key, an account with anyone, or an internet connection** once
 the files are downloaded.
 
+### Quick start: one-command setup
+
+Three scripts do exactly the manual steps below — find Python 3.11+, create
+`.venv`, install dependencies, download and unpack the archive if it isn't
+already at `data/Ashen_Era_Archive`, write `.env`, verify integrity, then
+start the app. Nothing they do is hidden: read the script if you want to see
+each step (the project's "explain any part on demand" rule applies to these
+too).
+
+| Platform | Run | Notes |
+|---|---|---|
+| Linux / macOS | `./setup.sh` | Add `--no-run` to set up without starting the server |
+| Windows | double-click `setup.exe`, or `setup.exe --no-run` from a terminal | A standalone binary — no Python needed to run *it*, only to run the app it sets up. Rebuild it with `scripts/build-setup-exe.sh` after editing its source |
+| Docker | `docker compose up --build` | Builds the image, downloads the archive into a named volume on first run, serves on `http://localhost:8000`. `docker build -t ashen-era . && docker run -p 8000:8000 -v ashen-era-data:/app/data ashen-era` works without compose too |
+
+The manual steps below are what those scripts automate, for anyone who wants
+to run — or understand — each one by hand.
+
 Windows commands are shown. On macOS or Linux use `source .venv/bin/activate`,
 `.venv/bin/python`, and `cp` in place of `copy`.
 
@@ -202,6 +220,7 @@ stop it.
 | `corpus matches the shipped archive` never appears | The archive is in the wrong folder, or a file was edited. Check `CORPUS_PATH`, then re-extract |
 | `ModuleNotFoundError` | The environment is not active. Run `.venv\Scripts\activate` again |
 | The page will not load | Check the terminal is still running. If the port is in use, run `python -m src.ui.server --port 8001` |
+| `OSError: [Errno 98] Address already in use` | Something else already has port 8000 — often an unrelated container. `docker ps` will show it if so. Either stop that, or use a different port: `--port 8001` for a bare run, or edit the `"8000:8000"` line in `docker-compose.yml` to e.g. `"8001:8000"` |
 | It complains about an API key | It should not. The demo needs none — check you did not pass `--with-model` |
 
 ---
@@ -372,6 +391,7 @@ itself on every run.
 | File | What is in it |
 |---|---|
 | [`submission_report.pdf`](submission_report.pdf) | The five-page report required by the challenge document §5.3 |
+| [`docs/HOW_TO_USE.md`](docs/HOW_TO_USE.md) | One walkthrough: every setup path in full, then using the running app |
 | [`docs/engineering-notes.md`](docs/engineering-notes.md) | The detailed technical README this one replaced — every number with its caveats |
 | [`docs/architecture.md`](docs/architecture.md) | The full architecture, with the diagram |
 | [`docs/numbers.md`](docs/numbers.md) | Every figure we allow ourselves to quote, and the command that re-derives it |
@@ -396,4 +416,7 @@ comparison/            the measurement behind the three-method design
 docs/                  architecture, decisions, failures, limitations, numbers
 tests/                 497 tests
 ai_usage/              our AI collaboration transcripts, a required deliverable
+setup.sh, setup.exe    one-command setup for Linux/macOS and Windows (see above)
+Dockerfile, docker-compose.yml, docker-entrypoint.sh   containerised setup
+scripts/setup-windows/ Go source for setup.exe, with its own tests
 ```

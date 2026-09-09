@@ -4601,3 +4601,106 @@ correctly and nothing that had an answer already was made worse."
 
 *Status: accepted. Full suite unaffected - this sweep adds no test, changes no
 production code path, and its numbers are additive documentation only.*
+
+---
+
+## ADR-049 - One-command setup, three platforms, and why the graph stays wiki-only
+
+**Problem**
+
+Every setup path documented so far (`README.md`'s "part 1") is a person typing
+eight-odd commands by hand: find Python 3.11+, `venv`, `pip install`, download
+a 123 MB zip, unzip it into the right place (the README itself warns some
+unzip tools add an extra wrapper folder), copy `.env.example`, and run the
+integrity check. A judge or teammate on a machine we don't control - no
+Python 3.11 on PATH, a zip tool that nests the folder, a stray process already
+on port 8000 - hits friction the README can describe but not remove.
+
+**Decision**
+
+Add three thin automation layers over the *same* manual steps, none of which
+replace understanding them:
+
+- `setup.sh` (Linux/macOS) and `setup.exe` (Windows) - idempotent scripts that
+  detect what's already done and skip it, so re-running costs nothing.
+- `Dockerfile` + `docker-compose.yml` + `docker-entrypoint.sh` - the archive
+  downloads into a named volume on first container start, not into the image,
+  so rebuilding the image never re-downloads 123 MB.
+
+`setup.exe` is a **compiled Go binary** (`scripts/setup-windows/`), not a
+`.bat` file, for one concrete reason: this project's only Windows-testable
+surface, from a Linux dev machine, is a binary's own logic, not a live Windows
+run. Go cross-compiles to a static Windows PE with no Wine, no MSVC, and no
+Windows box - `GOOS=windows GOARCH=amd64 go build` - and its archive/zip and
+net/http stdlib packages mean the exe's download-and-extract path has no
+external tool dependency (no assumption that `tar`/`curl`/PowerShell's
+`Expand-Archive` exist or behave the same across Windows 10/11 builds). The
+zip-layout logic (flat vs. wrapped-folder, matching the same ambiguity
+`setup.sh` handles with `find`) has its own Go test suite
+(`scripts/setup-windows/main_test.go`), run natively on Linux via
+`go test ./...` - the closest to measurement available without a Windows
+runner. `scripts/build-setup-exe.sh` reruns `go vet` + `go test` before every
+rebuild, so a change that breaks the extraction logic fails the build rather
+than shipping silently.
+
+**A bug found and fixed by building this**
+
+Every setup path clears `PYTHONPATH` before invoking Python/pip. This machine's
+shell sources ROS 2 Humble's `setup.bash`, which sets `PYTHONPATH` to a
+Python-3.10 site-packages directory globally - venv creation does not clear
+inherited environment variables, so `pip install -r requirements.txt` inside a
+fresh **3.11** venv was reporting unmet dependencies for a ROS package
+(`generate-parameter-library-py`) this project never imports. Confirmed by
+reproducing with `env -u PYTHONPATH pip install ...`: the warning disappears
+outright. Not a project bug - nothing in `requirements.txt` or the venv was
+wrong - but exactly the kind of host-specific noise a "just run one command"
+script should absorb rather than pass through to whoever runs it next.
+
+**What was raised and declined: extracting graph edges from chronicles, codex,
+ephemera**
+
+Discussed and rejected, no code changed. `src/graph/build.py`'s
+`builds: frozenset({"wiki"})` (ADR-035) stays as the only source of nodes and
+edges. Three reasons, all already measured elsewhere in this file rather than
+argued fresh here:
+
+1. **The measured bottleneck is routing, not graph coverage.** Node
+   reachability from wiki alone is 0 gaps of 79 (ADR-030), and 259 of 265
+   edges (97.7%) already have independent corroboration from the other three
+   collections (ADR-027) - the graph is not thin on cross-collection support,
+   it just does not treat that support as its source of truth. The number
+   that actually moves with effort is the 36/49 unmatched question shapes
+   (ADR-019 lineage), which prose-derived edges do not touch.
+2. **The collections are prose, not tables.** Infobox rows parse
+   deterministically because they are `field | value` cells (ADR-010). Chronicle
+   and codex text is narrative; turning it into edges means either fragile
+   hand-written extraction or an LLM pass, against this project's own
+   deterministic-first default (`CLAUDE.md`, "Architectural principle").
+3. **Ephemera is adversarial by design.** ADR-012 exists because ephemera
+   deliberately ships decoy values (`founded in **286 AS**`) contradicted by
+   the codex. Today those collections are only ever *corroboration* for a
+   wiki-built edge, or a side-by-side comparison for conflict detection
+   (`src/query/conflict.py`) - never asserted as ground truth on their own.
+   Building edges from them means trusting a source this corpus was
+   constructed to make untrustworthy, at exactly the traversal step where a
+   wrong edge silently produces a wrong answer.
+
+**New docs, not just new scripts**
+
+`README.md` gained a "Quick start" table (three setup paths) ahead of the
+existing hand-run steps, plus a Docker port-conflict entry in the
+troubleshooting table - found by hitting it ourselves: an unrelated, already
+running container held port 8000 during testing, and `--port 8001` /
+`docker compose`'s port mapping is the same fix either way. `docs/HOW_TO_USE.md`
+is new: a single walkthrough of all three setup paths plus using the running
+app, for a reader who wants one document rather than the README's full
+history and reasoning.
+
+*Status: accepted. `setup.sh` run twice (fresh and idempotent-skip), the Docker
+image built and run against a fresh volume end-to-end (download, extract,
+integrity check, HTTP 200), and `scripts/setup-windows`'s Go test suite (5
+tests: both zip layouts, missing-archive error, env filtering) all pass.
+`setup.exe` itself could not be executed on this Linux machine - no Windows
+runner, no Wine - so its coverage is the Go test suite plus `go vet`, not a
+live run. Full Python suite (497 tests) and `test_docs.py` re-run clean after
+the README edits.*
