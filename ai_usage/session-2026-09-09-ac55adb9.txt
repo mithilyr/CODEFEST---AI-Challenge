@@ -5,8 +5,8 @@ SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
 Session id      : ac55adb9-919c-431a-90c4-4b833f6e645a
 Source          : ac55adb9-919c-431a-90c4-4b833f6e645a.jsonl
 First activity  : 2026-09-09T05:36:43.769Z
-Last activity   : 2026-09-09T06:35:42.230Z
-Dialogue turns  : 388   (of 831 raw records)
+Last activity   : 2026-09-09T06:50:40.368Z
+Dialogue turns  : 419   (of 896 raw records)
 Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant, e:\AI Challenge CodeFest
 Git branch      : HEAD
 Assistant       : Claude Code (Anthropic)
@@ -1221,3 +1221,139 @@ Confirmed accurate. Now let's write the video recording script as a repo doc.
 
 --- ASSISTANT  2026-09-09T06:35:42.230Z -----------------------------
 [tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python ai_usage/export_logs.py 2>&1 | tail -30
+
+--- USER  2026-09-09T06:35:49.161Z ----------------------------------
+[tool result] ok (1749 chars, 29 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:36:24.971Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -rinE "AIza[0-9A-Za-z_-]{25,}|AQ\.[0-9A-Za-z_.-]{30,}|\bpa-[0-9A-Za-z_-]{30,}|sk-or-v1-[0-9a-f]{20,}" ai_u ...
+
+--- USER  2026-09-09T06:36:29.193Z ----------------------------------
+[tool result] ok (6 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:36:38.023Z -----------------------------
+Clean. Let's update the disclosure doc's turn count to match this final re-export.
+
+--- ASSISTANT  2026-09-09T06:36:38.265Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "9,726\|9726" ai_usage/ai-usage-disclosure.md
+
+--- USER  2026-09-09T06:36:38.387Z ----------------------------------
+[tool result] ok (90 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:36:45.374Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -i 's/9,726 dialogue turns/9,924 dialogue turns/; s/across 9,726 turns/across 9,924 turns/' ai_usage/ai-usa ...
+
+--- USER  2026-09-09T06:36:48.901Z ----------------------------------
+[tool result] ok (90 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:37:04.094Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\ai-usage-disclosure.md
+
+--- USER  2026-09-09T06:37:04.126Z ----------------------------------
+[tool result] ok (1632 chars, 30 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:37:10.018Z -----------------------------
+Good catch — this needs fixing too. Let's update both the stale model list and the "unmeasured" claim.
+
+--- ASSISTANT  2026-09-09T06:37:17.351Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\ai_usage\ai-usage-disclosure.md  (in-place edit)
+
+--- USER  2026-09-09T06:37:18.457Z ----------------------------------
+[tool result] ok (178 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:37:26.508Z -----------------------------
+[tool] Grep: pattern=unmeasured|z-ai|minimax-m3|4 of 18|only 4 of|18 free models  in E:\AI Challenge CodeFest\ashen-assistant\ai_usage\ai-usage-d ...
+
+--- USER  2026-09-09T06:37:26.582Z ----------------------------------
+[tool result] ok (75 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:37:33.627Z -----------------------------
+Good, that's the only remaining mention and it's the intentional historical reference. Let's re-verify test_docs.py still passes (this file is guarded) and run the full suite once more before final commit.
+
+--- ASSISTANT  2026-09-09T06:37:33.908Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -m pytest -q 2>&1 | tail -8
+
+--- USER  2026-09-09T06:39:01.734Z ----------------------------------
+[tool result] ok (565 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:39:08.572Z -----------------------------
+All 497 pass. Now let's commit this final AI-usage/disclosure update and the log re-export together.
+
+--- ASSISTANT  2026-09-09T06:39:08.922Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git add ai_usage/ && git status --short
+
+--- USER  2026-09-09T06:39:13.020Z ----------------------------------
+[tool result] ok (1275 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:39:25.065Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git commit -m "$(cat <<'EOF' docs(ai-usage): final re-export + fix two more stale claims found in the pass Re-r ...
+
+--- USER  2026-09-09T06:39:27.779Z ----------------------------------
+[tool result] ok (145 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:39:33.655Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git status --short echo "--- log since origin ---" git log --oneline origin/main..HEAD
+
+--- USER  2026-09-09T06:39:36.439Z ----------------------------------
+[tool result] ok (1031 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:39:42.025Z -----------------------------
+Working tree is clean. Let's push.
+
+--- ASSISTANT  2026-09-09T06:39:42.029Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git push origin main 2>&1
+
+--- USER  2026-09-09T06:39:54.291Z ----------------------------------
+[tool result] ok (92 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:40:09.711Z -----------------------------
+Pushed. Here's the full rundown of what happened:
+
+## Done
+
+1. **OpenRouter verification** — re-ran `--verify`, found it *not* clean: `z-ai/glm-5.2:free` and `minimax/minimax-m3:free` had been delisted entirely and were both first-choice models. Fixed the rotation, updated the pinned test, logged it as **F-038**. Suite: 497/497.
+
+2. **Planner tier sweep** — wrote `comparison/planner_sweep.py` (kept separate from `comparison/harness.py` on purpose, per that file's own reproducibility rule) and ran it once. Result: fires on 4/55 frozen questions, all correct, all with complete evidence (22→26 correct, 31→35 complete evidence), refusals unaffected at 6/6. Logged as **ADR-048**, cached, documented in `docs/numbers.md`.
+
+3. **AI usage logs** — re-exported twice (before and after the rest of this session's work). 12→21 sessions, 4,384→9,924 turns. Several old sessions had quietly kept growing for 4 days uncaptured. Secret-grep clean both times. Also caught the disclosure doc repeating the two stale claims above (old model names, "unmeasured" planner) and fixed those too.
+
+4. **Submission report** — `submission_report.pdf` had been built *before* three fixes landed later the same day (test count, document-count reconciliation, README rewrite) plus was missing today's planner numbers. Regenerated `docs/report.md`, fixed a stale label in the architecture SVG, rebuilt via Edge headless print-to-PDF — still 5 pages.
+
+5. **TEAM.md** — filled in what the repo already substantiates (the commit-history paragraph, the ADR-009..013 attribution, the question-split note). **Left one thing deliberately open**: a specific, checkable code-review pointer for Tatiana/Kenolee — nothing in the repo records one, and inventing it would violate the file's own stated rule. Flagged clearly for them to fill in.
+
+6. **Video script** — `docs/video-script.md`, beat-by-beat, marking exactly which segment must be one continuous unedited take. Every claim in it (the Ravena Stormwell walkthrough, the Isolde Mournvail near-miss scores, the planner-rescue example) was checked live against the running app, not written from memory.
+
+7. **Commit + push** — 7 atomic commits, all pushed to `origin/main`.
+
+## Still needs a human
+
+- **The video itself isn't recorded.** The script is ready; `docs/report.md`'s video link is still a placeholder.
+- **TEAM.md's one open paragraph** (code-review specifics from Tatiana/Kenolee).
+- A pre-existing doc inconsistency I found but didn't touch (out of scope of what was asked): `docs/numbers.md` flags its own unresolved contradiction about a "31→29" figure that doesn't match the shipped table — noted there as "needs the author."
+
+--- USER  2026-09-09T06:50:07.287Z ----------------------------------
+What are the documents I should share and update with my team members no
+
+--- ASSISTANT  2026-09-09T06:50:40.368Z -----------------------------
+Given the repo's already pushed to `origin/main`, "sharing" mostly means pointing teammates at specific files there and telling them exactly what to do with each. Here's the actionable list, split by what actually needs their edit vs. what's just for their awareness.
+
+## Needs their direct input today (highest value first)
+
+**1. [eval/verification/answer_key_review.md](https://github.com/mithilyr/CODEFEST---AI-Challenge/blob/main/eval/verification/answer_key_review.md)**
+This is the single biggest lever left. Every number in the report is currently flagged **PROVISIONAL** because the answer key has one reviewer, not the required two. If Tatiana, Kenolee, or Yasiru can spend 20–30 minutes independently verifying the 9 traced questions against the corpus (the file has the exact process — read the corpus excerpts, don't compare notes, mark `unsure` freely), that single review could remove the PROVISIONAL flag from the entire submission. Send this file specifically, with the instruction: work independently, don't look at what the current reviewer (Mithil) concluded first.
+
+**2. [TEAM.md](https://github.com/mithilyr/CODEFEST---AI-Challenge/blob/main/TEAM.md)**
+One paragraph is deliberately left blank, marked for them by name: a specific, checkable thing each of Tatiana/Kenolee can point to for their code review ("caught X in file Y," "disagreed with ADR-Z"). It's a 2-minute reply, not a rewrite. I left it open on purpose rather than inventing something — a fabricated-sounding claim there is worse than a blank one.
+
+## Needs someone to execute, not edit
+
+**3. [docs/video-script.md](https://github.com/mithilyr/CODEFEST---AI-Challenge/blob/main/docs/video-script.md)**
+Whoever is recording the demo needs this — it marks exactly which segment must be one continuous unedited take vs. what can be cut. Worth having a second person skim it too, since §4.1 means any of you could be asked to explain what's on screen.
+
+## Good to circulate for awareness (§4.1 — any member can be asked to defend any part)
+
+**4. [submission_report.pdf](https://github.com/mithilyr/CODEFEST---AI-Challenge/blob/main/submission_report.pdf)** — the actual 5-page report, just regenerated. Everyone should read it once before the demo, since a judge can ask any of you about any line.
+
+**5. [docs/TODO.md](https://github.com/mithilyr/CODEFEST---AI-Challenge/blob/main/docs/TODO.md)** — the live checklist; shows what's done and what's still open at a glance, useful if you want to divide the remaining items rather than doing them all yourself.
+
+If any of them can't reach the repo, that's the one blocker worth checking now — TEAM.md notes it's a private repo (`github.com/mithilyr/CODEFEST---AI-Challenge`) and access has to have been granted already.
