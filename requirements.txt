@@ -16,7 +16,7 @@ google-genai==1.2.0     # Gemini vision, used once to OCR the 17 scanned PDFs
 voyageai==0.5.0         # embeddings for the Checkpoint 1 baseline index
 
 # --- Configuration ----------------------------------------------------------
-PyYAML==6.0.2           # config/authority.yaml
+PyYAML==6.0.3           # config/authority.yaml — 6.0.2 has no Python 3.14 wheel, forces a source build
 python-dotenv==1.0.1    # .env loading, keeps keys out of source
 
 # --- Testing ----------------------------------------------------------------
