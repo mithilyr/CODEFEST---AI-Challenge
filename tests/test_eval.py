@@ -214,15 +214,22 @@ def test_1b_009_conflict_is_recorded_as_same_tier_and_unresolvable():
 
 def test_confirmed_requires_two_reviewers():
     """A single consolidated review is not two independent ones, however
-    confident. 1b_006 is why: one reviewer found 2 of 14 answers."""
+    confident. 1b_006 is why: one reviewer found 2 of 14 answers.
+
+    Tatiana and Kenolee's independent pass on 2026-09-09 is the second human
+    review ADR-014 requires, so all 9 are now genuinely `confirmed` - this
+    checks that the confirmation is real (two named reviewers, no open
+    discrepancy), not just a status string someone flipped."""
     key = load_key()
-    assert not any(e.verification.is_confirmed for e in key.values()), (
-        "No entry should be confirmed yet - the 2026-08-29 review was a single "
-        "pass and covered 1B only, and the 2026-09-06 pass was an AI "
-        "re-derivation, not a second human. If that has changed, update ADR-014."
+    assert all(e.verification.is_confirmed for e in key.values()), (
+        "Every entry should be confirmed - Tatiana and Kenolee's independent "
+        "2026-09-09 pass is the second human review. If that is no longer "
+        "true, this guard is why ADR-014 exists."
     )
-    assert key["1c_000"].verification.status == "draft", "1C was not human-reviewed"
-    assert key["1c_003"].verification.status == "draft", "1C was not human-reviewed"
+    for qid, entry in key.items():
+        assert len(entry.verification.reviewers) >= 2, f"{qid} has fewer than 2 reviewers"
+    assert key["1c_000"].verification.status == "confirmed", "1C was human-reviewed 2026-09-09"
+    assert key["1c_003"].verification.status == "confirmed", "1C was human-reviewed 2026-09-09"
 
 
 def test_the_key_states_its_own_verification_state_and_the_summary_is_true():
@@ -243,33 +250,37 @@ def test_the_key_states_its_own_verification_state_and_the_summary_is_true():
         counts[status] = counts.get(status, 0) + 1
 
     assert len(entries) == 9
-    assert counts.get("confirmed", 0) == 0
-    assert f"0 of {len(entries)} entries confirmed" in summary
-    assert f"{counts['single_review']} single_review" in summary
-    assert f"{counts['draft']} draft" in summary
+    assert counts.get("confirmed", 0) == 9
+    assert f"9 of {len(entries)} entries confirmed" in summary
 
     reviewers = {
         name
         for entry in entries
         for name in entry["verification"].get("reviewers") or []
     }
-    assert len(reviewers) == 1, "the summary says one reviewer; check it still is"
-    assert next(iter(reviewers)) in summary
+    assert len(reviewers) == 2, "the summary says two reviewers; check it still is"
+    for name in reviewers:
+        assert name in summary
 
 
 def test_an_ai_recheck_never_advances_verification_status():
     """The 2026-09-06 pass re-derived all nine answers from the primary corpus
-    and agreed with every one. It still does not count: it was not a second
-    human, and it was not blind - the same agent had seen the recorded answers
-    earlier in the session. Agreement from a non-independent reviewer is
-    corroboration, not confirmation, and the file must keep saying so."""
+    and agreed with every one. It still does not count on its own: it was not
+    a second human, and it was not blind - the same agent had seen the
+    recorded answers earlier in the session. Agreement from a non-independent
+    reviewer is corroboration, not confirmation, and the file must keep saying
+    so even now that all 9 are genuinely confirmed by Tatiana and Kenolee's
+    2026-09-09 human pass - the confirmation must trace to named human
+    reviewers, never to the recheck record."""
     raw = load_raw()
     for entry in raw["questions"]:
         recheck = entry["verification"].get("independent_recheck")
         assert recheck, f"{entry['qid']} lost its recheck record"
         assert recheck["is_second_human_reviewer"] is False
         assert recheck["counts_toward_confirmed"] is False
-        assert entry["verification"]["status"] in {"draft", "single_review"}
+        reviewers = entry["verification"].get("reviewers") or []
+        assert len(reviewers) >= 2, f"{entry['qid']} confirmed without 2 named reviewers"
+        assert recheck["by"] not in reviewers, "the AI recheck must not count as a reviewer"
 
 
 def test_1b_006_discrepancy_was_settled_on_evidence_not_by_narrowing():
@@ -280,7 +291,7 @@ def test_1b_006_discrepancy_was_settled_on_evidence_not_by_narrowing():
     teach the system to be worse."""
     entry = load_key()["1b_006"]
     assert len(entry.accepted_answers) == 14
-    assert entry.verification.status == "single_review"
+    assert entry.verification.status == "confirmed"
     assert entry.verification.discrepancy is None, "the factual dispute is closed"
     raw = next(q for q in load_raw()["questions"] if q["qid"] == "1b_006")
     assert "annals" in raw["verification"]["resolved_discrepancy"].lower()
