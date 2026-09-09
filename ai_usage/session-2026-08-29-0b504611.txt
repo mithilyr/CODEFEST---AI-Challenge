@@ -5,8 +5,8 @@ SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
 Session id      : 0b504611-7886-41dc-872f-55d3170b9dc5
 Source          : 0b504611-7886-41dc-872f-55d3170b9dc5.jsonl
 First activity  : 2026-08-29T08:19:44.451Z
-Last activity   : 2026-09-03T04:08:32.046Z
-Dialogue turns  : 541   (of 1296 raw records)
+Last activity   : 2026-09-07T03:54:59.072Z
+Dialogue turns  : 639   (of 1564 raw records)
 Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\Ashen_Era_Archive\ephemera, E:\AI Challenge CodeFest\Ashen_Era_Archive\wiki, E:\AI Challenge CodeFest\ashen-assistant
 Git branch      : HEAD
 Assistant       : Claude Code (Anthropic)
@@ -3531,3 +3531,473 @@ Plus: 26 ADRs, 27 failure entries, architecture diagram, README, LLM planner bui
 9 Sep is submission only — no work.
 
 **Next: run `python -m eval.run_eval --checkpoint baseline` to confirm the cache is warm, then I start the `ai_usage/` export — it's the single largest unclaimed rubric block at 15%.**
+
+--- USER  2026-09-05T18:26:39.759Z ----------------------------------
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md first.
+
+Every evaluation number in this project is currently flagged PROVISIONAL because
+eval/answer_key.json has not been two-person verified. Measured verification
+state: `single_review` x6, `draft` x2, `unresolved` x1, and all seven reviewed
+entries name the same single reviewer - which is precisely the failure mode
+docs/failures.md F-015 records (one careful reviewer reported "high confidence"
+on an answer with two valid values; the corpus had fourteen).
+
+Recall is already independently corroborated: `python -m eval.completeness`
+reports 0 defects. What is outstanding is PRECISION / semantic review - is each
+recorded answer actually right?
+
+This blocks the report. The 35/49 routing-robustness figure is the strongest
+single number in the submission, and it cannot be led with while every number
+carries a PROVISIONAL warning.
+
+TASK
+
+1. Run `python -m eval.verify_key` to regenerate the review pack, and read
+   eval/verification/answer_key_review.md for the process the project already
+   defined for itself. Follow that process; do not invent a new one.
+
+2. For each of the 9 entries, independently re-derive the answer from the corpus
+   WITHOUT looking at the recorded answer first. Work from the primary documents.
+   For each, record:
+     - the answer you derived
+     - every document you used, with locators
+     - whether it agrees with the recorded answer
+     - if it disagrees, which one the corpus actually supports
+
+3. Pay specific attention to the three entries that are not `single_review`:
+   the 2 `draft` and the 1 `unresolved`. Those are where the key is weakest.
+
+4. Update `verification.status` per entry honestly. If a second reviewer is not
+   actually a second human, DO NOT mark it two-person verified - record it as
+   what it is. An honestly-labelled single review is defensible; a falsely
+   labelled double review is an integrity problem judges can catch by asking
+   the other three team members.
+
+5. Re-run `python -m eval.run_eval --checkpoint baseline` and
+   `python -m comparison.harness`. If any headline number moved, say so
+   explicitly and update CLAUDE.md, README.md and docs/architecture.md - note
+   that CLAUDE.md warns the 35/49 figure has already moved twice in opposite
+   directions and must never be quoted from memory.
+
+6. If and only if verification is genuinely complete, remove the PROVISIONAL
+   warnings from README.md and docs/architecture.md.
+
+7. Log what you found in docs/failures.md if any recorded answer was wrong.
+   Atomic commit.
+
+DONE WHEN
+  - Every entry's verification.status reflects reality
+  - Any moved number is propagated to all four docs that quote it
+  - You can state, in one sentence for the report, what the verification status
+    now is
+
+--- ASSISTANT  2026-09-05T18:27:00.423Z -----------------------------
+4 days to deadline. Starting with the project's own instructions and the review pack.
+
+--- ASSISTANT  2026-09-05T18:27:01.135Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,60p' CLAUDE.md
+
+--- ASSISTANT  2026-09-05T18:27:02.163Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -m eval.verify_key 2>&1 | tail ...
+
+--- USER  2026-09-05T18:27:02.412Z ----------------------------------
+[tool result] ok (2883 chars, 60 lines, output not included)
+
+--- USER  2026-09-05T18:27:15.273Z ----------------------------------
+[tool result] ok (295 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:27:20.884Z -----------------------------
+You've hit your session limit · resets 12:20am (Asia/Colombo)
+
+--- USER  2026-09-05T18:51:32.903Z ----------------------------------
+I hit my usage limit while you were working, but it has reset now. Please continue from where you left off.
+
+--- ASSISTANT  2026-09-05T18:51:53.318Z -----------------------------
+3 days left. Continuing the verification — starting with the three weakest entries (2 `draft`, 1 `unresolved`).
+
+--- ASSISTANT  2026-09-05T18:51:58.348Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " import re from src.ingest ...
+
+--- USER  2026-09-05T18:52:02.430Z ----------------------------------
+[tool result] ok (1706 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:52:14.393Z -----------------------------
+`1c_000` derives to **246 AS** — agrees. But I found a **second** tier-4 source claiming 286 AS that the key doesn't list. Now `1c_003`.
+
+--- ASSISTANT  2026-09-05T18:52:18.574Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " import re from src.ingest ...
+
+--- USER  2026-09-05T18:52:21.294Z ----------------------------------
+[tool result] ok (3959 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:52:47.804Z -----------------------------
+`1c_003` derives to **391 AS** — agrees. But the key lists 4 sources; the corpus has **9**. Same defect class as F-015. Now the remaining six.
+
+--- ASSISTANT  2026-09-05T18:52:51.849Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive/wiki" && for q in "1b_003:cerys_sablewood_the_ashen:Wields" "1b_003b:the_cinder_wrought_aegis:housing" "1b_005:is ...
+
+--- USER  2026-09-05T18:52:57.710Z ----------------------------------
+[tool result] ok (657 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:53:11.485Z -----------------------------
+All six derive to the recorded answers. Now the `unresolved` one — checking whether the corpus has Silent Choir members **outside** the wiki that the 14 misses.
+
+--- ASSISTANT  2026-09-05T18:53:20.203Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " import re, json from src. ...
+
+--- USER  2026-09-05T18:53:25.398Z ----------------------------------
+[tool result] ok (1056 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:53:33.828Z -----------------------------
+Regex noise — only two real candidates. Let me check them directly.
+
+--- ASSISTANT  2026-09-05T18:53:38.378Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== Hesper Wrenfield: any membership? ===" && grep -riE "member|affiliat|membership" "E:/AI Challenge Cod ...
+
+--- USER  2026-09-05T18:53:41.507Z ----------------------------------
+[tool result] ok (2470 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:53:55.768Z -----------------------------
+Hesper Wrenfield is Bleeding Crown, correctly excluded. But the Annals (tier 1) has **anaphoric** membership claims. Let me resolve them — this is exactly the F-015 failure mode.
+
+--- ASSISTANT  2026-09-05T18:53:59.298Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " import re from src.ingest ...
+
+--- USER  2026-09-05T18:54:01.774Z ----------------------------------
+[tool result] ok (1621 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:54:14.759Z -----------------------------
+All three anaphors resolve to names already in the 14 (Ignatz Fellgard, Isolde Mournvale, Morwenna Vosgard). Let me get the complete Annals list to rule out a 15th.
+
+--- ASSISTANT  2026-09-05T18:54:21.005Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " import re, json from src. ...
+
+--- USER  2026-09-05T18:54:23.928Z ----------------------------------
+[tool result] ok (698 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:55:01.506Z -----------------------------
+All 9 derive to the recorded answers — **no answer is wrong**. Every explicit membership statement corpus-wide maps into the 14, corroborated by the Annals (tier 1), a source the original review never used.
+
+Two defects found, both in **conflict inventories**, not answers. Let me quantify the impact before changing anything.
+
+--- ASSISTANT  2026-09-05T18:55:02.839Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/def required_documents/,/^$/p' eval/answer_key.py && echo "=== current recalls ===" && grep -E "^\| \` ...
+
+--- USER  2026-09-05T18:55:05.605Z ----------------------------------
+[tool result] ok (267 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:55:26.234Z -----------------------------
+Adding corroborating sources without inflating the denominator — a correct answer needs the authority plus enough of the dispute, not all five paraphrases of "not recorded". Let me see the function body first.
+
+--- ASSISTANT  2026-09-05T18:55:27.559Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "def required_documents" -A 22 eval/answer_key.py && echo "=== Claim dataclass ===" && grep -n "class C ...
+
+--- USER  2026-09-05T18:55:27.751Z ----------------------------------
+[tool result] ok (1115 chars, 28 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:55:35.532Z -----------------------------
+Now applying the corrections — full inventory recorded, minimal set required.
+
+--- ASSISTANT  2026-09-05T18:55:45.553Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("eval/answer_key.py"); s = p.read_text(encoding="utf-8") s = ...
+
+--- USER  2026-09-05T18:55:48.122Z ----------------------------------
+[tool result] ok (25 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:55:53.921Z -----------------------------
+Now the key itself — the missing claims and honest verification records.
+
+--- ASSISTANT  2026-09-05T18:56:28.570Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import json, pathlib p = pathlib.Path("eval/answer_key.json") d = json.loads(p.read_text(enc ...
+
+--- USER  2026-09-05T18:56:31.522Z ----------------------------------
+[tool result] ok (373 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:56:40.161Z -----------------------------
+Statuses honest, `confirmed: 0/9`, required-document counts unchanged. Now re-running everything to check nothing moved.
+
+--- ASSISTANT  2026-09-05T18:56:42.301Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest -q 2>&1 | tail -4
+
+--- ASSISTANT  2026-09-05T18:56:43.270Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -m eval.run_eval --checkpoint  ...
+
+--- USER  2026-09-05T18:57:34.643Z ----------------------------------
+[tool result] ok (201 chars, 3 lines, output not included)
+
+--- USER  2026-09-05T18:57:39.906Z ----------------------------------
+[tool result] ok (382 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:57:49.862Z -----------------------------
+Baseline unchanged (2/7, 2/2). One test failed — and it's the guard doing its job: it pinned `1b_006` as `unresolved`.
+
+--- ASSISTANT  2026-09-05T18:57:50.317Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '/def test_confirmed_requires_two_reviewers/,/^def /p' tests/test_eval.py | head -25
+
+--- USER  2026-09-05T18:57:53.176Z ----------------------------------
+[tool result] ok (709 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:58:16.061Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib p = pathlib.Path("tests/test_eval.py"); s = p.read_text(encoding="utf-8") s = ...
+
+--- USER  2026-09-05T18:58:21.216Z ----------------------------------
+[tool result] ok (94 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:58:30.059Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest -q 2>&1 | tail -3
+
+--- ASSISTANT  2026-09-05T18:58:30.933Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -m comparison.harness 2>&1 | t ...
+
+--- USER  2026-09-05T18:59:18.620Z ----------------------------------
+[tool result] ok (241 chars, 3 lines, output not included)
+
+--- USER  2026-09-05T18:59:29.140Z ----------------------------------
+[tool result] ok (789 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:59:40.429Z -----------------------------
+`no_route_shape = 35` re-derived — matches. Shipped tier 17 correct / 27 complete evidence — matches. **No headline number moved.** Now finding every place the verification status is quoted.
+
+--- ASSISTANT  2026-09-05T18:59:41.266Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "unresolved\|single_review\|PROVISIONAL\|two-person\|two humans" CLAUDE.md README.md docs/architecture ...
+
+--- USER  2026-09-05T18:59:41.538Z ----------------------------------
+[tool result] ok (1082 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:59:48.942Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '250,268p' README.md && echo "=== ARCH ===" && sed -n '150,162p' docs/architecture.md
+
+--- USER  2026-09-05T18:59:49.146Z ----------------------------------
+[tool result] ok (1212 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-09-05T18:59:56.805Z -----------------------------
+Updating all four docs with the new state — PROVISIONAL stays, because 0/9 are two-human confirmed.
+
+--- ASSISTANT  2026-09-05T19:00:14.957Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PYEOF' import pathlib NEW_STATUS = "`single_review` ×7, `draft` ×2" RECHECK = ( "A second, **AI** r ...
+
+--- USER  2026-09-05T19:00:18.316Z ----------------------------------
+[tool result] ok (85 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T19:00:25.881Z -----------------------------
+Now the failure-log entry for the two defects found.
+
+--- ASSISTANT  2026-09-05T19:00:53.537Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> docs/failures.md <<'MDEOF' --- ## F-028 — A conflict inventory that stopped at the first competing sourc ...
+
+--- USER  2026-09-05T19:01:42.408Z ----------------------------------
+[tool result] ok (164 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-05T19:01:50.964Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe -m pytest 2>&1 | tail -2 && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./ ...
+
+--- USER  2026-09-05T19:02:48.407Z ----------------------------------
+[tool result] ok (377 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-05T19:02:57.935Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's/python -m pytest # 342 tests/python -m pytest # 345 tests/' CLAUDE.md && grep -n "345 tests" CLAUDE.m ...
+
+--- USER  2026-09-05T19:03:01.055Z ----------------------------------
+[tool result] ok (245 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T19:03:09.422Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's/342 tests/345 tests/g' README.md && sed -i 's/342 tests/345 tests/g' docs/architecture.md 2>/dev/null ...
+
+--- USER  2026-09-05T19:03:12.354Z ----------------------------------
+[tool result] ok (440 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T19:03:32.688Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && rm -f eval/results/baseline_2026-09-05T20-09-37.* && ls eval/results/ && git add -A && git commit -q -F - <<'MS ...
+
+--- USER  2026-09-05T19:03:35.965Z ----------------------------------
+[tool result] ok (1464 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-09-05T19:03:55.141Z -----------------------------
+**All 9 answers re-derived from the corpus. All 9 agree. No recorded answer was wrong.**
+
+## What I found
+
+Two defects, both in **conflict inventories**, not answers:
+
+| Question | Sources recorded | Sources in corpus |
+|---|---|---|
+| `1c_000` | 3 | **4** |
+| `1c_003` | 4 | **9** |
+
+`1c_003` is the one that matters. The key had the codex at 391 AS, one sermon at 360 AS, one ledger, and the wiki abstention. The corpus has **two** sources asserting 360 AS and **five** refusing to state a date — a decree, field report, interrogation record, ledger and second sermon, each in its own voice: *"no keeper shall invent a year"*, *"Let no clerk fill this blank with a guess."*
+
+Same shape as F-015, one level down: that was a reviewer finding 2 of 14 *answers*; this is finding 4 of 9 *sources*. Neither produced a wrong answer, which is why it survived three weeks.
+
+## `1b_006` — settled on evidence, not narrowed
+
+The 2-vs-14 dispute is closed. `codex/the_annals_of_the_ashen_era` — tier 1, never opened by the original review — states Silent Choir membership for **10 of the 14**, three anaphorically (`#303` Ignatz Fellgard, `#337` Isolde Mournvale, `#520` Morwenna Vosgard, each resolved against the preceding paragraph). A corpus-wide sweep returns **zero** names outside the 14. Also checked and correctly excluded: Hesper Wrenfield is Bleeding Crown, not Silent Choir.
+
+## What I did NOT do
+
+**I did not mark anything verified. `confirmed` stays 0/9 and the PROVISIONAL banners stay up.**
+
+Two reasons, recorded as F-029:
+1. I am not a second human.
+2. **It was not blind** — I had seen the recorded answers earlier in this session. Agreement from a reviewer who already knows the answer is worth materially less, and no procedural care recovers that.
+
+Recorded per entry as `independent_recheck` with `is_second_human_reviewer: false` and `counts_toward_confirmed: false`, pinned by a test so it can't drift.
+
+## No number moved
+
+```
+baseline           1B 2/7   1C 2/2   4/9   complete evidence 0/9   0 API calls
+comparison.harness no_route_shape 35   shipped 17 correct / 27 complete evidence
+```
+
+Re-derived, not quoted from memory. 345 tests pass (+3). Status corrected in CLAUDE.md, README.md, `docs/architecture.md`, `docs/TODO.md`. Committed as `7204f87`.
+
+## One sentence for the report
+
+> The answer key has had one human review and one independent AI re-derivation which agreed with all nine answers and corrected two conflict inventories; it is **not** two-person verified, so every evaluation number remains provisional.
+
+**Next: `1c_000` and `1c_003` are still `draft` — no human has ever reviewed them. Ask one teammate to read just those two pages of `eval/verification/answer_key_review.md`; that's the smallest action that changes the status line.**
+
+--- USER  2026-09-05T20:46:03.585Z ----------------------------------
+Before we proceed, I need to make sure the codex, ephemera, chronicles and images were all taken into account when finding info for all 1B subtrack questions.
+Also when and where is google AI studio, voyage ai, openrouter api keys used?
+
+--- ASSISTANT  2026-09-05T20:46:21.687Z -----------------------------
+Both need checking against the code, not recall. Starting with what the graph actually reads.
+
+--- ASSISTANT  2026-09-05T20:46:23.103Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== what collections does build_graph read? ===" && grep -n "collection\|wiki\|codex\|ephemera\|chronicle ...
+
+--- USER  2026-09-05T20:46:23.314Z ----------------------------------
+[tool result] ok (318 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T20:46:25.267Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== GOOGLE_API_KEY ===" && grep -rn "google_api_key\|GOOGLE_API_KEY" src/ eval/ comparison/ --include=*.p ...
+
+--- USER  2026-09-05T20:46:25.618Z ----------------------------------
+[tool result] ok (1802 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-09-05T20:46:37.378Z -----------------------------
+Found it — `src/graph/build.py:204` reads **wiki only**. Let me check whether the query path compensates via the fallback.
+
+--- ASSISTANT  2026-09-05T20:46:39.279Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== fallback.py docstring ===" && sed -n '1,30p' src/query/fallback.py && echo "=== does anything in quer ...
+
+--- USER  2026-09-05T20:46:39.524Z ----------------------------------
+[tool result] ok (1849 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-09-05T20:46:56.724Z -----------------------------
+Decisive: `src/query/` contains **zero** references to the vector index. Let me quantify exactly what that costs.
+
+--- ASSISTANT  2026-09-05T20:47:00.969Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && PYTHONPATH="E:/AI Challenge CodeFest/ashen-assistant" ./.venv/Scripts/python.exe -c " import collections from s ...
+
+--- ASSISTANT  2026-09-05T20:47:02.977Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== who calls GeminiPool now? ===" && grep -rln "GeminiPool" src/ eval/ comparison/ --include=*.py | head ...
+
+--- USER  2026-09-05T20:47:08.840Z ----------------------------------
+[tool result] ok (353 chars, 8 lines, output not included)
+
+--- USER  2026-09-05T20:47:09.139Z ----------------------------------
+[tool result] ok (339 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-05T20:47:32.824Z -----------------------------
+**No. Codex, ephemera, chronicles and images are NOT used for 1B answers. The 1B path reads wiki only — 7.5% of the corpus.**
+
+```
+src/graph/build.py:204   if unit.collection == "wiki":
+```
+
+And `src/query/` contains **zero** references to the vector index — I grepped. All three routing tiers (templates → cues → LLM plan) traverse the same wiki-only graph.
+
+| Collection | Evidence units | Share | Used for 1B? |
+|---|---|---|---|
+| chronicles | 24,979 | 81.8% | **no** |
+| ephemera | 1,652 | 5.4% | **no** |
+| codex | 1,638 | 5.4% | **no** |
+| wiki | 2,284 | **7.5%** | yes |
+| images (70 PNG) | 0 | — | no |
+
+The vector index does cover all four collections (3,392 chunks) — but **only `src/baseline/` uses it**, which is the Checkpoint 1 baseline we're comparing *against*, not the shipped system.
+
+So ADR-001's "graph-first, **vector fallback**" was never completed. The second tier turned out to be more graph routing, not vector retrieval. That's a real gap against your 2 Sep instruction, and against the sub-track name.
+
+Measured cost, from the 2 Sep probe: **17 relational facts exist outside the wiki that the wiki does not contain** — e.g. `marsh_revenant lairs in greyfell_citadel`, `lucan_hollowmere serves at palewell_abbey`. Same *shapes* the dev questions use. All 7 dev 1B questions happen to be wiki-only, which is why 7/7 passes and hid this.
+
+## Where each API key is used
+
+| Key | Used by | When | In the 1B answer path? |
+|---|---|---|---|
+| **GOOGLE_API_KEY** (Gemini) | `src/ingest/ocr.py` | OCR of the 17 scans — offline, cached, cache committed | no |
+| | `src/baseline/rag.py` via `eval/run_eval.py` | Checkpoint 1 baseline only | no |
+| **VOYAGE_API_KEY** | `src/baseline/index.py` | Embeds 3,392 chunks; query embedding at search time | **no — baseline only** |
+| **OPENROUTER_API_KEY** | `src/query/planner.py` | Tier 3 LLM planner — **off by default** | only with `--with-model` |
+| | `src/query/synthesis.py` | Prose phrasing — template path needs no key | optional |
+
+**The shipped 1B path needs no API key at all.** Graph build, entity resolution, routing, traversal and template phrasing are pure Python. That's a genuinely strong story for the report — and it's the flip side of the gap above, because it's *why* nothing pulls from the other 92.5%.
+
+## Your call, with 3 days left
+
+Two honest options:
+
+1. **Close the gap** — add the codex/chronicles prose relation extractor I measured on 2 Sep (~10 regular verb patterns, 85 statements, 17 new facts). Deterministic, no LLM. Roughly half a day plus a re-measure.
+2. **Document it as a stated limitation** — "the graph is built from the wiki's structured infoboxes; prose relations in the other collections are out of scope, measured at 17 facts" — and spend the time on the report and video, which are unstarted and worth 20%.
+
+I'd take (1) only if the report and video are genuinely on track, because an incomplete submission isn't evaluated at all. Which is it?
+
+--- USER  2026-09-06T04:33:40.614Z ----------------------------------
+<local-command-caveat>Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.</local-command-caveat>
+
+--- USER  2026-09-06T04:33:11.597Z ----------------------------------
+<command-name>/compact</command-name>
+            <command-message>compact</command-message>
+            <command-args></command-args>
+
+--- USER  2026-09-07T03:54:00.061Z ----------------------------------
+What is the tokenizer used.
+
+--- ASSISTANT  2026-09-07T03:54:25.338Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== token counting in embeddings ===" && grep -n "token\|tiktoken\|encode\|count_tokens" src/clients/embe ...
+
+--- USER  2026-09-07T03:54:25.755Z ----------------------------------
+[tool result] ok (1336 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-07T03:54:37.167Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '53,62p' src/clients/embeddings.py && echo "--- the function ---" && sed -n '127,132p' src/clients/embed ...
+
+--- USER  2026-09-07T03:54:37.483Z ----------------------------------
+[tool result] ok (638 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-07T03:54:59.072Z -----------------------------
+**No tokenizer. We estimate: `len(text) / 3.5` characters per token.**
+
+`src/clients/embeddings.py:127`
+
+```python
+CHARS_PER_TOKEN = 3.5
+
+def _estimate_tokens(text: str) -> int:
+    return max(1, int(len(text) / CHARS_PER_TOKEN))
+```
+
+Zero tokenizer dependencies — no `tiktoken`, no `transformers`, no `sentencepiece`. Nothing in `requirements.txt`.
+
+## Where it's used, and why an estimate is enough
+
+Only one place: **sizing embedding batches** against Voyage's free-tier limit of 3 requests / 10,000 tokens per minute (ADR-008). It is never used for billing, truncation, or context-window fitting.
+
+Two guards make the approximation safe:
+
+1. **3.5 chars/token is deliberately low.** English averages ~4. Underestimating tokens means over-packing a batch and getting it rejected — costing a wasted minute against a 3-req/min limit. Overestimating just costs a little throughput.
+2. **`TPM_SAFETY = 0.8`** — batches target 80% of the stated limit, absorbing whatever the estimate gets wrong.
+
+The actual tokenization happens **server-side at Voyage**; `voyage-4-lite` returns a real `total_tokens` in every response, and `EmbeddingStats.tokens` accumulates it. So spend is reported from the provider's true count, not our estimate — the estimate only decides how much to put in each request.
+
+## The other two providers don't need one
+
+- **Gemini** (`GOOGLE_API_KEY`) — quota is **requests/day**, not tokens. Counting tokens wouldn't help.
+- **OpenRouter** (`OPENROUTER_API_KEY`) — planner prompts are one question plus a relation list, far below any limit.
+
+**Next: nothing to fix here. Still open is the wiki-only 1B gap from the last message — close it, or document it as a limitation? 2 days left, and the report and video are unstarted.**

@@ -5,8 +5,8 @@ SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
 Session id      : 7a16f3b9-6c6d-44cd-ae11-d703a848ec88
 Source          : 7a16f3b9-6c6d-44cd-ae11-d703a848ec88.jsonl
 First activity  : 2026-09-05T14:36:18.080Z
-Last activity   : 2026-09-05T14:57:20.206Z
-Dialogue turns  : 104   (of 257 raw records)
+Last activity   : 2026-09-05T15:10:29.457Z
+Dialogue turns  : 144   (of 362 raw records)
 Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant, E:\AI Challenge CodeFest\ashen-assistant\ai_usage
 Git branch      : HEAD
 Assistant       : Claude Code (Anthropic)
@@ -436,3 +436,167 @@ Now the final export before committing, so the live sessions are current:
 
 --- ASSISTANT  2026-09-05T14:57:20.206Z -----------------------------
 [tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ./.venv/Scripts/python.exe ai_usage/export_logs.py
+
+--- USER  2026-09-05T14:57:23.047Z ----------------------------------
+[tool result] ok (1152 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:57:27.488Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -i 's/\*\*4,273 dialogue turns\*\*/**4,384 dialogue turns**/; s/across 4,273 turns/across 4,384 turns/' ai_ ...
+
+--- USER  2026-09-05T14:57:29.600Z ----------------------------------
+[tool result] ok (85 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:57:34.820Z -----------------------------
+Final verification before commit:
+
+--- ASSISTANT  2026-09-05T14:57:40.351Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== [A] key-shaped strings in ai_usage/ ===" && grep -rnE "AIza[0-9A-Za-z_-]{20,}|\bAQ\.[0-9A-Za-z_.-]{20 ...
+
+--- USER  2026-09-05T14:57:42.749Z ----------------------------------
+[tool result] ok (913 chars, 28 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:57:46.872Z -----------------------------
+All clean — 14 files, no `__pycache__`, no `.env`. Committing only `ai_usage/`, leaving the other live sessions' working-tree changes untouched:
+
+--- ASSISTANT  2026-09-05T14:57:57.702Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git rev-parse --abbrev-ref HEAD && git add ai_usage/ && git commit -F - <<'MSGEOF' docs(ai_usage): export the 1 ...
+
+--- USER  2026-09-05T14:58:00.524Z ----------------------------------
+[tool result] ok (1762 chars, 23 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:58:12.008Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== DONE WHEN: git grep over ai_usage/ (verbatim) ===" && git grep -iE "sk-|AIza|api[_-]?key.*=.*[A-Za-z0 ...
+
+--- USER  2026-09-05T14:58:16.141Z ----------------------------------
+[tool result] ok (2157 chars, 30 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:58:25.870Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git log --oneline -3 && echo && echo "=== ai_usage/ contents as committed ===" && git show --stat --oneline HEA ...
+
+--- USER  2026-09-05T14:58:26.656Z ----------------------------------
+[tool result] ok (1321 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:58:30.928Z -----------------------------
+[tool] SendUserFile: caption=The disclosure, committed. Worth a read before submission — §4 attributes seven decisions to the team, and I want you to confirm I attributed them the way you'd ...
+
+--- USER  2026-09-05T14:58:32.031Z ----------------------------------
+[tool result] ok (150 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T14:58:52.922Z -----------------------------
+All four steps done. Committed as `b17ad1e`, 14 files, `ai_usage/` only — the other live sessions' working-tree changes were left alone.
+
+## Redaction counts
+
+| Session | Turns | Redactions |
+|---|---:|---|
+| `2026-08-28-801b2686` | 651 | **3** — google-aq-key ×1, voyage-pa-key ×1, key-assignment ×1 |
+| `2026-08-29-0b504611` | 541 | 1 — high-entropy |
+| `2026-08-31-c7ca46cc` | 719 | 1 — high-entropy |
+| other 9 sessions | 2,473 | 0 |
+| **Total** | **4,384** | **5** |
+
+## Two things you should know
+
+**The redactor's first version would have leaked your Google key.** It matched the classic `AIza...` format. Your key is the current AI Studio format — `AQ.` + ~50 chars — and it occurs 21× in the 28 Aug session, including in a rendered user prompt and a `cat > .env` Bash command. I only caught it because the counter said `google-aiza-key=0` while a literal search said the value was present 21 times, and I chased the discrepancy instead of trusting the report. Rotation had already made it dead, but the pattern-based safety net you asked for was not actually a net.
+
+**The first version also over-redacted 246 tokens, every one a file path.** `/Users/LENOVO/AppData/...` passes an entropy check comfortably. Left alone, the logs would have been peppered with `[REDACTED]` where paths belong — worse than useless, since it reads as concealment. Rule 3 now uses only the `[A-Za-z0-9_-]` alphabet so paths break into short segments, and exempts word-like identifiers. It fires twice in 4,384 turns, and both are false positives (a long test-function name, a temp filename) that I left redacted — the bias should point that way.
+
+## On your DONE-WHEN grep
+
+It doesn't return empty, and it can't: `sk-` matches inside `<ta**sk-**notification>`, and both today's sessions quote your own brief containing the literal strings `sk-*, AIza*`. Substantively the check passes. The version that's actually a clean pass/fail:
+
+```bash
+git grep -inE "AIza[0-9A-Za-z_-]{25,}|AQ\.[0-9A-Za-z_.-]{30,}|\bpa-[0-9A-Za-z_-]{30,}|sk-or-v1-[0-9a-f]{20,}" -- ai_usage/
+```
+
+That returns nothing, over `ai_usage/` and over all 69 commits.
+
+## Loose ends
+
+- **Determinism holds**, verified byte-identical across two runs on a frozen snapshot. But four source transcripts were live while I worked — `0da104e9` (started 30 Aug) is being appended to *right now* by another window of yours, driving a browser. Two others are today's meta-sessions. **Re-run `python ai_usage/export_logs.py` and amend before you submit on the 9th**, ideally with other Claude Code windows closed, or those three files ship truncated mid-conversation.
+- `CLAUDE.md` says to rotate keys before exporting *on 8 Sep*. We did it today instead. Worth updating that line so nobody rotates a second time and breaks a working `.env` during demo prep.
+- **§4 of the disclosure is the part to check.** I attributed seven decisions to the team from `docs/decisions.md` and `docs/failures.md` — ADR-003, ADR-011, F-015 (both the call and your later reversal of it), F-025, ADR-013 CORRECTION, ADR-019, ADR-006→ADR-018. I wrote those from the record, not from knowing who was in the room. If any of them was actually the assistant's call that a human ratified, that's a claim a judge could test against the very logs sitting next to it.
+
+--- USER  2026-09-05T15:06:23.126Z ----------------------------------
+fix the CLAUDE.md rotation line to say 5 Sep
+
+--- ASSISTANT  2026-09-05T15:06:35.935Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "Rotate\|Never commit API\|Export AI chat" CLAUDE.md
+
+--- USER  2026-09-05T15:06:36.122Z ----------------------------------
+[tool result] ok (146 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:06:39.181Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '239,241p;246p' CLAUDE.md
+
+--- USER  2026-09-05T15:06:39.344Z ----------------------------------
+[tool result] ok (302 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:06:44.116Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\CLAUDE.md  (in-place edit)
+
+--- USER  2026-09-05T15:06:44.228Z ----------------------------------
+[tool result] ok (156 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:06:51.825Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git status --porcelain CLAUDE.md && echo "--- diff ---" && git diff CLAUDE.md
+
+--- USER  2026-09-05T15:06:52.085Z ----------------------------------
+[tool result] ok (1197 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:06:55.657Z -----------------------------
+Diff is isolated to that one bullet — the other session's ADR-026 edits are already committed.
+
+--- ASSISTANT  2026-09-05T15:07:00.040Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add CLAUDE.md && git commit -F - <<'MSGEOF' docs: rotation happened 5 Sep, not 8 Sep - record it as done Th ...
+
+--- USER  2026-09-05T15:07:02.434Z ----------------------------------
+[tool result] ok (226 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:07:08.477Z -----------------------------
+Done — `2a4b4ae`. The line now reads:
+
+> **Never commit API keys.** `.env` is gitignored. All three keys were rotated on **5 Sep**, before the AI chat logs were exported to `ai_usage/` — the logs are a mandatory deliverable that judges read. Done, not pending: do not rotate again unless a *new* key reaches a transcript after that export.
+
+I framed it as completed rather than just swapping the date. A future-tense instruction carrying a past date is the kind of thing someone re-reads on the 8th and acts on, which would mean rotating a working `.env` during demo prep for nothing.
+
+One thing I did *not* touch, since you asked for the rotation line specifically: the bullet four lines down still says "Export AI chat logs to `ai_usage/` as you go." That's now under-specified — three sessions were live during the export, so those transcripts are committed mid-conversation and need a re-run before submission. Say the word and I'll amend that bullet to name the re-export step.
+
+--- USER  2026-09-05T15:09:51.467Z ----------------------------------
+yes, update that bullet too
+
+--- ASSISTANT  2026-09-05T15:09:56.721Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "Export AI chat" CLAUDE.md && sed -n '244,250p' CLAUDE.md
+
+--- USER  2026-09-05T15:09:56.942Z ----------------------------------
+[tool result] ok (399 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:10:04.355Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\CLAUDE.md  (in-place edit)
+
+--- USER  2026-09-05T15:10:04.451Z ----------------------------------
+[tool result] ok (156 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:10:08.429Z -----------------------------
+Verifying that grep works verbatim before I enshrine it in CLAUDE.md:
+
+--- ASSISTANT  2026-09-05T15:10:10.232Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git grep -inE "AIza[0-9A-Za-z_-]{25,}|AQ\.[0-9A-Za-z_.-]{30,}|\bpa-[0-9A-Za-z_-]{30,}|sk-or-v1-[0-9a-f]{20,}" - ...
+
+--- USER  2026-09-05T15:10:12.740Z ----------------------------------
+[tool result] ok (28 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:10:20.426Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git diff CLAUDE.md && git add CLAUDE.md && git commit -F - <<'MSGEOF' docs: the export bullet needs the rerun c ...
+
+--- USER  2026-09-05T15:10:22.736Z ----------------------------------
+[tool result] ok (1552 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-05T15:10:29.457Z -----------------------------
+Done — `bc77f80`. The bullet now carries the command, the rerun condition, and the check:
+
+> **Export AI chat logs to `ai_usage/` as you go** — `python ai_usage/export_logs.py`, one `.txt` per session, deterministic and safe to rerun. **Rerun it before submission with every other Claude Code window closed.** A session that is still open keeps appending to its `.jsonl`, so it exports truncated mid-conversation; three of the twelve were live during the 5 Sep export. Then check the export with `git grep -inE "AIza…|AQ\.…|\bpa-…|sk-or-v1-…" -- ai_usage/`, which must return nothing. Do not use a bare `sk-` pattern — it matches `<task-notification>` and gives a false alarm every time.
+
+I ran that grep verbatim before committing it — exit 1, no matches. A documented check that nobody has executed is worth less than no check, since the first person to run it and see noise will stop trusting it.
+
+Three commits now on `main`: `b17ad1e` (the deliverable), `2a4b4ae` (rotation date), `bc77f80` (this). Working tree still holds the other session's in-progress work on `src/query/` and `src/ui/` — untouched throughout.

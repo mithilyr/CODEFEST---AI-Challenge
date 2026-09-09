@@ -5,8 +5,8 @@ SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
 Session id      : c7ca46cc-35fd-4233-9e70-85bbc54654a4
 Source          : c7ca46cc-35fd-4233-9e70-85bbc54654a4.jsonl
 First activity  : 2026-08-31T07:51:39.642Z
-Last activity   : 2026-09-02T06:36:38.260Z
-Dialogue turns  : 719   (of 1616 raw records)
+Last activity   : 2026-09-07T16:23:13.483Z
+Dialogue turns  : 728   (of 1661 raw records)
 Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant
 Git branch      : HEAD
 Assistant       : Claude Code (Anthropic)
@@ -3004,3 +3004,62 @@ I also caught a stray non-English token I'd fat-fingered into the stopword list.
 <status>stopped</status>
 <summary>No completion record was found for this background shell command from the previous session. It may have been stopped (via the UI, Monitor timeout, or agent teardown — these leave no transcript marker), or it may have been running when the previous Claude Code process exited. Check the output file for partial results before assuming it completed.</summary>
 </task-notification>
+
+--- USER  2026-09-07T16:22:00.668Z ----------------------------------
+Continue from where you left off.
+
+--- ASSISTANT  2026-09-07T16:22:00.668Z -----------------------------
+No response requested.
+
+--- USER  2026-09-07T16:22:02.095Z ----------------------------------
+Is delphi better than what I made?
+
+--- ASSISTANT  2026-09-07T16:22:22.236Z -----------------------------
+Checking both repos before answering — yours has moved since I last touched it, and theirs may have too.
+
+--- ASSISTANT  2026-09-07T16:22:24.358Z -----------------------------
+[tool] Bash: command=gh api "repos/YasiruRF/delphi/commits?per_page=30" --jq '.[] | "\(.commit.author.date[0:16]) \(.commit.message | split("\n")[0])"' 2>&1 | head -30
+
+--- ASSISTANT  2026-09-07T16:22:25.612Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git log --oneline -12 && echo "=== status ===" && git status --porcelain | head -5 && echo "=== ADR count ==="  ...
+
+--- USER  2026-09-07T16:22:32.755Z ----------------------------------
+[tool result] ok (2193 chars, 28 lines, output not included)
+
+--- USER  2026-09-07T16:22:35.843Z ----------------------------------
+[tool result] ok (1013 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-07T16:23:13.483Z -----------------------------
+**No — and the question is slightly off, because Delphi *is* your architecture.**
+
+Their ADR-017 is titled *"Adopt the sister prototype's deterministic architecture wholesale."* On 31 Aug they threw out their own graph-DB plan and ported yours in. `config/` is byte-identical, the 9 answer-key questions are field-for-field identical. You're comparing your work to a fork of your work.
+
+## The one thing they have that you don't
+
+**Prose extraction.** Between 31 Aug and 2 Sep they built an "AI reading assistant" that turns prose claims into Facts and merges them into the same graph the router walks — commits literally titled *"ai is reading through half the books"* → *"ai read all books"*.
+
+Your `docs/limitations.md` says plainly: *"Prose relations are invisible to the graph. It reads infoboxes only."* That's a real capability gap.
+
+**But it may not matter for scoring.** Your own `eval/completeness.py` reports **0 recall defects across all 9 scoreable questions** — the infobox-only graph already reaches every document the answers need. Their prose layer buys coverage you have no measured demand for.
+
+## Where you're clearly ahead
+
+1. **Measured routing.** You have 55 independently-authored questions, a frozen set, three-arm comparison, guard ablations. They have **no robustness measurement at all** — their router shipped on one worked example.
+2. **Named failure states.** Your `EvidenceStatus` taxonomy + three labelled tiers. Theirs collapses to five statuses with no precision figures.
+3. **Record.** 45 ADRs, 36 failure entries vs their ~23 and 21 — and 30% of the rubric is process.
+4. **Zero dependencies.** They rebuilt the UI on **Streamlit** on 31 Aug — violating their own stated "no framework a teammate would have to defend to a judge." Yours is stdlib.
+5. **Deterministic by default.** Yours can't spend quota or break on a cold network. Theirs needs Docker + a key to demo.
+
+## The thing you should actually care about
+
+**They went quiet on 2 September. That's five days, with the deadline in two.**
+
+Their last two commits are bug fixes to the prose extractor and a Docker packaging bug. Nobody has touched it since.
+
+## What I'd do
+
+Don't merge anything. With two days left, prose extraction is a large, unmeasured change to a system whose numbers you currently trust — and your completeness checker says you don't need it.
+
+Spend the time on the three things that are actually unfinished and *are* graded: the answer key's second-reviewer pass (`1c_000` still disputed), the ≤5-page report, and the video against a warm cache.
+
+Next: run `python -m eval.completeness` and read the `1c_000` dispute — that's the one open item that could change a score.

@@ -5,8 +5,8 @@ SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
 Session id      : 216df882-c78e-4b27-ba88-60d722329c1c
 Source          : 216df882-c78e-4b27-ba88-60d722329c1c.jsonl
 First activity  : 2026-09-05T13:46:45.117Z
-Last activity   : 2026-09-05T14:29:26.640Z
-Dialogue turns  : 78   (of 213 raw records)
+Last activity   : 2026-09-06T08:20:03.286Z
+Dialogue turns  : 139   (of 367 raw records)
 Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant
 Git branch      : HEAD
 Assistant       : Claude Code (Anthropic)
@@ -1637,3 +1637,921 @@ actually run.
 ```
 
 **Next: open a new window, paste Block 1, and answer its Step 0 question about rotating keys — nothing else in `ai_usage/` should be written until that's done.**
+
+--- USER  2026-09-05T20:59:10.594Z ----------------------------------
+Council this: before I proceed with steps 7-9 from above, I have decided that not only the wiki but the codex, chronicles, ephemera, images must also be taken to account.
+Step-by-Step Implementation
+
+1. Targeted Extraction: Implement your ~10 regular verb patterns targeting the Codex and Chronicles to capture the 85 statements and 17 missing relational facts.
+2. Schema Integration: Normalize these extracted facts directly into your existing `EvidenceUnit` pipeline so they populate the graph as valid edges alongside the Wiki infoboxes.
+3. Audit & Measure: Document this addition as ADR-030: Cross-Collection Prose Relation Ingestion. Contrast your baseline (7.5% coverage) against your final architecture ($\approx 100\%$ relational coverage across all collections) in your report.
+
+--- ASSISTANT  2026-09-05T20:59:22.568Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== LOG ===" && git log --oneline | head -12 && echo "" && echo "=== STATUS ===" && git status --short |  ...
+
+--- USER  2026-09-05T20:59:25.177Z ----------------------------------
+[tool result] ok (1346 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-09-05T20:59:25.462Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== 7.5% ===" && grep -rn "7\.5%\|7\.5 %" --include="*.md" --include="*.py" --include="*.json" . 2>/dev/n ...
+
+--- USER  2026-09-05T20:59:55.680Z ----------------------------------
+[tool result] ok (398 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-05T20:59:58.811Z -----------------------------
+You've hit your session limit · resets 5:20am (Asia/Colombo)
+
+--- USER  2026-09-05T23:51:34.930Z ----------------------------------
+I hit my usage limit while you were working, but it has reset now. Please continue from where you left off.
+
+--- ASSISTANT  2026-09-05T23:51:46.755Z -----------------------------
+Picking up where I stopped. Blocks 1–6 landed — and I need to read one ADR before the council runs, because it already decided this question.
+
+--- ASSISTANT  2026-09-05T23:51:47.399Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '2330,2456p' docs/decisions.md
+
+--- USER  2026-09-05T23:51:47.708Z ----------------------------------
+[tool result] ok (6359 chars, 127 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:52:05.918Z -----------------------------
+ADR-027 already answers this — with measurements. Let me pull the two newest items before framing the council.
+
+--- ASSISTANT  2026-09-05T23:52:06.957Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^## F-03" docs/failures.md && echo "=== F-031 ===" && sed -n "$(grep -n '^## F-031' docs/failures.md | ...
+
+--- USER  2026-09-05T23:52:12.726Z ----------------------------------
+[tool result] ok (3112 chars, 59 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:52:28.262Z -----------------------------
+Framing the council. Your proposal contradicts a measurement already in your repo, so I'm putting the actual numbers in front of the advisors rather than the premise.
+
+--- ASSISTANT  2026-09-05T23:52:57.917Z -----------------------------
+[tool] Agent: prompt=You are The Contrarian on an LLM Council. You actively look for what's wrong, what's missing, what will fail. You assume the proposal has a fatal flaw and try t ...
+
+--- ASSISTANT  2026-09-05T23:53:16.978Z -----------------------------
+[tool] Agent: prompt=You are The First Principles Thinker on an LLM Council. You ignore the surface-level question and ask "what are we actually trying to solve here?" You strip awa ...
+
+--- USER  2026-09-05T23:53:23.970Z ----------------------------------
+[tool result] ok (1896 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:53:35.452Z -----------------------------
+[tool] Agent: prompt=You are The Expansionist on an LLM Council. You look for upside everyone else is missing. What could be bigger? What adjacent opportunity is hiding? What's bein ...
+
+--- USER  2026-09-05T23:53:37.794Z ----------------------------------
+[tool result] ok (1915 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:53:53.864Z -----------------------------
+[tool] Agent: prompt=You are The Outsider on an LLM Council. You have zero context about this team, their field, or their history. You respond purely to what's in front of you. You  ...
+
+--- USER  2026-09-05T23:53:59.563Z ----------------------------------
+[tool result] ok (1932 chars, 13 lines, output not included)
+
+--- USER  2026-09-05T23:54:15.256Z ----------------------------------
+[tool result] ok (1723 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:54:15.622Z -----------------------------
+[tool] Agent: prompt=You are The Executor on an LLM Council. You care about one thing: can this actually be done, and what is the fastest path? You ignore theory and big-picture thi ...
+
+--- USER  2026-09-05T23:54:33.355Z ----------------------------------
+[tool result] ok (1959 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:54:43.794Z -----------------------------
+Unanimous rejection — which is exactly when peer review matters most. Running it with an explicit instruction to steelman the proposal.
+
+--- ASSISTANT  2026-09-05T23:55:25.441Z -----------------------------
+[tool] Agent: prompt=You are reviewing an LLM Council's output. All five advisors reached the SAME verdict, which is a groupthink risk — part of your job is to check whether they ar ...
+
+--- ASSISTANT  2026-09-05T23:55:55.333Z -----------------------------
+[tool] Agent: prompt=You are the second of five independent reviewers of an LLM Council's output. Give your own honest read, not a consensus. All five advisors reached the SAME verd ...
+
+--- ASSISTANT  2026-09-05T23:56:23.100Z -----------------------------
+[tool] Agent: prompt=You are the third of five independent reviewers of an LLM Council's output. Give your own honest read, not a consensus. All five advisors reached the SAME verdi ...
+
+--- USER  2026-09-05T23:56:29.035Z ----------------------------------
+[tool result] ok (1782 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:56:48.749Z -----------------------------
+[tool] Agent: prompt=You are the fourth of five independent reviewers of an LLM Council's output. Give your own honest read, not a consensus. All five advisors reached the SAME verd ...
+
+--- USER  2026-09-05T23:56:58.186Z ----------------------------------
+[tool result] ok (2203 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:57:11.509Z -----------------------------
+[tool] Agent: prompt=You are the fifth of five independent reviewers of an LLM Council's output. Give your own honest read, not a consensus. All five advisors reached the SAME verdi ...
+
+--- USER  2026-09-05T23:57:13.528Z ----------------------------------
+[tool result] ok (2490 chars, 13 lines, output not included)
+
+--- USER  2026-09-05T23:57:52.794Z ----------------------------------
+[tool result] ok (1966 chars, 13 lines, output not included)
+
+--- USER  2026-09-05T23:57:56.769Z ----------------------------------
+[tool result] ok (1956 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:58:08.629Z -----------------------------
+Peer review found things the advisors missed. Verifying the two load-bearing claims before I write the verdict.
+
+--- ASSISTANT  2026-09-05T23:58:10.044Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== AUTHORS ===" && git log --format='%an <%ae>' | sort | uniq -c | sort -rn && echo "" && echo "=== TOTA ...
+
+--- USER  2026-09-05T23:58:10.588Z ----------------------------------
+[tool result] ok (88 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:58:12.979Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== Cindervale in corpus ===" && grep -ril "cindervale" ../Ashen_Era_Archive/ 2>/dev/null | head -8 && ec ...
+
+--- USER  2026-09-05T23:58:16.245Z ----------------------------------
+[tool result] ok (1398 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:58:28.533Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.graph.build import build_graph g = build_graph() names = {n.name.lower() ...
+
+--- USER  2026-09-05T23:58:36.737Z ----------------------------------
+[tool result] ok (164 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-05T23:59:17.200Z -----------------------------
+Both claims verified. One of them outranks the architecture question entirely.
+
+## Council Verdict: prose extraction before the deliverables
+
+**Do this first, today: get the other three team members committing real work to the repo.** All **83 of 83 commits** are authored by `mithilyr <mithilrajapakse11@gmail.com>`. CLAUDE.md says a team of four. The challenge doc says commit history "should reflect your team's actual working process across the two weeks," and 15% of the rubric is judged from exactly that history. No architectural decision on this page matters as much, and unlike the extractor, this one expires on Wednesday.
+
+### Where the Council Agrees
+
+Unanimous, 5/5, on the core question: **do not build the extractor before the deliverables.**
+
+- **The headline number is not real.** "7.5% → ≈100% relational coverage" compares two different denominators — corpus-file share against answer coverage. (One reviewer noted even the file-level figure is wrong: 96/415 docs = 23%, not 7.5%.) And "85" appears in your repo as ADR-027's *chronicles attestations on 85 distinct edges* — a corroboration count, relabelled as missing facts. Putting that chart in the PDF builds a trap on the 10% axis that rewards honest analysis.
+- **ADR-027 already ran this experiment.** Deleting the wiki filter yields zero edges. The prose extractor was measured and rejected on 2 Sep. Your own verdict: "more edges was not the constraint."
+- **The cost is unpriced.** Touching the graph invalidates the 49-question harness, the answer key, the architecture SVG, 10 diagram tests, README, CLAUDE.md and every ADR quoting 117/261 — landing the day before you record.
+- **Corroboration is the story you already own and haven't told.** 255 of 261 edges (97.7%) independently named outside the wiki; 555 attestations across codex, chronicles and ephemera. That answers "Connecting Facts Across Thousands of Pages" using all 1,277 pages.
+
+### Where the Council Clashes
+
+**Is F-031 an asset or a landmine?** The Expansionist wants it demoed live as proof of intellectual honesty — 50% of the rubric touched by one bug. Two reviewers pushed back hard: a wrong-but-`SUFFICIENT` answer inside a ≥3-minute *unedited* segment is unrecoverable. **Resolution: put F-031 in the report, not in the live demo.** Same credit, no live risk.
+
+**Does more edges make F-031 worse?** The Contrarian's central claim. One reviewer called it out as asserted, never measured — F-031 is a question-*parsing* failure; edge density changes which wrong entity comes back, not whether the bug fires. Don't use that argument in your report; it won't survive a judge who thinks about it.
+
+### Blind Spots the Peer Review Caught
+
+1. **ADR-027 is partly circular, and you should know that before defending it on stage.** Its "the 4 wrong ones name only wiki pages in `required_evidence`" cannot prove prose adds nothing — `required_evidence` was itself derived from the wiki-built graph. The ADR measured its own inputs. It is still the right decision; the reasoning is narrower than it reads.
+2. **Entity reachability was never measured, and the gap is real.** I verified it: `ephemera/contract_concerning_halvard_cindervale.pdf` exists, there is no `halvard_cindervale.md`, and `halvard cindervale` is **not** among the 117 nodes. An unpublished judge question about that class of entity declines by construction. Nobody has counted how many such entities exist.
+3. **"7/7" is self-graded.** `answer_key.json` is `single_review ×7, draft ×2`, **0 of 9 confirmed**, one reviewer (F-015). Say so in the report before a judge infers it.
+4. **Your own TODO already ranks even *fixing* F-031 below the report, video and team-roles items.** The proposal contradicts the plan you wrote.
+5. **The demo's real failure risk is quota, not coverage** — the planner tier has never run on the frozen set, and the OpenRouter free lineup rotates.
+
+### The Recommendation
+
+**No to the extractor. Yes to the 2-hour read-only version of your instinct.**
+
+Your instinct is right, but mislocalized. The gap is not *edges between existing nodes* — that's 97.7% attested. It's the **node set**, which is bounded by wiki pages. Run a read-only audit under `eval/`: diff capitalised entity mentions in non-wiki text against the 117 graph nodes, and report the count.
+
+- Zero schema change, zero pipeline change, no answer-key re-derivation, no diagram-test cascade.
+- If the number is small, that paragraph is a stronger report claim than 97.7% alone.
+- If it's large, you learned it before a judge did, and it goes in limitations with a number attached.
+- Either way it ships as ADR-030 — **"Cross-collection entity reachability, measured"** — which is the honest version of the ADR you wanted to write.
+
+Timebox: Sunday, one person, dead by Monday noon. `EvidenceStatus.OUTSIDE_STRUCTURED_COVERAGE` already exists and demos this boundary live — your worry is partly shipped and unnoticed.
+
+Optional second cheap item, only if 7/7 still holds after: refuse `SUFFICIENT` when a template match leaves question clauses unconsumed. ~1 hour, converts F-031 into a decline your UI already renders well.
+
+### The One Thing to Do First
+
+Message the other three team members now and get them committing. If the working arrangement genuinely is one person at the keyboard, then say that plainly in the AI Usage Disclosure and the report's contributions section — an explained arrangement is defensible; an unexplained one-author history under a "team of four" claim is what gets asked about in the final round.
+
+**Next: reply with the three team members' names and roles, and I'll write the roster file and the contributions section.**
+
+--- USER  2026-09-06T04:28:37.453Z ----------------------------------
+Give me seperate copy pastable sections to be pasted into multiple context windows for the above tasks to be done. Be thorough with the remaining tasks.
+
+--- ASSISTANT  2026-09-06T04:28:56.430Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== ADRs 24-31 ===" && grep -n "^## ADR-0(2[4-9]|3[0-9])" -E docs/decisions.md; grep -nE "^## ADR-02[4-9] ...
+
+--- USER  2026-09-06T04:28:56.953Z ----------------------------------
+[tool result] ok (1206 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-06T04:28:57.298Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== TODO must-do open items ===" && sed -n '1,80p' docs/TODO.md
+
+--- USER  2026-09-06T04:28:57.492Z ----------------------------------
+[tool result] ok (5092 chars, 81 lines, output not included)
+
+--- ASSISTANT  2026-09-06T04:31:37.121Z -----------------------------
+Verified current state: 83 commits (all one author), ADRs through 028, answer key `single_review ×7, draft ×2, 0 confirmed`, and your TODO already caught the authorship problem today. Two things below are new since your last set.
+
+## Order and dependencies
+
+| # | Task | Why now | Est. | Notes |
+|---|---|---|---|---|
+| 1 | Team authorship + roster | Expires Wed | 30m + ongoing | Do first, today |
+| 2 | Entity reachability audit → ADR-030 | The council's "yes" | 2h | Dead Mon noon |
+| 3 | Planner + OpenRouter housekeeping | Unblocks report §3 | 1h | Small |
+| 4 | Answer-key final status call | Unblocks report §4 | 1h | Decision, not work |
+| 5 | F-031 coverage guard | Optional | 1h | Only if 7/7 holds |
+| 6 | PDF report | The gate | 5h | Needs 1–4 |
+| 7 | Video | The gate | 4h | Needs 6 |
+| 8 | Final packaging | The gate | 2h | Needs all |
+
+Blocks 5 is droppable. Nothing else is.
+
+---
+
+## Block 1 — Team authorship and roster (do first)
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026 AI Competition, sub-track 1B. Deadline 9 Sep 2026 11:30 PM.
+Read CLAUDE.md and docs/TODO.md first.
+
+MEASURED TODAY (6 Sep 2026), verify it yourself with:
+    git log --format='%an <%ae>' | sort | uniq -c
+
+  All 83 commits from 28 Aug to today carry ONE author:
+  mithilyr <mithilrajapakse11@gmail.com>
+
+CLAUDE.md states a team of four. This matters because:
+  - Challenge doc §5.2: "The commits history should reflect your team's actual
+    working process across the two weeks."
+  - Rubric, 15% Human-AI collaboration: judged from the exported chat logs, the
+    AI Usage Disclosure, AND the commit history.
+  - Challenge doc §5.3 requires team member names, roles and contributions.
+  - Challenge doc §4.1: every team member must be able to explain, justify and
+    modify any part of the submission on demand; inability in the final round
+    is disqualifying.
+
+A one-author history cannot evidence four contributors, and rewriting history to
+fabricate authorship is out of the question - it is exactly the misrepresentation
+the integrity rule forbids, and it is detectable.
+
+TASK
+
+1. Ask me for the four team members' full names and what each actually did.
+   Do not invent names, roles, or contributions. Wait for my answer.
+
+2. Determine which of these is true and tell me which you are acting on:
+   (a) The other three have done work that simply was not committed by them.
+       Then: they commit their real remaining work themselves, from now to the
+       deadline, under their own git identity. Even a few genuine commits each -
+       report sections, the reachability audit, demo rehearsal notes, test
+       additions - changes the history from one-author to four-author for the
+       final stretch, honestly.
+   (b) One person genuinely did the implementation and the others contributed
+       in ways git does not capture (review, question authoring, answer-key
+       verification, corpus analysis, presentation).
+       Then: say so plainly in the report and the AI Usage Disclosure. An
+       explained arrangement is defensible. An unexplained one-author history
+       under a "team of four" claim is the first thing a judge asks about.
+
+   In both cases the answer is disclosure, never rewriting.
+
+3. Create `docs/team.md` with: each member's full name, their role, and a
+   specific list of what they contributed. Be concrete - "wrote the cue-based
+   fallback tier and its 30 tests (ADR-019)" not "backend development". Where a
+   contribution is not visible in git, say where it IS visible.
+
+4. Add the same content, compressed, to the report's team section. Cross-check
+   against docs/decisions.md and docs/failures.md so no claimed contribution
+   contradicts the record.
+
+5. Update docs/TODO.md's team item and CLAUDE.md if its team description needs
+   correcting. Commit.
+
+DONE WHEN
+  - docs/team.md exists with four real names, roles and specific contributions
+  - The chosen honest option (a) or (b) is recorded in the report and disclosure
+  - No git history has been rewritten
+```
+
+---
+
+## Block 2 — Entity reachability audit → ADR-030 (timeboxed)
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B - "Connecting Facts Across Thousands of Pages".
+Read CLAUDE.md, docs/architecture.md, and docs/decisions.md ADR-027 first.
+
+HARD TIMEBOX: this dies at Monday 7 Sep, noon, in whatever state it is in. The
+report and the video are unwritten and they are the gate. Do not let this run
+long. If it is not producing a number by then, delete the branch and tell me.
+
+THE QUESTION THIS ANSWERS
+ADR-027 established that the other three collections corroborate edges but
+cannot build them, and shipped a corroboration layer: 255 of 261 edges (97.7%)
+are independently named outside the wiki.
+
+But ADR-027 measured EDGES between existing nodes. Nobody has measured the NODE
+SET. The graph's nodes are bounded by wiki pages, so an entity named only in the
+codex, chronicles or ephemera has no node at all, and a question about it
+declines by construction.
+
+VERIFIED EXAMPLE (reproduce it):
+    ephemera/contract_concerning_halvard_cindervale.pdf exists
+    There is no wiki/halvard_cindervale.md
+    'halvard cindervale' is NOT among the 117 graph nodes
+Meanwhile 'ignatz cindervale' IS a node, because he has a wiki page.
+
+Note ADR-027's reasoning has a narrower base than it reads: its claim that "the
+4 wrong answers name only wiki pages in required_evidence" cannot by itself
+prove prose adds nothing, because `required_evidence` was derived from the
+wiki-built graph. The decision still stands; the evidence for it is thinner than
+the ADR implies, and this audit is what would widen it.
+
+TASK - READ ONLY. Change no pipeline code, no schema, no graph.
+
+1. Write ONE script under `eval/` - e.g. `eval/probes/entity_reachability.py`.
+   It must not import or modify anything in the build path.
+
+2. Extract candidate entity mentions from non-wiki evidence units. Use the same
+   gazetteer surface forms `src/graph/corroborate.py` already uses (ADR-027
+   reused route.py's gazetteer - reuse it again rather than inventing a third
+   scanner), plus capitalised multi-word spans for names the gazetteer has never
+   heard of.
+
+3. Report:
+   - how many distinct candidate entity names appear in non-wiki collections
+   - how many of those resolve to one of the 117 graph nodes
+   - how many do NOT, broken down by collection
+   - a sample of 15 unresolved ones with the document that names them
+   Exact matching only. ADR-011 forbids fuzzy resolution and it holds here.
+
+4. HAND-CHECK the sample. Automated capitalised-span extraction will produce
+   noise - chapter titles, place-name fragments, in-world honorifics. State how
+   many of the 15 are genuinely entities the corpus treats as first-class, and
+   say so honestly. An inflated number is worse than a small true one.
+
+5. Write ADR-030 - "Cross-collection entity reachability, measured". It records:
+   the question, the method, the number, and what you decided to do about it
+   (almost certainly: nothing, three days out - it goes in limitations with a
+   number attached). Note explicitly that EvidenceStatus.OUTSIDE_STRUCTURED_
+   COVERAGE already exists and renders this boundary to the user, so the
+   limitation is disclosed in the product, not just in the docs.
+
+6. Add the number to docs/limitations.md and to the report's limitations
+   section. Commit.
+
+DO NOT
+  - Do not build a prose relation extractor. ADR-027 measured and rejected that
+    on 2 Sep; more edges was not the constraint.
+  - Do not modify the graph. tests/test_diagram.py re-derives every number in
+    the architecture SVG from the live corpus and goes red if the picture goes
+    stale, and the frozen 49-question harness result would need re-running.
+  - Do not put "7.5% coverage" or "100% relational coverage" anywhere. Those
+    numbers do not exist in this repo and compare different denominators.
+
+DONE WHEN
+  - One reproducible command prints the reachability number
+  - ADR-030 records it and the decision
+  - limitations.md carries it
+```
+
+---
+
+## Block 3 — Planner tier and OpenRouter housekeeping
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md, docs/TODO.md, ADR-020 and
+docs/failures.md F-025 first. Two small open items block the report's decisions
+section. Both are decisions, not builds. Budget one hour total.
+
+ITEM 1 - The planner tier is unmeasured.
+docs/TODO.md: "Measure the planner tier. It is currently unmeasured on the
+frozen set - running it there spends daily quota and gives a number that moves
+with OpenRouter's free lineup. Decide whether to spend one measured sweep (and
+cache it) before the report, or to report it as unmeasured."
+
+RECOMMENDATION: report it as unmeasured, and say exactly why. That is a stronger
+technical-judgment story than a number that drifts with a provider's free model
+lineup, and it costs no quota three days out. F-025 - the tier returning a
+schema-valid, name-checked, hop-bounded plan for "What color is the sky in the
+Ashen Era?" and walking it into a confident cited answer - is the reason it is
+off by default, and that reasoning belongs in the report verbatim.
+
+Decide, then write the decision into ADR-029 in docs/decisions.md using the
+existing format: the decision, the alternatives, the measurement or its
+deliberate absence, and the condition under which it would be revisited. Update
+CLAUDE.md's component table and docs/architecture.md's tier table to agree.
+
+ITEM 2 - Re-verify the OpenRouter model rotations before the demo.
+    python -m src.clients.openrouter --verify
+The model list was last verified 1 Sep 2026 and the free lineup rotates. If a
+rotation is dead, fix the list now, not during the recording. Note in TODO that
+this must be re-run the morning of the recording.
+
+ITEM 3 - Close or drop the sister-repo conflict comparison.
+docs/TODO.md still carries "Compare the sister repo's conflict detector against
+src/query/conflict.py (Phase 2 of the comparison; not yet measured - F-024
+showed ours over-fires when used as a general per-edge filter)."
+Three days out, this is almost certainly a drop. If you drop it, do not just
+delete the line - record it as a deliberate descope with the reason, because
+"what we chose not to do and why" is scored under technical judgment. Move it to
+a "descoped" section in TODO.md.
+
+DONE WHEN
+  - ADR-029 records the planner decision
+  - CLAUDE.md and docs/architecture.md agree with it
+  - The OpenRouter rotations are verified and the result is recorded
+  - The sister-repo item is either done or explicitly descoped with a reason
+  - Committed
+```
+
+---
+
+## Block 4 — Answer-key final status call
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md, docs/failures.md F-015, and
+eval/verification/answer_key_review.md first.
+
+THE SITUATION
+eval/answer_key.json verification state, measured: `single_review` x7, `draft`
+x2, and 0 of 9 confirmed. All reviewed entries name the same single reviewer -
+which is F-015 exactly, the failure where one careful reviewer reported "high
+confidence" on an answer the corpus gave fourteen valid values for.
+
+All nine answers were re-derived on 5 Sep (commit 7204f87, which also found two
+incomplete conflict inventories). Recall is independently corroborated:
+`python -m eval.completeness` reports 0 defects. What is outstanding is
+precision/semantic review by a SECOND human.
+
+WHY THIS BLOCKS THE REPORT
+The headline "7/7 dev 1B questions answered correctly" is graded against this
+key. A judge who reads eval/answer_key.json sees 0 confirmed. If the report
+quotes 7/7 without qualifying it, the judge finds the qualification themselves,
+which is the worst ordering.
+
+TASK - THIS IS A DECISION, NOT A BUILD. Budget one hour.
+
+1. Determine whether a genuine second human reviewer is available before the
+   deadline. Ask me. Do not mark anything two-person verified that was not
+   actually reviewed by a second person - a falsely labelled double review is an
+   integrity problem the other three team members can be asked about in the
+   final round.
+
+2. If a second reviewer IS available: run them through
+   eval/verification/answer_key_review.md, have them independently re-derive
+   each answer from the primary documents WITHOUT reading the recorded answer
+   first, update `verification.status` per entry honestly, and re-run:
+       python -m eval.run_eval --checkpoint baseline
+       python -m comparison.harness
+   If any headline number moved, propagate it to CLAUDE.md, README.md,
+   docs/architecture.md and the report. CLAUDE.md warns the 35/49 figure has
+   already moved twice in opposite directions - never quote it from memory.
+
+3. If a second reviewer is NOT available: keep PROVISIONAL, and write ONE
+   paragraph for the report that states plainly:
+     - the key is single-reviewer, 0 of 9 confirmed
+     - recall is independently corroborated by eval/completeness.py, 0 defects
+     - therefore 7/7 is a self-graded result on a key the team authored, and
+       the honest external number is the frozen 49-question comparison
+     - F-015 is why the team knows this matters
+   Volunteering this is worth more than the 7/7 it qualifies.
+
+4. Whichever path: the report must never quote 7/7 without 35/49 beside it.
+   That is already CLAUDE.md's standing rule.
+
+DONE WHEN
+  - Every entry's verification.status reflects reality
+  - You can state the key's status in one sentence for the report
+  - Any moved number is propagated to all four docs that quote it
+```
+
+---
+
+## Block 5 — F-031 coverage guard (optional, droppable)
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read docs/failures.md F-031 first, and
+docs/TODO.md - which already ranks this as STRETCH, only after the report,
+video and team-roles items land. Respect that ordering. If those are not done,
+close this window and go do them.
+
+THE DEFECT (reproduce it)
+    python -m src.query.engine "Which war was won by the faction that Hesper Wrenfield's mentor belongs to?"
+    -> status sufficient, values ('The War of Endless Vigil',),
+       template victory_membership, chain ('member_of', 'victor_of')
+The correct answer is The War of Drowned Light, via
+mentor_of -> member_of -> victor_of.
+
+The question contains the two-hop shape `member_of -> victor_of` that
+`victory_membership` matches. The template fired, resolved the start entity to
+Hesper Wrenfield, and walked two hops FROM HESPER - silently answering "which
+war did Hesper's own faction win", a different question. The mentor hop was
+never walked. Nothing in the router asks whether the template consumed the whole
+question.
+
+WHY IT MATTERS MORE THAN A WRONG ANSWER
+It returns EvidenceStatus.SUFFICIENT. Every other failure mode in this system
+declines - no_template_match, relation_unavailable, no_path, fallback_ambiguous
+- and ADR-026 made the UI render declines as inspectable results. This is the
+only measured case of the engine being confidently wrong, against a project
+whose headline claim is "deterministic-first, declines rather than guesses."
+
+THE FIX
+Refuse SUFFICIENT when a matched template leaves relation cues in the question
+unconsumed. Concretely: after a template matches, check whether the question
+carries relation vocabulary (from config/relations.yaml's `cues:` keys, which
+ADR-024 declared separately from field names) that the matched chain does not
+cover. If it does, decline with a named status rather than answering.
+
+CONSTRAINTS
+  - This sits in ROUTING, which the 7/7 dev result depends on. Run
+    `python -m pytest` and `python -m comparison.harness` before and after and
+    diff the numbers.
+  - GATE: if 7/7 on the dev 1B questions does not still hold after the change,
+    revert it. Do not trade a measured result for an unmeasured improvement
+    three days out.
+  - If the frozen 49-question numbers move, that is not automatically bad -
+    but it must be re-measured and propagated to CLAUDE.md, README.md,
+    docs/architecture.md and the report, and you must have time to do that.
+  - eval/multihop_3hop_draft.json exists and is explicitly "DRAFT - NOT VERIFIED
+    BY ANYONE", derived by an AI assistant from the built graph. Do not promote
+    it into answer_key.json and do not quote numbers from it as measured.
+
+IF IT WORKS
+Write it up as an ADR and amend F-031 to record the fix and what it cost.
+
+IF IT DOES NOT WORK IN ONE HOUR
+Revert and stop. F-031 as an honestly logged, deliberately unfixed defect is
+already worth real credit under technical judgment - the log entry explains the
+ordering ("three days from the deadline, with the report and video unwritten,
+the ordering is not close"), and that reasoning is exactly what the 10% criterion
+asks for.
+
+DONE WHEN
+  - Either the guard ships with 7/7 intact and all numbers re-propagated
+  - Or the branch is reverted and F-031 stands as written
+```
+
+---
+
+## Block 6 — The ≤5-page PDF report
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md, docs/architecture.md,
+docs/report-outline.md (already structured as an evidence register with a page
+budget - follow it) and docs/report-draft.md first.
+
+DELIVERABLE: one PDF, maximum 5 pages, containing ALL of:
+  1. Problem statement and chosen sub-track
+  2. Solution overview and architecture, WITH the diagram
+  3. Key technical decisions and why
+  4. What works, what doesn't, limitations - including approaches that failed
+  5. AI Usage Disclosure
+  6. Team member names, roles, contributions
+  7. The unlisted YouTube link, pasted at the top
+Missing any one makes the submission incomplete, and incomplete submissions are
+not evaluated.
+
+WHAT TO LEAD WITH - in this order
+
+(a) The honest routing number. Four templates answer 7/7 dev 1B questions, and
+    the same templates match no route shape on 35 of 49 independently authored
+    questions frozen before either router ran; on the 21 novel ones, one.
+    CLAUDE.md's standing rule: never quote 7/7 without 35/49 beside it.
+    Re-derive both with `python -m comparison.harness` before writing them.
+    Also state that 7/7 is graded against a team-authored key that is
+    single-reviewer, 0 of 9 confirmed (see the answer-key task) - volunteering
+    that is worth more than the 7/7 it qualifies.
+
+(b) The baseline comparison. A competent Voyage+Gemini vector RAG scores 2/7
+    correct and 0/9 COMPLETE EVIDENCE on 1B - not one question retrieved every
+    document its answer needs, and 3 of 7 reached neither required document.
+    That number is why the graph exists. Reproduce with
+    `python -m eval.run_eval --checkpoint baseline` before quoting.
+
+(c) The cross-collection story, stated precisely. 255 of 261 edges (97.7%) are
+    independently named outside the wiki - codex 416 attestations on 238 edges,
+    chronicles 114 on 85, ephemera 25 on 23 (ADR-027, as amended by ADR-028).
+    Quote 255/261, not the superseded 255/267 or 95.5%.
+    CRITICAL: co-mention is NOT proof. ADR-027 is explicit that a passage naming
+    both ends is evidence the archive discusses them together, not a second
+    assertion of the relation, and a test forbids the words "confirms" and
+    "proves" in the rendered page. Write it the same way in the report. Do not
+    let this become "97.7% verified".
+
+FORBIDDEN IN THIS REPORT
+  - "7.5% coverage" and "~100% relational coverage". Neither number exists in
+    this repo, and they compare different denominators (corpus-file share vs
+    answer coverage). A judge who opens ADR-027 finds the team's own measurement
+    contradicting the team's own report.
+  - Any number quoted from memory. CLAUDE.md warns several have moved more than
+    once, in opposite directions, for legitimate reasons.
+
+SECTION 4 MATERIAL - the strongest failures to distil (docs/failures.md is 53 KB
+and nobody will read it; it only scores if it reaches this PDF):
+  - F-031: the only measured case of the engine being confidently wrong - a
+    template matched a two-hop shape inside a three-hop question and returned
+    SUFFICIENT. Include the mechanism AND the decision not to fix it three days
+    out, with the reasoning. That is precisely what "honest analysis of
+    trade-offs, failures and limitations" asks for.
+  - F-025: a validated plan that was well-formed, relevant to nothing, and
+    confidently wrong - and why the LLM tier is now opt-in.
+  - F-016: trusting a read-only corpus stayed read-only; cost 36 files.
+  - F-015: a single careful reviewer.
+  - F-008: an extractor that found zero conflicts corpus-wide and reported full
+    confidence - silent failure.
+Plus the ADR-013 CORRECTION, where the team's own earlier conclusion was
+overturned by measurement and left visible in the record rather than edited out.
+
+SCOPE TO DECLARE IN YOUR OWN WORDS, not in a footnote
+The graph is built from wiki infobox rows: `if unit.collection == "wiki":` in
+src/graph/build.py. State why (only wiki pages carry infobox pipe tables;
+deleting the filter yields zero edges - measured), what was built instead (the
+corroboration layer), and the entity-reachability number if the audit produced
+one. A declared boundary is forgiven; a discovered one is not.
+
+DIAGRAM
+Embed docs/diagrams/architecture.svg. Add one line under it: every number in it
+is re-derived from the live corpus by tests/test_diagram.py, which goes red if
+the picture goes stale. That is a credibility signal worth its space.
+
+TEAM SECTION
+Use docs/team.md. If the team's working arrangement means one person authored
+all commits, say so plainly and explain how the others contributed - see the
+authorship task. Do not let the report imply four committers if git shows one.
+
+PROCESS
+1. Draft in docs/report.md first. Show me before converting.
+2. Convert to PDF. Verify <= 5 pages and that the diagram is legible.
+3. Commit the markdown source and the PDF.
+
+DONE WHEN
+  - All seven required elements present
+  - Every number re-derived today, not remembered
+  - <= 5 pages
+```
+
+---
+
+## Block 7 — Video
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Read CLAUDE.md first.
+
+DELIVERABLE: one video, 10 minutes MAXIMUM, uploaded to YouTube as UNLISTED
+(not public, not private). At least 3-4 minutes must be a live, UNEDITED screen
+recording of the working prototype on real inputs. Videos over 10 minutes or
+without a genuine live segment are penalised. The upload timestamp is checked.
+The link goes at the top of the report.
+
+BEFORE RECORDING - non-negotiable
+  - CLAUDE.md's rule: NEVER record against a cold cache. Run the ingest, the
+    graph build, and every demo question once first.
+  - Re-run `python -m src.clients.openrouter --verify`. The free model lineup
+    rotates and a dead rotation during recording is a re-shoot.
+  - Run `python -m pytest` and confirm green.
+  - Decide whether the demo runs with or without `--with-model`. The
+    deterministic path needs no API key and cannot fail on quota. Default to
+    without.
+
+TIMED SHOT LIST - write this before touching the recorder
+    0:00-1:00  The problem: one question, two documents, no shared vocabulary
+    1:00-1:30  The baseline: 2/7 correct, 0/9 complete evidence
+    1:30-2:30  Architecture on the diagram; the three declining tiers
+    2:30-6:30  LIVE DEMO - one continuous unedited take
+    6:30-8:00  The honest numbers: 7/7 vs 35/49, and what they mean
+    8:00-9:00  What we chose not to build, and why; limitations
+    9:00-9:30  Team, roles, AI usage
+Adjust freely, but the live segment must be one continuous unedited take of at
+least 3-4 minutes and the total must not exceed 10:00.
+
+THE LIVE SEGMENT - what to show
+  1. A question that works, showing the full evidence path: both documents, both
+     hops, source tiers, citations. Suggested: "Which accord was ultimately won
+     by the faction of which Ederon Fellgard is a member?" - two hops, no shared
+     vocabulary, reverse lookup on hop two.
+  2. Cross-collection attestation on a hop - the "also attested in N other
+     documents" surface. Say the exact wording out loud: these name both ends of
+     the hop, they are not a second assertion of it. Do not say "confirms" or
+     "proves"; a test in this repo forbids those words on the page and you
+     should not undo that on camera.
+  3. The conflict surface (src/query/conflict.py, rendered by
+     src/ui/render.py's _conflict_block). Two sources disagreeing, both cited.
+  4. AT LEAST ONE DELIBERATE DECLINE. Type a question the system refuses and
+     show that ADR-026 renders what it DID establish - the resolved entities,
+     their neighbourhood, the citations, and what it could not join. Frame it:
+     "our system tells you when it cannot answer, and shows you what it found."
+     A judge will find the declines in 30 seconds anyway; showing them first is
+     the credibility moment.
+
+DO NOT DEMO F-031 LIVE
+The three-hop question "Which war was won by the faction that Hesper Wrenfield's
+mentor belongs to?" returns EvidenceStatus.SUFFICIENT with the WRONG war. It is
+the only case of the engine being confidently wrong. It belongs in the REPORT,
+where you control the framing, not inside an unedited live segment where a wrong
+answer is unrecoverable. Discuss it in the presentation portion if you want the
+credit - do not type it into the demo.
+
+SAY THE UNFLATTERING NUMBER OUT LOUD
+"Our four templates answer 7 of 7 development questions. On 49 questions written
+independently and frozen before either router ran, they match no route shape on
+35." Volunteering your own adverse measurement is worth more than polish.
+
+REHEARSE
+Twice, minimum, before recording. Every team member should be able to answer any
+question about any part - that rule is disqualifying in the final round, so use
+the rehearsal to find who cannot.
+
+THEN
+Record. Re-record once if needed. Upload unlisted. Verify the link opens in a
+private browser window. Paste it at the top of the report.
+
+DONE WHEN
+  - <= 10:00 with a >= 3-4 min continuous unedited live segment
+  - The live segment shows a working answer, cross-collection attestation, a
+    conflict, and a decline
+  - Uploaded unlisted before 9 Sep 11:30 PM, link in the report
+```
+
+---
+
+## Block 8 — Final packaging and submission
+
+```
+Working directory: E:\AI Challenge CodeFest\ashen-assistant
+
+CONTEXT
+SLIIT Codefest 2026, sub-track 1B. Final submission, due 9 Sep 2026 11:30 PM.
+Incomplete submissions are not evaluated at all. Read CLAUDE.md and
+docs/TODO.md first.
+
+Three deliverables: ZIP of the complete git repo INCLUDING full history; the
+<= 5-page PDF report; the unlisted YouTube link (at the top of the report).
+
+DO THIS FIRST - the AI chat log re-export
+docs/TODO.md records a known defect in the 5 Sep export: a live session's .jsonl
+is still being appended to, and three of the twelve transcripts were truncated
+because those Claude Code windows were open during the run.
+
+  1. CLOSE EVERY OTHER CLAUDE CODE WINDOW. All of them.
+  2. Run `python ai_usage/export_logs.py`
+  3. Re-run the secret grep documented in CLAUDE.md over ai_usage/
+  4. Note that the window you run this from cannot capture its own session
+     completely. Run it from a window you are about to close, and accept that
+     the final session is partial - do not fabricate the remainder.
+
+PRE-FLIGHT CHECKS - run every one, report pass/fail for each
+
+REPOSITORY
+  [ ] `git status` clean
+  [ ] `git log --oneline | wc -l` - history intact and pushed to
+      github.com/mithilyr/CODEFEST---AI-Challenge
+  [ ] `git log --format='%an' | sort | uniq -c` - matches what docs/team.md and
+      the report say about how the team worked. These must not contradict.
+  [ ] .env NOT committed: `git log --all -p -- .env` returns nothing
+  [ ] No key in history:
+      git grep -iE "sk-[A-Za-z0-9]{20}|AIza[A-Za-z0-9_-]{30}|sk-or-v1" $(git rev-list --all)
+      If this hits, rotate at the provider immediately and tell me. Do not
+      rewrite history this close to the deadline without telling me first.
+  [ ] Corpus (~123 MB) NOT committed; data/ gitignored
+  [ ] `python -m src.ingest.integrity` - 341 files, 0 modified
+  [ ] `python -m pytest` green - report the count
+  [ ] ai_usage/ holds the re-exported .txt sessions + ai-usage-disclosure.md
+  [ ] configuration-example/ populated
+  [ ] docs/ has architecture.md, decisions.md, failures.md, limitations.md,
+      team.md, diagrams/
+  [ ] requirements.txt complete and pinned
+
+CONSISTENCY - every number must agree across all five places
+  Re-derive, then check README.md, CLAUDE.md, docs/architecture.md, the report
+  and the architecture SVG all say the same thing for:
+    entities / edges (117 / 261 as of ADR-028)
+    corroborated edges (255 of 261, 97.7% - NOT 255/267 or 95.5%)
+    test count
+    the routing figures (7/7 dev, 35/49 frozen - never one without the other)
+    the answer key's verification status
+  `python -m pytest tests/test_diagram.py` pins the SVG's numbers to the live
+  corpus; if it is red, the picture is stale.
+
+COLD RUN
+  [ ] Clone fresh to a temp dir, new venv, follow README literally with no
+      knowledge from this session. Must reach a working demo. Report breakages.
+
+REPORT
+  [ ] <= 5 pages, all seven required elements present
+  [ ] YouTube link at the top, opens from a logged-out browser
+  [ ] Contains no "7.5%" or "100% relational coverage"
+
+VIDEO
+  [ ] <= 10:00, >= 3-4 min continuous unedited live segment
+  [ ] UNLISTED - verify in a private window
+  [ ] Upload timestamp before the deadline
+
+PACKAGE
+  [ ] ZIP the repo INCLUDING the .git directory - the history is a graded
+      deliverable; a ZIP of the working tree alone forfeits part of the 15%
+  [ ] Verify: extract the ZIP elsewhere and run `git log` inside it
+  [ ] Name it <Team_Name>.zip
+
+SUBMIT
+  [ ] Submit via the link in the competition email
+  [ ] TARGET 6:00 PM on 9 Sep, not 11:29 PM
+  [ ] Confirm receipt
+
+Report every check as pass or fail. Do not mark anything passed that you did not
+actually run.
+```
+
+**Next: open a window, paste Block 1, and have it ask you for the four names — everything in Blocks 6 and 8 depends on that answer.**
+
+--- USER  2026-09-06T04:34:27.268Z ----------------------------------
+Does this implement the openrouter and  LLM fallback
+
+--- ASSISTANT  2026-09-06T04:34:39.186Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== FILES ===" && wc -l src/clients/openrouter.py src/query/planner.py src/query/synthesis.py src/query/f ...
+
+--- USER  2026-09-06T04:34:39.533Z ----------------------------------
+[tool result] ok (1968 chars, 43 lines, output not included)
+
+--- ASSISTANT  2026-09-06T04:34:40.459Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== planner.py head ===" && sed -n '1,40p' src/query/planner.py && echo "" && echo "=== tests ===" && gre ...
+
+--- USER  2026-09-06T04:34:40.771Z ----------------------------------
+[tool result] ok (2120 chars, 47 lines, output not included)
+
+--- ASSISTANT  2026-09-06T04:35:04.044Z -----------------------------
+Both are already implemented and shipped. My blocks don't implement them — Block 3 only decides how to *report* the planner.
+
+## What's already in the repo
+
+| Component | File | Lines | Tests |
+|---|---|---|---|
+| OpenRouter provider | `src/clients/openrouter.py` | 432 | 15 |
+| LLM planner (Tier 3) | `src/query/planner.py` | 316 | 24 |
+| Prose synthesis | `src/query/synthesis.py` | 186 | 10 |
+| Cue fallback (Tier 2) | `src/query/fallback.py` | 406 | 30 |
+
+**OpenRouter** — model rotation, response cache, structured output, timeout, retry classification. Verified live against the models API on 1 Sep: 420 models, 18 free. It splits the rotations because only 4 of those 18 advertise `structured_outputs`: `PLANNER_MODELS` uses only those, `PHRASING_MODELS` uses any free model. Gemini stays the OCR client so the query path never competes with OCR for the same daily allowance.
+
+**Planner** — emits a `QueryPlan` (start entity + ordered relation list) and nothing else. Never sees the graph contents, never receives evidence, never writes an answer. `validate_plan` rejects a plan naming an unknown entity or relation outright rather than repairing it — a returned `ederon_fellgar` gets nothing, not `ederon_fellgard`. Every call is counted via `PlannerOutcome.escalated`/`.model` and `OpenRouterPool.usage`.
+
+## One thing worth separating
+
+"LLM fallback" is Tier 3 only. **Tier 2 — the cue fallback — is deterministic**, not a model. Three tiers: templates → cue fallback (deterministic) → LLM plan. Only the third calls out.
+
+## What is actually open
+
+The planner is **off by default** (`use_planner=False`) and **unmeasured on the frozen 49-question set**. That's the open item, and it's a reporting decision, not an implementation one:
+
+1. Report it as unmeasured with the reason (recommended — the number drifts with OpenRouter's free lineup, and a sweep costs quota three days out), or
+2. Spend one cached sweep and publish whatever comes back.
+
+Block 3 covers exactly that, plus re-running `python -m src.clients.openrouter --verify` before the demo, since the free lineup rotates.
+
+**Next: run `python -m src.clients.openrouter --verify` — it prints what's live now and flags any rotation that has disappeared since 1 Sep.**
+
+--- USER  2026-09-06T08:01:39.770Z ----------------------------------
+run the openrouter verify
+
+--- ASSISTANT  2026-09-06T08:01:52.051Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.clients.openrouter --verify 2>&1 | tail -40
+
+--- USER  2026-09-06T08:01:57.144Z ----------------------------------
+[tool result] ok (243 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-06T08:02:10.150Z -----------------------------
+**All rotations live. Nothing to fix.**
+
+```
+OpenRouter: 431 models, 19 free-tier
+free models advertising structured_outputs: 4
+  phrasing_missing             none
+  planner_missing              none
+  planner_without_structured   none
+```
+
+Every model id in both tuples still resolves, and every planner model still advertises `structured_outputs` — so the schema-constrained plan path is intact.
+
+**Drift since the 1 Sep check:** 420 → 431 models, 18 → 19 free. The structured-output count held at 4, which is the one that matters — that's the constraint that forced the split rotations in the first place. Your key works, so the 5 Sep rotation is good.
+
+Two things follow:
+
+1. **Block 3's OpenRouter item is done.** Record the result and today's date in `docs/TODO.md` and ADR-020's verification note — the ADR currently says "verified live 2026-09-01," and a judge running `--verify` should find a date close to submission.
+2. **Re-run it on recording day.** The lineup moved by 11 models in five days. Same command, morning of the shoot.
+
+**Next: paste this output into a commit — `docs: re-verify OpenRouter rotations 6 Sep, 431 models / 19 free / 4 structured` — so the check is in the history judges read.**
+
+--- USER  2026-09-06T08:20:00.623Z ----------------------------------
+Does that mean I have a graph first and vector fallback system
+
+--- USER  2026-09-06T08:20:03.286Z ----------------------------------
+[Request interrupted by user]

@@ -1,0 +1,427 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : d35dae2c-f1b1-461a-8dae-ce3764b9ff14
+Source          : d35dae2c-f1b1-461a-8dae-ce3764b9ff14.jsonl
+First activity  : 2026-09-08T09:06:37.635Z
+Last activity   : 2026-09-08T09:39:47.381Z
+Dialogue turns  : 130   (of 365 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant, e:\AI Challenge CodeFest
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-08T09:06:37.678Z ----------------------------------
+<ide_opened_file>The user opened the file e:\AI Challenge CodeFest\ashen-assistant\README.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+Now the next main task is, I need to learn and understand the full code as well as teach the other teammates as well indepth on how everything works. For this the best case would be a detailed yet explained sections in simple english of an architechture diagram. 
+
+The areas we need to know is what exactly has been implemented, what libraries and traversal methods are used, API keys, LLM calling, the full breakdown from top to bottom. This file has to be gitignored and this is purely to understand as well as teach my teammates. Ask me questions for clarity.
+
+--- ASSISTANT  2026-09-08T09:06:39.873Z -----------------------------
+I'll start by exploring the codebase so my questions are grounded in what's actually there.
+
+--- ASSISTANT  2026-09-08T09:06:41.570Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest" && ls -la && echo "--- TREE ---" && find . -type d -name node_modules -prune -o -type d -name .git -prune -o -type d -name __pycac ...
+
+--- USER  2026-09-08T09:06:42.925Z ----------------------------------
+[tool result] ok (3668 chars, 71 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:06:46.291Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && ls -la && echo "=== SRC TREE ===" && find . -type d \( -name node_modules -o -name .cache -o -name .git -o -nam ...
+
+--- USER  2026-09-08T09:06:46.544Z ----------------------------------
+[tool result] ok (7212 chars, 200 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:06:49.827Z -----------------------------
+Good — substantial codebase. Let me read the existing docs and key source before asking my questions.
+
+--- ASSISTANT  2026-09-08T09:06:50.131Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat CLAUDE.md
+
+--- USER  2026-09-08T09:06:50.276Z ----------------------------------
+[tool result] ok (21899 chars, 278 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:06:53.766Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat docs/architecture.md && echo "===== TEAM.md =====" && cat TEAM.md
+
+--- USER  2026-09-08T09:06:54.001Z ----------------------------------
+[tool result] ok (19342 chars, 375 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:06:59.204Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && wc -l src/*.py src/*/*.py eval/*.py comparison/*.py | sort -n && echo "=== .gitignore ===" && cat .gitignore && ...
+
+--- USER  2026-09-08T09:06:59.899Z ----------------------------------
+[tool result] ok (4605 chars, 138 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:07:10.280Z -----------------------------
+I've read the repo docs and mapped the source (13,933 lines across `src/`, `eval/`, `comparison/`). Before I write, four things that would change what I produce:
+
+--- ASSISTANT  2026-09-08T09:07:34.924Z -----------------------------
+[tool] AskUserQuestion
+
+--- USER  2026-09-08T09:08:53.615Z ----------------------------------
+[tool result] ok (686 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:08:59.104Z -----------------------------
+Full coverage at function level. Now I'll read the source properly — starting with config, settings and clients.
+
+--- ASSISTANT  2026-09-08T09:09:00.091Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/settings.py src/clients/retry.py; do echo "########## $f ##########"; cat -n "$f"; done
+
+--- USER  2026-09-08T09:09:02.480Z ----------------------------------
+[tool result] ok (10039 chars, 236 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:07.687Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/clients/gemini.py src/clients/embeddings.py; do echo "########## $f ##########"; cat -n "$f"; done
+
+--- USER  2026-09-08T09:09:10.155Z ----------------------------------
+[tool result] ok (25699 chars, 575 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:13.118Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat -n src/clients/openrouter.py
+
+--- USER  2026-09-08T09:09:13.253Z ----------------------------------
+[tool result] ok (19430 chars, 432 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:15.808Z -----------------------------
+Clients done. Now the ingest layer.
+
+--- ASSISTANT  2026-09-08T09:09:17.229Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/ingest/loaders.py src/ingest/dedup.py src/ingest/authority.py; do echo "########## $f ##########"; ...
+
+--- USER  2026-09-08T09:09:19.440Z ----------------------------------
+[tool result] ok (27014 chars, 595 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:23.260Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/ingest/metadata.py src/ingest/pipeline.py; do echo "########## $f ##########"; cat -n "$f"; done
+
+--- USER  2026-09-08T09:09:25.206Z ----------------------------------
+[tool result] ok (24179 chars, 533 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:29.597Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/ingest/ocr.py src/ingest/integrity.py; do echo "########## $f ##########"; cat -n "$f"; done
+
+--- USER  2026-09-08T09:09:31.863Z ----------------------------------
+[tool result] ok (27320 chars, 594 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:35.237Z -----------------------------
+Ingest done. Now the graph layer — the core of the system.
+
+--- ASSISTANT  2026-09-08T09:09:36.010Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/graph/schema.py src/graph/entities.py src/graph/cells.py; do echo "########## $f ##########"; cat  ...
+
+--- USER  2026-09-08T09:09:37.764Z ----------------------------------
+[tool result] ok (27788 chars, 572 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:40.824Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat -n src/graph/build.py
+
+--- USER  2026-09-08T09:09:40.968Z ----------------------------------
+[tool result] ok (22337 chars, 454 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:44.219Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/graph/traverse.py src/graph/corroborate.py; do echo "########## $f ##########"; cat -n "$f"; done
+
+--- USER  2026-09-08T09:09:46.361Z ----------------------------------
+[tool result] ok (21723 chars, 449 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:50.007Z -----------------------------
+Now the query layer — the largest and most important part.
+
+--- ASSISTANT  2026-09-08T09:09:51.432Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/query/__init__.py src/query/resolve.py src/query/evidence.py; do echo "########## $f ##########";  ...
+
+--- USER  2026-09-08T09:09:53.568Z ----------------------------------
+[tool result] ok (24931 chars, 498 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:09:57.561Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat -n src/query/route.py
+
+--- USER  2026-09-08T09:09:57.704Z ----------------------------------
+[tool result] ok (17629 chars, 346 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:02.049Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat -n src/query/engine.py
+
+--- USER  2026-09-08T09:10:02.197Z ----------------------------------
+[tool result] ok (2222 chars, 51 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:06.966Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && sed -n '44,340p' src/query/engine.py | cat -n | sed 's/^\([ 0-9]*\)\t/\1./' | awk '{printf "%d\t%s\n", NR+43, s ...
+
+--- USER  2026-09-08T09:10:09.119Z ----------------------------------
+[tool result] ok (14156 chars, 297 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:12.634Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk 'NR>=340 && NR<=600 {printf "%d\t%s\n", NR, $0}' src/query/engine.py
+
+--- USER  2026-09-08T09:10:14.800Z ----------------------------------
+[tool result] ok (13356 chars, 261 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:18.561Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk '{printf "%d\t%s\n", NR, $0}' src/query/fallback.py
+
+--- USER  2026-09-08T09:10:20.701Z ----------------------------------
+[tool result] ok (22414 chars, 472 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:25.004Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/query/planner.py src/query/conflict.py; do echo "########## $f ##########"; awk '{printf "%d\t%s\n ...
+
+--- USER  2026-09-08T09:10:27.010Z ----------------------------------
+[tool result] ok (21051 chars, 474 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:31.495Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/query/synthesis.py src/query/catalogue.py; do echo "########## $f ##########"; awk '{printf "%d\t% ...
+
+--- USER  2026-09-08T09:10:33.744Z ----------------------------------
+[tool result] ok (22029 chars, 482 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:38.898Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk 'NR<=140 {printf "%d\t%s\n", NR, $0}' src/query/diagnostics.py && echo "...[snip]..." && grep -n "^def \|^c ...
+
+--- USER  2026-09-08T09:10:41.027Z ----------------------------------
+[tool result] ok (6722 chars, 160 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:45.303Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk 'NR>=140 && NR<=351 {printf "%d\t%s\n", NR, $0}' src/query/diagnostics.py
+
+--- USER  2026-09-08T09:10:47.837Z ----------------------------------
+[tool result] ok (8679 chars, 212 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:10:52.607Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in src/baseline/chunker.py src/baseline/index.py src/baseline/rag.py; do echo "########## $f ##########"; ...
+
+--- USER  2026-09-08T09:10:54.849Z ----------------------------------
+[tool result] ok (19550 chars, 503 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:01.065Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk '{printf "%d\t%s\n", NR, $0}' src/ui/server.py && echo "########## view.py head+sigs ##########" && awk 'NR ...
+
+--- USER  2026-09-08T09:11:03.190Z ----------------------------------
+[tool result] ok (19673 chars, 404 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:10.086Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk 'NR<=60 {printf "%d\t%s\n", NR, $0}' src/ui/render.py && echo "--- render sigs ---" && grep -n "^def \|^PAG ...
+
+--- USER  2026-09-08T09:11:12.355Z ----------------------------------
+[tool result] ok (7943 chars, 189 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:15.933Z -----------------------------
+Now the eval/comparison layer and configs.
+
+--- ASSISTANT  2026-09-08T09:11:17.935Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && echo "########## config/relations.yaml ##########" && awk '{printf "%d\t%s\n", NR, $0}' config/relations.yaml | ...
+
+--- USER  2026-09-08T09:11:20.104Z ----------------------------------
+[tool result] ok (10740 chars, 222 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:26.026Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk 'NR>=120 {printf "%d\t%s\n", NR, $0}' config/relations.yaml
+
+--- USER  2026-09-08T09:11:28.645Z ----------------------------------
+[tool result] ok (3747 chars, 81 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:34.415Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && for f in eval/answer_key.py eval/scoring.py eval/harness.py eval/run_eval.py eval/completeness.py comparison/ha ...
+
+--- USER  2026-09-08T09:11:36.980Z ----------------------------------
+[tool result] ok (20765 chars, 478 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:43.818Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && wc -l tests/*.py && echo "--- test counts per file ---" && for f in tests/test_*.py; do n=$(grep -c "^def test_ ...
+
+--- USER  2026-09-08T09:11:47.057Z ----------------------------------
+[tool result] ok (5284 chars, 124 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:51.562Z -----------------------------
+Let me verify the live numbers so the document doesn't quote stale figures.
+
+--- ASSISTANT  2026-09-08T09:11:53.256Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && ls data/ 2>/dev/null && ls .venv/Scripts/python.exe 2>/dev/null && echo "--- corpus check ---" && ls "../Ashen_ ...
+
+--- USER  2026-09-08T09:11:53.605Z ----------------------------------
+[tool result] ok (244 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:11:57.868Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 300 .venv/Scripts/python.exe -m src.graph.build 2>&1 | tail -40
+
+--- USER  2026-09-08T09:12:06.814Z ----------------------------------
+[tool result] ok (969 chars, 29 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:12:12.588Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 300 .venv/Scripts/python.exe -m src.ingest.pipeline 2>&1 | tail -20 && echo "=== TEST COUNT ===" && tim ...
+
+--- USER  2026-09-08T09:12:21.490Z ----------------------------------
+[tool result] ok (418 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:12:25.402Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 300 .venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | grep -E "^[0-9]+ tests|tests collected| ...
+
+--- USER  2026-09-08T09:12:28.830Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:12:33.319Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 300 .venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | grep -iE "collect|error" | tail -5; ech ...
+
+--- USER  2026-09-08T09:12:38.286Z ----------------------------------
+[tool result] ok (20 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:12:43.560Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 590 .venv/Scripts/python.exe -m comparison.harness 2>&1 | tail -45
+
+--- USER  2026-09-08T09:12:52.737Z ----------------------------------
+[tool result] ok (789 chars, 16 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:13:28.669Z -----------------------------
+I have everything I need, with live numbers verified. Writing the document now.
+
+--- ASSISTANT  2026-09-08T09:25:38.278Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat > docs/INTERNALS.md <<'PARTONE' # INTERNALS — how the Ashen Era Assistant actually works **This file is git ...
+
+--- USER  2026-09-08T09:25:40.734Z ----------------------------------
+[tool result] ERROR: Exit code 2 /usr/bin/bash: -c: line 162: unexpected EOF while looking for matching `''
+
+--- ASSISTANT  2026-09-08T09:25:49.481Z -----------------------------
+Heredoc choked on the content. Using Write instead, in pieces.
+
+--- ASSISTANT  2026-09-08T09:26:41.233Z -----------------------------
+[tool] Write: file_path=e:\AI Challenge CodeFest\ashen-assistant\docs\INTERNALS.md
+
+--- USER  2026-09-08T09:26:42.386Z ----------------------------------
+[tool result] ok (154 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:28:10.097Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\e--AI-Challenge-CodeFest\d35dae2c-f1b1-461a-8dae-ce3764b9ff14\scratchpad\part2.md
+
+--- USER  2026-09-08T09:28:11.149Z ----------------------------------
+[tool result] ok (219 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:28:16.948Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat "C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/d35dae2c-f1b1-461a-8dae-ce3764b9ff14/sc ...
+
+--- USER  2026-09-08T09:28:17.129Z ----------------------------------
+[tool result] ok (21 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:30:34.257Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\e--AI-Challenge-CodeFest\d35dae2c-f1b1-461a-8dae-ce3764b9ff14\scratchpad\part3.md
+
+--- USER  2026-09-08T09:30:35.336Z ----------------------------------
+[tool result] ok (219 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:30:41.684Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat "C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/d35dae2c-f1b1-461a-8dae-ce3764b9ff14/sc ...
+
+--- USER  2026-09-08T09:30:41.868Z ----------------------------------
+[tool result] ok (22 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:33:21.866Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\e--AI-Challenge-CodeFest\d35dae2c-f1b1-461a-8dae-ce3764b9ff14\scratchpad\part4.md
+
+--- USER  2026-09-08T09:33:22.932Z ----------------------------------
+[tool result] ok (219 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:33:27.714Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat "C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/d35dae2c-f1b1-461a-8dae-ce3764b9ff14/sc ...
+
+--- USER  2026-09-08T09:33:27.912Z ----------------------------------
+[tool result] ok (22 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:33:34.219Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && grep -n "def test_" tests/test_ui.py | grep -iE "import|architect|thin|reason|no_|forbid" | head -20 && echo "- ...
+
+--- USER  2026-09-08T09:33:34.573Z ----------------------------------
+[tool result] ok (2975 chars, 43 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:33:40.385Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && awk 'NR<=106 {printf "%d\t%s\n", NR, $0}' tests/test_docs.py
+
+--- USER  2026-09-08T09:33:42.954Z ----------------------------------
+[tool result] ok (5187 chars, 106 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:35:37.042Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\e--AI-Challenge-CodeFest\d35dae2c-f1b1-461a-8dae-ce3764b9ff14\scratchpad\part5.md
+
+--- USER  2026-09-08T09:35:38.108Z ----------------------------------
+[tool result] ok (219 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:35:43.542Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat "C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/d35dae2c-f1b1-461a-8dae-ce3764b9ff14/sc ...
+
+--- USER  2026-09-08T09:35:43.810Z ----------------------------------
+[tool result] ok (22 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:35:48.712Z -----------------------------
+Let me run two real traces so §16 shows actual output, not invented output.
+
+--- ASSISTANT  2026-09-08T09:35:50.006Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 300 .venv/Scripts/python.exe -m src.query.engine "To which shadowed redoubt must one journey to examine ...
+
+--- USER  2026-09-08T09:35:58.648Z ----------------------------------
+[tool result] ok (536 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:36:03.676Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 300 .venv/Scripts/python.exe -m src.query.engine "In what way is Halvard Crowhurst connected to the vic ...
+
+--- USER  2026-09-08T09:36:16.555Z ----------------------------------
+[tool result] ok (1078 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:36:20.561Z -----------------------------
+Real traces captured. Writing the final part.
+
+--- ASSISTANT  2026-09-08T09:38:44.309Z -----------------------------
+[tool] Write: file_path=C:\Users\LENOVO\AppData\Local\Temp\claude\e--AI-Challenge-CodeFest\d35dae2c-f1b1-461a-8dae-ce3764b9ff14\scratchpad\part6.md
+
+--- USER  2026-09-08T09:38:45.387Z ----------------------------------
+[tool result] ok (219 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:38:50.966Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && cat "C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/d35dae2c-f1b1-461a-8dae-ce3764b9ff14/sc ...
+
+--- USER  2026-09-08T09:38:51.305Z ----------------------------------
+[tool result] ok (25 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:38:54.864Z -----------------------------
+Now gitignore it and verify nothing breaks.
+
+--- ASSISTANT  2026-09-08T09:38:57.627Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && printf '\n# --- Team teaching notes: internal, not a deliverable. ---\n# docs/INTERNALS.md is a from-scratch wa ...
+
+--- USER  2026-09-08T09:39:00.717Z ----------------------------------
+[tool result] ok (441 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:39:06.894Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && timeout 590 .venv/Scripts/python.exe -m pytest tests/test_docs.py tests/test_diagram.py -q 2>&1 | tail -8
+
+--- USER  2026-09-08T09:39:23.027Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:39:29.706Z -----------------------------
+[tool] Bash: command=cd "e:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import re, pathlib t = pathlib.Path("docs/INTERNALS.md").read_text(encoding=" ...
+
+--- USER  2026-09-08T09:39:32.367Z ----------------------------------
+[tool result] ok (96 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T09:39:47.381Z -----------------------------
+Done. All 358 file links resolve, fences balanced, four Mermaid diagrams, doc-guard tests still green.
+
+**[docs/INTERNALS.md](ashen-assistant/docs/INTERNALS.md)** — 2,984 lines, 22 sections, gitignored ([.gitignore:44](ashen-assistant/.gitignore#L44) with a comment explaining why).
+
+**What's in it**
+
+- **§1–§4** — the sixty-second version, four Mermaid diagrams (system halves, build path, the three declining answer tiers, and a "where an LLM can/cannot reach" map), the seven rules that explain every design decision, and a repo map with line counts.
+- **§5–§14** — function-level walkthrough of every module: config/secrets, clients, ingest, graph, query, UI, baseline, eval, comparison, tests. Each file gets purpose, a table of key functions with clickable `file:line` links, the data structures, and *why* each decision was made with the measurement behind it.
+- **§15** — the consolidated LLM table: four call sites, which are off by default, what each may decide and what it may never touch.
+- **§16** — three end-to-end traces using **real output I ran**, not invented: a clean two-hop answer, the same-tier conflict, and a question that correctly declines.
+- **§17** — every number, what it means, the command to re-derive it, plus the five sentences to say without hedging and a "numbers that have moved" list.
+- **§18** — 18 judge questions with honest answers, grouped by architecture / correctness / components / process.
+- **§19** — 40+ term glossary in plain English (embedding, BFS, cosine similarity, abstention vs denial vs silence, precision, complete evidence…).
+- **§20–§21** — commands annotated with what costs quota, and a five-session teaching plan.
+
+**Numbers I re-derived rather than trusting the docs** (all live, today): 118 entities / 265 edges / 15 relations; 340→317 docs, 30,553 units; **497 tests** (CLAUDE.md says 479 — stale); and from `comparison.harness`: templates miss on **36/49**, shipped system **22 correct / 31 complete evidence**, honest refusal **6/6**. CLAUDE.md's parenthetical trail still ends at 21/29 for arm C; `docs/architecture.md` matches the live 22/31.
+
+**One thing to flag:** `tests/test_docs.py` guards graph counts in six named docs, and INTERNALS.md is deliberately not among them (it's gitignored, so not a deliverable). Its numbers *can* go stale — that warning is in §14 and in the `.gitignore` comment, with the re-derivation commands in §17.

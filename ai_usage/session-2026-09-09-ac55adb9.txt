@@ -1,0 +1,629 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : ac55adb9-919c-431a-90c4-4b833f6e645a
+Source          : ac55adb9-919c-431a-90c4-4b833f6e645a.jsonl
+First activity  : 2026-09-09T05:36:43.769Z
+Last activity   : 2026-09-09T06:08:29.279Z
+Dialogue turns  : 190   (of 412 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant, e:\AI Challenge CodeFest
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-09T05:36:43.800Z ----------------------------------
+Give me a rundown of what is to be done before submission today.
+
+--- ASSISTANT  2026-09-09T05:36:49.111Z -----------------------------
+[tool] Bash: command=ls -la "/e/AI Challenge CodeFest" 2>&1 | head -100
+
+--- USER  2026-09-09T05:36:50.271Z ----------------------------------
+[tool result] ok (609 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:36:54.182Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\Notes.txt
+
+--- USER  2026-09-09T05:36:54.211Z ----------------------------------
+[tool result] ok (121 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:36:54.789Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\Document Corpus link.txt
+
+--- USER  2026-09-09T05:36:54.806Z ----------------------------------
+[tool result] ok (149 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:36:55.422Z -----------------------------
+[tool] Bash: command=ls -la "/e/AI Challenge CodeFest/Meeting01 -28.06.2026" 2>&1 echo "---ashen-assistant---" ls -la "/e/AI Challenge CodeFest/ashen-assistant" 2>&1
+
+--- USER  2026-09-09T05:36:55.741Z ----------------------------------
+[tool result] ok (2742 chars, 43 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:00.540Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git status && echo "---LOG---" && git log --oneline -20 && echo "---BRANCH---" && git branch -a
+
+--- ASSISTANT  2026-09-09T05:37:00.688Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\TEAM.md
+
+--- USER  2026-09-09T05:37:03.825Z ----------------------------------
+[tool result] ok (2117 chars, 39 lines, output not included)
+
+--- USER  2026-09-09T05:37:03.842Z ----------------------------------
+[tool result] ok (6489 chars, 113 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:10.115Z -----------------------------
+[tool] Grep: pattern=TODO|TO BE COMPLETED|\[TEAM|FIXME|PROVISIONAL  in E:\AI Challenge CodeFest\ashen-assistant
+
+--- USER  2026-09-09T05:37:10.742Z ----------------------------------
+[tool result] ok (1036 chars, 34 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:10.973Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && ls docs/ && echo "---" && git diff --stat HEAD~6 HEAD 2>&1 | tail -5
+
+--- USER  2026-09-09T05:37:13.827Z ----------------------------------
+[tool result] ok (534 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:16.549Z -----------------------------
+There's an actual [TODO.md](docs/TODO.md) file — let's check that directly, plus a couple other key docs.
+
+--- ASSISTANT  2026-09-09T05:37:17.002Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\TODO.md
+
+--- USER  2026-09-09T05:37:17.024Z ----------------------------------
+[tool result] ok (9816 chars, 146 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:31.843Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && echo "--- video search ---" && find . -iname "*.mp4" -o -iname "*.mov" -o -iname "*.mkv" -o -iname "*.avi" 2>/d ...
+
+--- USER  2026-09-09T05:37:34.766Z ----------------------------------
+[tool result] ok (442 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:38.769Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -c " import json d = json.load(open('eval/answer_key.json', encoding='utf-8')) print(type(d)) if isinsta ...
+
+--- USER  2026-09-09T05:37:40.947Z ----------------------------------
+[tool result] ok (1185 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:47.171Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -c " import json from collections import Counter d = json.load(open('eval/answer_key.json', encoding='ut ...
+
+--- USER  2026-09-09T05:37:49.633Z ----------------------------------
+[tool result] ok (884 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:55.770Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && cat .gitattributes echo "--- verification file ---" cat eval/verification/answer_key_review.md 2>&1 | head -60
+
+--- USER  2026-09-09T05:37:55.933Z ----------------------------------
+[tool result] ok (4412 chars, 72 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:37:56.487Z -----------------------------
+[tool] Bash: command=find "/e/AI Challenge CodeFest" -iname "*.mp4" -o -iname "*.mov" -o -iname "*.webm" 2>/dev/null
+
+--- USER  2026-09-09T05:37:56.765Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:38:13.868Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && echo "--- file mtimes ---" && ls -la docs/report.md docs/report-draft.md submission_report.pdf README.md docs/n ...
+
+--- USER  2026-09-09T05:38:14.055Z ----------------------------------
+[tool result] ok (1263 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:38:20.696Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "490\|497\|tests" docs/report.md | head -10 echo "--- commit times ---" git log --format="%h %ci %s" -2 ...
+
+--- USER  2026-09-09T05:38:24.003Z ----------------------------------
+[tool result] ok (2090 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:38:40.841Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && echo "--- ai_usage freshness ---" && ls -la ai_usage/*.txt ai_usage/*.md 2>&1 echo "--- CLAUDE.md secret grep / ...
+
+--- USER  2026-09-09T05:38:41.025Z ----------------------------------
+[tool result] ok (1209 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:38:58.940Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git diff .gitignore
+
+--- USER  2026-09-09T05:39:01.418Z ----------------------------------
+[tool result] ok (580 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:39:18.292Z -----------------------------
+Good — I have a clear, evidence-based picture. Here's the rundown.
+
+## Deadline
+
+**Tonight, 9 Sep 2026, 11:30 PM** (per [docs/TODO.md](docs/TODO.md)) — same day.
+
+## What's actually done
+
+Query layer, UI, robustness measurement (36/49, 22/49 correct), three-hop fixes, F-026/031 closed, README rewrite, architecture diagram, key rotation — all solid per the git log and TODO.md's checked items. Don't touch these.
+
+## What's still open, in priority order
+
+1. **No demo video exists.** Searched the whole project tree — nothing. Requirement is ≤10 min, ≥3–4 min unedited live demo, **recorded against a warm cache**. This is the single biggest remaining task and has a real setup dependency (warm cache) — do this first.
+
+2. **AI-usage disclosure is 3 days stale.** [ai_usage/](ai_usage/) was last exported **5 Sep**; every commit from **6–8 Sep** (router fixes, UI rewrite, README rewrite, TEAM.md, the report itself) has no session transcript. Rerun `python ai_usage/export_logs.py` with every other Claude Code window closed, per the TODO's own warning, then regenerate `ai-usage-disclosure.md`.
+
+3. **submission_report.pdf is stale.** It was built at 11:09 on 8 Sep from `docs/report.md` (last edited 10:03) — *before* the test-count fix (490→497), the 415-vs-317 document-count reconciliation, and the README rewrite that followed later that day. The PDF quotes numbers the README has since corrected. Regenerate `docs/report.md` from `docs/numbers.md` and rebuild the PDF.
+
+4. **TEAM.md still has unfilled placeholders**, required by §5.3: Tatiana's and Kenolee's contribution lines, who split the question-authoring work, a checkable code-review specific, and the "how we actually worked" paragraph. Needs the actual people, not something I can safely invent.
+
+5. **Answer-key second review never happened** — still `single_review`×7, `draft`×2, 0 confirmed by a second reviewer (F-015). README already discloses this honestly as a shipped limitation. Decision needed: try to get a real second reviewer today, or confirm you're shipping with the disclosure as-is.
+
+6. **Planner tier is unmeasured** on the frozen set — explicit undecided item in TODO.md: spend one measured sweep (costs API quota) or report it as unmeasured.
+
+7. **OpenRouter model rotation not re-verified today**: `python -m src.clients.openrouter --verify` — do this right before recording the demo, not before.
+
+8. **Sister-repo conflict-detector comparison (Phase 2)** still not measured against `src/query/conflict.py`.
+
+9. **Repo/remote state**: local `main` is 6 commits ahead of `origin/main`, and `.gitignore` has an uncommitted change (excluding `docs/INTERNALS.md`, a legitimate teaching doc, from the deliverable). Commit that, then push — the README tells judges to start from the repo/ZIP, so origin needs to reflect the final state.
+
+10. **Owner assignments in TODO.md's "Assign" section** are still blank (`src/query/` owner, two answer-key verifiers) — minor, but it's part of the graded process section (30% of rubric).
+
+## Suggested order given the clock
+
+Video (needs a clean warm-cache run) → OpenRouter re-verify right before it → re-export AI logs → regenerate report.md/PDF → TEAM.md fill-in (needs the other three people) → commit `.gitignore` + push → final answer-key/planner decisions if time remains.
+
+Want me to start on any of these — e.g., rebuilding the report/PDF from `docs/numbers.md`, or drafting the AI-usage re-export?
+
+--- USER  2026-09-09T05:54:02.902Z ----------------------------------
+Draft a script of steps to execute the video recording.
+Update the AI Usage.
+Update the submission report
+Team.md update it for kenolee and tatiana as you please. 
+Do one sweep for the planner tier
+Verify openrouter model rotation
+Commmit and push all as required.
+
+--- ASSISTANT  2026-09-09T05:54:44.418Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && echo "=== ai_usage/export_logs.py head ===" && sed -n '1,40p' ai_usage/export_logs.py 2>&1 echo "=== docs/build ...
+
+--- USER  2026-09-09T05:54:44.878Z ----------------------------------
+[tool result] ok (3681 chars, 84 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:54:45.096Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && echo "=== ADR-020 planner ===" && grep -n -A 30 "ADR-020" docs/decisions.md | head -60
+
+--- USER  2026-09-09T05:54:45.325Z ----------------------------------
+[tool result] ok (2699 chars, 61 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:54:45.783Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && echo "=== openrouter client ===" && find . -path ./.venv -prune -o -iname "*openrouter*" -print 2>&1
+
+--- USER  2026-09-09T05:54:46.157Z ----------------------------------
+[tool result] ok (319 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:02.282Z -----------------------------
+[tool] Grep: pattern=planner  in E:\AI Challenge CodeFest\ashen-assistant\comparison
+
+--- USER  2026-09-09T05:55:02.502Z ----------------------------------
+[tool result] ok (81 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:02.836Z -----------------------------
+[tool] Grep: pattern=planner  in E:\AI Challenge CodeFest\ashen-assistant\eval
+
+--- USER  2026-09-09T05:55:03.063Z ----------------------------------
+[tool result] ok (14 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:03.825Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && cat .env.example 2>&1 | head -30 echo "--- .env keys present (names only) ---" grep -o "^[A-Z_]*=" .env 2>&1
+
+--- USER  2026-09-09T05:55:04.099Z ----------------------------------
+[tool result] ok (942 chars, 26 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:23.165Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "planner\|argparse\|add_argument\|def main" comparison/harness.py | head -40
+
+--- USER  2026-09-09T05:55:23.293Z ----------------------------------
+[tool result] ok (310 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:23.628Z -----------------------------
+[tool] Grep: pattern=planner  in E:\AI Challenge CodeFest\ashen-assistant\src
+
+--- USER  2026-09-09T05:55:23.848Z ----------------------------------
+[tool result] ok (155 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:29.622Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '100,170p' comparison/harness.py
+
+--- USER  2026-09-09T05:55:29.825Z ----------------------------------
+[tool result] ok (2476 chars, 68 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:30.021Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '440,470p' comparison/harness.py
+
+--- USER  2026-09-09T05:55:30.137Z ----------------------------------
+[tool result] ok (1115 chars, 31 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:39.851Z -----------------------------
+[tool] Grep: pattern=use_planner=True|use_planner=true|--planner|planner_sweep|measure.*planner  in E:\AI Challenge CodeFest\ashen-assistant
+
+--- USER  2026-09-09T05:55:40.428Z ----------------------------------
+[tool result] ok (242 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:49.549Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "add_argument\|use_planner\|planner" eval/run_eval.py | head -30 echo "---" grep -n "def answer_questio ...
+
+--- USER  2026-09-09T05:55:49.804Z ----------------------------------
+[tool result] ok (988 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:50.269Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n -B5 -A 40 "measured sweep\|Measure the planner" docs/decisions.md | head -100
+
+--- USER  2026-09-09T05:55:50.405Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:57.191Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '170,230p' comparison/harness.py
+
+--- USER  2026-09-09T05:55:57.397Z ----------------------------------
+[tool result] ok (2051 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:55:57.564Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "unmeasured\|planner" docs/report.md README.md docs/numbers.md 2>&1
+
+--- USER  2026-09-09T05:55:57.688Z ----------------------------------
+[tool result] ok (560 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:56:06.900Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '155,200p' docs/report.md
+
+--- USER  2026-09-09T05:56:07.031Z ----------------------------------
+[tool result] ok (2613 chars, 46 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:56:07.315Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '1676,1760p' docs/decisions.md
+
+--- USER  2026-09-09T05:56:07.468Z ----------------------------------
+[tool result] ok (4331 chars, 84 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:56:46.621Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '380,440p' comparison/harness.py
+
+--- USER  2026-09-09T05:56:46.752Z ----------------------------------
+[tool result] ok (2366 chars, 61 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:56:47.020Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '470,520p' comparison/harness.py
+
+--- USER  2026-09-09T05:56:47.163Z ----------------------------------
+[tool result] ok (1938 chars, 51 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:56:57.170Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '1,80p' comparison/harness.py
+
+--- USER  2026-09-09T05:56:57.308Z ----------------------------------
+[tool result] ok (3623 chars, 80 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:57:02.868Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '80,100p' comparison/harness.py echo "--- build_context def ---" grep -n "def build_context" -A 30 compa ...
+
+--- USER  2026-09-09T05:57:03.031Z ----------------------------------
+[tool result] ok (1926 chars, 53 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:57:28.407Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "cache\|RATE\|rate_limit\|PLANNER_MODELS\|def verify\|--verify" src/clients/openrouter.py | head -40
+
+--- USER  2026-09-09T05:57:28.559Z ----------------------------------
+[tool result] ok (1668 chars, 29 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:57:44.464Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && source .venv/Scripts/activate 2>/dev/null; python -m src.clients.openrouter --verify 2>&1
+
+--- USER  2026-09-09T05:57:56.465Z ----------------------------------
+[tool result] ERROR: Exit code 1 model rotation is stale - update src/clients/openrouter.py OpenRouter: 431 models, 18 free-tier free models advertising structured_outputs: 5 phrasing_missing ['z-ai/glm-5.2:free', 'minima ...
+
+--- ASSISTANT  2026-09-09T05:58:06.225Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '1,80p' src/clients/openrouter.py
+
+--- USER  2026-09-09T05:58:06.355Z ----------------------------------
+[tool result] ok (3270 chars, 79 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:58:22.402Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '370,420p' src/clients/openrouter.py
+
+--- USER  2026-09-09T05:58:22.533Z ----------------------------------
+[tool result] ok (1723 chars, 51 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:58:24.263Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -c " import json, urllib.request req = urllib.request.Request('https://openrouter.ai/api/v1/models', hea ...
+
+--- USER  2026-09-09T05:58:31.801Z ----------------------------------
+[tool result] ok (197 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:58:43.635Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -c " import json, urllib.request req = urllib.request.Request('https://openrouter.ai/api/v1/models', hea ...
+
+--- USER  2026-09-09T05:58:51.397Z ----------------------------------
+[tool result] ok (616 chars, 18 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:59:23.735Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\src\clients\openrouter.py  (in-place edit)
+
+--- USER  2026-09-09T05:59:26.215Z ----------------------------------
+[tool result] ok (172 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:59:29.867Z -----------------------------
+Now re-verify and run the test suite for this module to make sure nothing else hardcodes the old model names.
+
+--- ASSISTANT  2026-09-09T05:59:30.420Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -m src.clients.openrouter --verify 2>&1
+
+--- ASSISTANT  2026-09-09T05:59:31.233Z -----------------------------
+[tool] Grep: pattern=glm-5\.2|minimax-m3  in E:\AI Challenge CodeFest\ashen-assistant
+
+--- USER  2026-09-09T05:59:37.154Z ----------------------------------
+[tool result] ok (243 chars, 7 lines, output not included)
+
+--- USER  2026-09-09T05:59:37.296Z ----------------------------------
+[tool result] ok (96 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:59:43.917Z -----------------------------
+[tool] Grep: pattern=glm-5\.2|minimax-m3  in E:\AI Challenge CodeFest\ashen-assistant\tests\test_openrout ...
+
+--- USER  2026-09-09T05:59:43.997Z ----------------------------------
+[tool result] ok (375 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:59:48.757Z -----------------------------
+This test now fails against the fixed rotation — it's asserting the *old* (now-dead) model set. Let me check it fully and fix it.
+
+--- ASSISTANT  2026-09-09T05:59:48.761Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '320,350p' tests/test_openrouter.py
+
+--- USER  2026-09-09T05:59:48.927Z ----------------------------------
+[tool result] ok (1118 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:59:55.553Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\tests\test_openrouter.py  (in-place edit)
+
+--- USER  2026-09-09T05:59:56.645Z ----------------------------------
+[tool result] ok (171 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T05:59:59.819Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -m pytest tests/test_openrouter.py -q 2>&1 | tail -30
+
+--- USER  2026-09-09T06:00:03.666Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:00:07.325Z -----------------------------
+All 15 pass. Let's run the full suite quickly to make sure nothing else broke (no network calls expected per project convention).
+
+--- ASSISTANT  2026-09-09T06:00:07.714Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -m pytest -q 2>&1 | tail -20
+
+--- USER  2026-09-09T06:01:39.701Z ----------------------------------
+[tool result] ok (565 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:01:45.448Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "^## F-0\|^## ADR-0" docs/failures.md docs/decisions.md | tail -10
+
+--- USER  2026-09-09T06:01:45.656Z ----------------------------------
+[tool result] ok (1030 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:01:49.573Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "^### F-0\|^## F-0" docs/failures.md | tail -5 echo "---tail of file---" tail -40 docs/failures.md
+
+--- USER  2026-09-09T06:01:49.808Z ----------------------------------
+[tool result] ok (2870 chars, 46 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:01:54.795Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '1768,1800p' docs/failures.md
+
+--- USER  2026-09-09T06:01:54.946Z ----------------------------------
+[tool result] ok (1741 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:01:58.344Z -----------------------------
+Now I'll append F-038 in the same style, then move on to the other tasks.
+
+--- ASSISTANT  2026-09-09T06:01:58.729Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && tail -c 5 docs/failures.md | xxd | tail -3
+
+--- USER  2026-09-09T06:02:01.154Z ----------------------------------
+[tool result] ok (56 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:02:17.839Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\failures.md  (in-place edit)
+
+--- USER  2026-09-09T06:02:17.850Z ----------------------------------
+[tool result] ERROR: <tool_use_error>String to replace not found in file. String: The thing that found it was not a review; it was running the README's own steps in a fresh clone.</tool_use_error>
+
+--- ASSISTANT  2026-09-09T06:02:22.866Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\failures.md
+
+--- USER  2026-09-09T06:02:22.897Z ----------------------------------
+[tool result] ok (2016 chars, 31 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:02:29.017Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python -c " data = open('docs/failures.md', 'rb').read() print(repr(data[-60:])) "
+
+--- USER  2026-09-09T06:02:32.006Z ----------------------------------
+[tool result] ok (67 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:02:35.066Z -----------------------------
+CRLF line endings — that's why the match failed. I'll append using Bash directly instead.
+
+--- ASSISTANT  2026-09-09T06:02:43.775Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python3 - <<'PYEOF' import io entry = """ ## F-038 - The rotation ADR-020 called "re-verifiable" had not been r ...
+
+--- USER  2026-09-09T06:02:46.050Z ----------------------------------
+[tool result] ok (355 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:02:49.628Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\TODO.md
+
+--- USER  2026-09-09T06:02:49.654Z ----------------------------------
+[tool result] ok (279 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:02:55.544Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\TODO.md  (in-place edit)
+
+--- USER  2026-09-09T06:02:56.627Z ----------------------------------
+[tool result] ok (159 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:03:02.513Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git status --short
+
+--- USER  2026-09-09T06:03:04.512Z ----------------------------------
+[tool result] ok (106 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:03:11.852Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git add .gitignore src/clients/openrouter.py tests/test_openrouter.py docs/failures.md docs/TODO.md && git comm ...
+
+--- USER  2026-09-09T06:03:14.987Z ----------------------------------
+[tool result] ok (348 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:03:21.584Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "planner_pool\|use_planner\|OpenRouterPool" src/query/engine.py | head -30
+
+--- USER  2026-09-09T06:03:21.733Z ----------------------------------
+[tool result] ok (340 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:03:25.874Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "_planned_answer" -A 40 src/query/engine.py | head -70
+
+--- USER  2026-09-09T06:03:26.017Z ----------------------------------
+[tool result] ok (3257 chars, 70 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:03:34.418Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && ls comparison/results/ 2>&1 | head -20 echo "---" cat comparison/results/*.json 2>/dev/null | head -5 ls eval/r ...
+
+--- USER  2026-09-09T06:03:34.669Z ----------------------------------
+[tool result] ok (309 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:04:04.662Z -----------------------------
+[tool] Write: file_path=E:\AI Challenge CodeFest\ashen-assistant\comparison\planner_sweep.py
+
+--- USER  2026-09-09T06:04:05.789Z ----------------------------------
+[tool result] ok (164 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:04:09.614Z -----------------------------
+Now let's run it.
+
+--- ASSISTANT  2026-09-09T06:04:10.196Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && timeout 580 python -m comparison.planner_sweep 2>&1 | tail -80
+
+--- USER  2026-09-09T06:06:00.940Z ----------------------------------
+[tool result] ok (770 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:07.819Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\comparison\results\planner_sweep.md
+
+--- USER  2026-09-09T06:06:07.850Z ----------------------------------
+[tool result] ok (1200 chars, 28 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:16.487Z -----------------------------
+[tool] Grep: pattern=planner  in E:\AI Challenge CodeFest\ashen-assistant\docs\numbers.md
+
+--- USER  2026-09-09T06:06:16.552Z ----------------------------------
+[tool result] ok (14 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:16.751Z -----------------------------
+[tool] Grep: pattern=planner|Off by default  in E:\AI Challenge CodeFest\ashen-assistant\README.md
+
+--- USER  2026-09-09T06:06:16.809Z ----------------------------------
+[tool result] ok (22 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:23.072Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '1,50p' docs/numbers.md
+
+--- USER  2026-09-09T06:06:23.205Z ----------------------------------
+[tool result] ok (2395 chars, 50 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:23.584Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "numbers.md\|def test" tests/test_docs.py | head -40
+
+--- USER  2026-09-09T06:06:23.716Z ----------------------------------
+[tool result] ok (252 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:28.699Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && grep -n "^##" docs/numbers.md
+
+--- USER  2026-09-09T06:06:28.818Z ----------------------------------
+[tool result] ok (225 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:33.489Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\numbers.md
+
+--- USER  2026-09-09T06:06:33.506Z ----------------------------------
+[tool result] ok (3771 chars, 65 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:44.450Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\numbers.md  (in-place edit)
+
+--- USER  2026-09-09T06:06:45.549Z ----------------------------------
+[tool result] ok (162 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:06:54.334Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\numbers.md  (in-place edit)
+
+--- USER  2026-09-09T06:06:55.434Z ----------------------------------
+[tool result] ok (162 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:07:00.819Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && wc -l docs/decisions.md && sed -n '4444,4520p' docs/decisions.md
+
+--- USER  2026-09-09T06:07:01.030Z ----------------------------------
+[tool result] ok (3984 chars, 78 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:07:06.126Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '4520,4538p' docs/decisions.md echo "---bytes---" python -c "print(repr(open('docs/decisions.md','rb').r ...
+
+--- USER  2026-09-09T06:07:08.487Z ----------------------------------
+[tool result] ok (1130 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:07:27.364Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python3 - <<'PYEOF' entry = """ --- ## ADR-048 - The planner tier's one measured sweep **Problem** ADR-020 buil ...
+
+--- USER  2026-09-09T06:07:29.494Z ----------------------------------
+[tool result] ok (300 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:07:33.400Z -----------------------------
+Now update TODO.md's planner item to reflect the decision made:
+
+--- ASSISTANT  2026-09-09T06:07:37.270Z -----------------------------
+[tool] Edit: file_path=E:\AI Challenge CodeFest\ashen-assistant\docs\TODO.md  (in-place edit)
+
+--- USER  2026-09-09T06:07:38.368Z ----------------------------------
+[tool result] ok (159 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:07:45.791Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && sed -n '295,320p' README.md
+
+--- USER  2026-09-09T06:07:45.933Z ----------------------------------
+[tool result] ok (1404 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:07:54.922Z -----------------------------
+[tool] Grep: pattern=unmeasured|Limitations|limitation  in E:\AI Challenge CodeFest\ashen-assistant\README.md
+
+--- USER  2026-09-09T06:07:54.988Z ----------------------------------
+[tool result] ok (22 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:07:59.808Z -----------------------------
+[tool] Grep: pattern=unmeasured|imitation  in E:\AI Challenge CodeFest\ashen-assistant\README.md
+
+--- USER  2026-09-09T06:07:59.870Z ----------------------------------
+[tool result] ok (164 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:08:04.703Z -----------------------------
+[tool] Grep: pattern=planner  in E:\AI Challenge CodeFest\ashen-assistant\docs\limitations.md
+
+--- USER  2026-09-09T06:08:04.764Z ----------------------------------
+[tool result] ok (16 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:08:11.169Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git add comparison/planner_sweep.py comparison/results/planner_sweep.json comparison/results/planner_sweep.md d ...
+
+--- USER  2026-09-09T06:08:13.427Z ----------------------------------
+[tool result] ok (642 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:08:21.396Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && git commit -m "$(cat <<'EOF' feat(eval): one measured sweep of the planner tier (ADR-048) docs/TODO.md left thi ...
+
+--- USER  2026-09-09T06:08:24.069Z ----------------------------------
+[tool result] ok (290 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-09T06:08:29.279Z -----------------------------
+[tool] Bash: command=cd "/e/AI Challenge CodeFest/ashen-assistant" && python ai_usage/export_logs.py 2>&1 | tail -60

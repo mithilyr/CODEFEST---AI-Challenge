@@ -1,0 +1,1062 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : a610b99e-e68f-42a9-af43-023f3a271f8f
+Source          : a610b99e-e68f-42a9-af43-023f3a271f8f.jsonl
+First activity  : 2026-09-08T05:41:13.494Z
+Last activity   : 2026-09-08T06:22:49.196Z
+Dialogue turns  : 289   (of 506 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-08T05:41:16.610Z ----------------------------------
+In E:\AI Challenge CodeFest\ashen-assistant, the Checkpoint 1 baseline numbers (1B 2/7, 1C 2/2, 4/9 scored, 0/9 complete evidence) cannot be reproduced from a fresh clone. Verified 2026-09-05 in a clean clone with a fresh venv:
+
+1. `python -m eval.run_eval --checkpoint baseline` prints "No vector index found. Build it first: python -m src.baseline.index" and stops. `.cache/` is gitignored, so neither the vector index nor the response cache is in a clone.
+2. The command that error message names is a no-op: `src/baseline/index.py` has no `if __name__ == "__main__":` block. `python -m src.baseline.index` prints nothing and exits 0, so a judge following the error message sees no output and no index. Confirmed with `grep -rn "__main__" src eval comparison` — index.py is absent from that list while every other runnable module is in it.
+3. `eval/run_eval.py` exits 0 on this failure path, so a script or CI wrapping it would read the missing-index case as success.
+
+README.md now documents this honestly (see the block quote under "Checkpoint 1 — vector RAG baseline"), but honest documentation of a dead command is not the same as a working one.
+
+Options, in the order they probably matter:
+- Add a `main()` + `__main__` block to `src/baseline/index.py` that builds and saves the index, with a test that exercises the entrypoint without spending Voyage quota (mock the embedding client the way tests/test_clients.py already does). Then the README's pointer is true.
+- Make `eval/run_eval.py` exit non-zero when the index is missing.
+- Decide whether the built index (3,392 x 1024 float32, ~14 MB) should be committed so the baseline arm reproduces with no key at all, or whether requiring VOYAGE_API_KEY is acceptable. ADR-008 and the .gitignore comment are the relevant prior art; record the decision either way.
+
+Note the README's claim that everything else runs without a key is verified true — only this baseline arm needs one.
+
+--- ASSISTANT  2026-09-08T05:41:18.980Z -----------------------------
+I'll start by verifying the claims against the actual repo state.
+
+--- ASSISTANT  2026-09-08T05:41:21.065Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la && echo "--- git ---" && git log --oneline -5 && git status --short
+
+--- USER  2026-09-08T05:41:25.160Z ----------------------------------
+[tool result] ok (1852 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:41:27.807Z -----------------------------
+[thinking]
+Let me look at the relevant files.
+
+--- ASSISTANT  2026-09-08T05:41:27.916Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat src/baseline/index.py && echo "=== gitignore ===" && cat .gitignore
+
+--- USER  2026-09-08T05:41:28.199Z ----------------------------------
+[tool result] ok (4766 chars, 145 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:41:31.651Z -----------------------------
+[thinking]
+No `__main__` block confirmed. I should check run_eval.py and figure out where the index gets built elsewhere, maybe in the UI or a CLI.
+
+--- ASSISTANT  2026-09-08T05:41:32.724Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "__main__" src eval comparison tests 2>/dev/null && echo "=== index build callers ===" && grep -rn "Ve ...
+
+--- USER  2026-09-08T05:41:34.451Z ----------------------------------
+[tool result] ok (2543 chars, 40 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:41:38.796Z -----------------------------
+[thinking]
+Confirmed—VectorIndex.build is only defined, never called anywhere, so nothing actually builds the index; it must have been built manually at some point. I'm going to look at run_eval.py around the failure path and src/baseline/chunker.py to see how chunks get produced.
+
+--- ASSISTANT  2026-09-08T05:41:38.798Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,130p' eval/run_eval.py
+
+--- USER  2026-09-08T05:41:39.010Z ----------------------------------
+[tool result] ok (4679 chars, 130 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:41:42.931Z -----------------------------
+[thinking]
+Actually, raising SystemExit with a string message exits with code 1, not 0 — so the claim that it exits with code 0 might be incorrect unless something in run_eval's main catches that exception. I should check the tail of run_eval.py to verify.
+
+--- ASSISTANT  2026-09-08T05:41:43.285Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '190,270p' eval/run_eval.py
+
+--- USER  2026-09-08T05:41:43.448Z ----------------------------------
+[tool result] ok (2494 chars, 64 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:41:47.684Z -----------------------------
+[thinking]
+The SystemExit raised in run_baseline propagates through main() before sys.exit sees a return value, so Python's top-level handler exits with code 1, not 0 — meaning claim #3 is actually incorrect. I should verify this empirically to be sure.
+
+--- ASSISTANT  2026-09-08T05:41:48.489Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls .cache/ .cache/index 2>/dev/null; echo "--- python check ---"; python -c " import sys, subprocess " ; ls .ve ...
+
+--- USER  2026-09-08T05:41:50.749Z ----------------------------------
+[tool result] ok (184 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:41:54.293Z -----------------------------
+[thinking]
+Since the local repo already has the index, I need to simulate the missing-index scenario to test that path, so I'm considering temporarily pointing cache_dir elsewhere and checking src/settings.py to see how cache_dir gets configured.
+
+--- ASSISTANT  2026-09-08T05:41:54.305Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "cache_dir\|corpus\|class Settings\|def \|environ\|getenv" src/settings.py | head -60
+
+--- USER  2026-09-08T05:41:54.508Z ----------------------------------
+[tool result] ok (1224 chars, 23 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:41:56.990Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,30p' src/settings.py && grep -n "CACHE_DIR" src/settings.py
+
+--- USER  2026-09-08T05:41:57.228Z ----------------------------------
+[tool result] ok (1043 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:02.689Z -----------------------------
+[thinking]
+Since CACHE_DIR has no env override, I'm considering temporarily renaming the .cache/index directory to simulate a missing index, running the command, checking the exit code, then restoring it—though I want to be cautious since a crash mid-way could leave things in a bad state.  Actually, patching the call directly is safer and equally conclusive, so I'll go with that instead.
+
+--- ASSISTANT  2026-09-08T05:42:04.365Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > "$TMPDIR/probe.py" <<'PY' import sys from unittest.mock import patch import eval.run_eval as re_mod impor ...
+
+--- USER  2026-09-08T05:42:06.207Z ----------------------------------
+[tool result] ok (307 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:11.514Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/a610b99e-e68f-42a9-af43-023f3a271f8f/scr ...
+
+--- USER  2026-09-08T05:42:13.849Z ----------------------------------
+[tool result] ok (285 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:16.971Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/a610b99e-e68f-42a9-af43-023f3a271f8f/scr ...
+
+--- USER  2026-09-08T05:42:19.567Z ----------------------------------
+[tool result] ok (164 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:23.102Z -----------------------------
+[thinking]
+Ah, that exit 0 was actually from my probe catching the SystemExit itself. The real question is what Python's top-level does with `SystemExit('string')` -- it should print to stderr and exit with code 1, so let me verify that by removing the catch.
+
+--- ASSISTANT  2026-09-08T05:42:24.953Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/a610b99e-e68f-42a9-af43-023f3a271f8f/scr ...
+
+--- USER  2026-09-08T05:42:27.396Z ----------------------------------
+[tool result] ok (145 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:33.466Z -----------------------------
+[thinking]
+Claim #3 turns out false — the missing-index path in `eval/run_eval.py` exits 1, not 0, since `SystemExit("message")` prints to stderr and exits 1, so that part's already correct and needs no change. Next I want to empirically confirm claim #2, checking that `python -m src.baseline.index` prints nothing and exits 0, and then look at chunker.py to understand how chunks are produced so main() can build them properly.
+
+--- ASSISTANT  2026-09-08T05:42:33.539Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.baseline.index; echo "exit: $?"; echo "=== chunker ==="; sed -n '1,60p' src/bas ...
+
+--- USER  2026-09-08T05:42:35.746Z ----------------------------------
+[tool result] ok (2318 chars, 66 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:39.579Z -----------------------------
+[thinking]
+Claim #2 checks out cleanly, no output, exits successfully. Now I need to figure out how to get the evidence list, so I'm heading into src/ingest/pipeline.py to check its main block and public API.
+
+--- ASSISTANT  2026-09-08T05:42:40.176Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '230,290p' src/ingest/pipeline.py && echo "=== defs ===" && grep -n "^def \|^class \|^CACHE\|corpus" src ...
+
+--- USER  2026-09-08T05:42:40.414Z ----------------------------------
+[tool result] ok (3113 chars, 64 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:43.950Z -----------------------------
+[thinking]
+I want to check how graph/build.py or query/engine.py structure their __main__ blocks to match the house style for an operator entrypoint.
+
+--- ASSISTANT  2026-09-08T05:42:45.394Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '430,470p' src/graph/build.py && echo "=== corroborate main ===" && sed -n '230,250p' src/graph/corrobor ...
+
+--- USER  2026-09-08T05:42:45.616Z ----------------------------------
+[tool result] ok (993 chars, 36 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:49.627Z -----------------------------
+[thinking]
+I'm noting the house style convention of using a `main()` function with the standard `if __name__ == "__main__"` guard. Now I want to check whether VectorIndex already has test coverage, and look at how tests/test_clients.py mocks things to stay consistent.
+
+--- ASSISTANT  2026-09-08T05:42:49.659Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls tests/ && echo "=== baseline tests ===" && ls tests/*baseline* tests/*index* 2>/dev/null; grep -rln "VectorI ...
+
+--- USER  2026-09-08T05:42:49.973Z ----------------------------------
+[tool result] ok (367 chars, 23 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:52.633Z -----------------------------
+[thinking]
+There are no baseline tests at all, so I should check test_clients.py to see the embedding-mock pattern the user mentioned.
+
+--- ASSISTANT  2026-09-08T05:42:53.171Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "voyage\|embed\|monkeypatch\|mock\|Mock" tests/test_clients.py | head -40 && echo "=== conftest ===" && ...
+
+--- USER  2026-09-08T05:42:53.471Z ----------------------------------
+[tool result] ok (2005 chars, 54 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:56.605Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '125,175p' tests/test_clients.py && echo "=== embeddings client API ===" && grep -n "^def \|^class \|^EM ...
+
+--- USER  2026-09-08T05:42:56.881Z ----------------------------------
+[tool result] ok (2640 chars, 65 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:42:59.986Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '184,240p' src/clients/embeddings.py
+
+--- USER  2026-09-08T05:43:00.171Z ----------------------------------
+[tool result] ok (1947 chars, 57 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:43:03.968Z -----------------------------
+[thinking]
+Now I want to check the README section documenting this and ADR-008, plus look at .gitattributes for LFS references and the actual index size.
+
+--- ASSISTANT  2026-09-08T05:43:04.172Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la .cache/index/ && echo "=== gitattributes ===" && cat .gitattributes && echo "=== ADRs ===" && ls docs/ & ...
+
+--- USER  2026-09-08T05:43:04.536Z ----------------------------------
+[tool result] ERROR: Exit code 2 total 18832 drwxr-xr-x 1 Mithil 197121 0 Aug 29 11:11 . drwxr-xr-x 1 Mithil 197121 0 Sep 6 17:40 .. -rw-r--r-- 1 Mithil 197121 5383767 Aug 29 11:11 voyage-4-lite.chunks.json -rw-r--r-- 1 M ...
+
+--- ASSISTANT  2026-09-08T05:43:07.010Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "ADR-008" -A 30 docs/decisions.md | head -50
+
+--- USER  2026-09-08T05:43:07.238Z ----------------------------------
+[tool result] ok (1258 chars, 31 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:43:09.995Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "Checkpoint 1 — vector RAG baseline" -A 45 README.md
+
+--- USER  2026-09-08T05:43:10.157Z ----------------------------------
+[tool result] ok (2287 chars, 46 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:43:13.104Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "index\|baseline" docs/TODO.md | head -30
+
+--- USER  2026-09-08T05:43:13.328Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:43:15.568Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat docs/TODO.md
+
+--- USER  2026-09-08T05:43:15.722Z ----------------------------------
+[tool result] ok (9339 chars, 145 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:43:37.577Z -----------------------------
+[thinking]
+I notice the README points to a TODO.md entry that doesn't actually exist, so I'll fix that pointer after the main work. My plan is to add a main entry point to index.py that ingests, chunks, builds and saves the vector index, prints a summary, and handles embedding errors gracefully.
+
+I'm weighing whether to add a `--force` flag for idempotency, checking that this matches the house style of other main() blocks in the codebase, and confirming which ingest function other callers already use. I also need a test that exercises this entrypoint without burning Voyage API quota by mocking the embed call, and I should double check the claim about run_eval's exit code since it already looks correct using SystemExit. Finally, I'm considering the tradeoff of committing the ~19MB index files to the repo versus requiring users to rebuild them with their own API key.
+
+Items 1 and 2 don't depend on the answer, so I can knock those out first, and item 3 needs nothing. The .gitignore explicitly excludes build artifacts like `.cache/` and `*.npy`, which cuts against committing, and ADR-008 notes a free-tier build takes ~2 hours just to reproduce a baseline arm that scores 4/9 and nothing else depends on. My instinct is to recommend not committing and requiring VOYAGE_API_KEY instead, documented as an ADR — but since it's a real fork in approach, I'll do the independent work first and then ask the user about that one decision with concrete numbers in hand.
+
+Before that, I want to check how `in
+    ... [reasoning truncated]
+
+--- ASSISTANT  2026-09-08T05:43:38.359Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "reindex\|ingest_cached\|chunk_documents" --include=*.py . --exclude-dir=.venv | head -20
+
+--- USER  2026-09-08T05:43:38.654Z ----------------------------------
+[tool result] ok (1673 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:43:43.850Z -----------------------------
+[thinking]
+I realize the reindex UI refers to graph reindexing, not vector indexing, and that chunk_documents has no callers anywhere outside its own definition—meaning the whole baseline chunker-to-index path has no actual build route in the codebase, a bigger gap than I'd assumed. I want to check the chunk_documents signature and rag.py to verify how these pieces are meant to connect.
+
+--- ASSISTANT  2026-09-08T05:43:43.852Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '61,120p' src/baseline/chunker.py
+
+--- USER  2026-09-08T05:43:44.015Z ----------------------------------
+[tool result] ok (1969 chars, 55 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:43:59.125Z -----------------------------
+[thinking]
+I'm writing the main() function with argument parsing, adding a --force flag, and checking for an existing saved index before deciding whether to rebuild it.
+
+Now the remaining logic loads cached evidence and chunks it, builds the vector index (catching EmbeddingsUnavailableError), then saves it and prints the output paths. I'm also double-checking that importing ingest_cached at module level won't cause circular import issues, since chunker already pulls in the pipeline module elsewhere.
+
+I decide to import inside `main()` instead, matching the house style used in corroborate.py, rather than adding to the module's top-level import surface. I also want to catch `EmbeddingsUnavailableError` cleanly with exit code 1 rather than letting a traceback surface, consistent with the README's philosophy that errors should always tell the reader what to do next -- and I'm checking whether `MissingCorpusError` needs the same treatment.
+
+--- ASSISTANT  2026-09-08T05:43:59.145Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '285,315p' src/ingest/integrity.py && echo "=== openrouter main ===" && sed -n '400,440p' src/clients/op ...
+
+--- USER  2026-09-08T05:43:59.424Z ----------------------------------
+[tool result] ok (1952 chars, 58 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:44:02.303Z -----------------------------
+[thinking]
+I'll match the existing style with a `main(argv) -> int` entry point and `sys.exit(main())`, consistent with integrity.py's convention.
+
+--- ASSISTANT  2026-09-08T05:44:02.305Z -----------------------------
+Everything's confirmed except one claim. Now writing the entrypoint.
+
+--- ASSISTANT  2026-09-08T05:44:09.082Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io, re, pathlib p = pathlib.Path("src/baseline/index.py") s = p.read_text(encoding="utf- ...
+
+--- USER  2026-09-08T05:44:10.999Z ----------------------------------
+[tool result] ok (2 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:44:22.175Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> src/baseline/index.py <<'PY' # -- operator entry point ------------------------------------------------  ...
+
+--- USER  2026-09-08T05:44:23.982Z ----------------------------------
+[tool result] ok (4 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:44:27.040Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.baseline.index; echo "exit: $?"; echo "--- help ---"; .venv/Scripts/python.exe  ...
+
+--- USER  2026-09-08T05:44:29.827Z ----------------------------------
+[tool result] ok (343 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:44:44.819Z -----------------------------
+[thinking]
+3392 chunks matches ADR-008's corrected figure. Now for the test, I want to verify the build path without burning quota by mocking the embed function and chunking/ingest calls so no real corpus is needed, and I'll monkeypatch get_settings to point cache_dir at a tmp_path for full isolation.
+
+I'm sketching out the test suite: one test builds an index via main() and checks it round-trips through VectorIndex.load(); another actually runs `python -m src.baseline.index --help` as a subprocess to prove the module entrypoint is reachable, which is the exact regression that caught F-034; a third confirms a second build reuses the saved index instead of re-embedding; a fourth checks the missing-key error message and exit code. I also want to verify that the command named in run_eval's error message is genuinely runnable, since that's the tightest guarantee against a broken pointer.
+
+I'll simplify that last piece to just assert the message names `src.baseline.index` and that the module actually exposes `main`. Now I want to check the fields on Chunk and EvidenceUnit so I can build proper fixtures.
+
+--- ASSISTANT  2026-09-08T05:44:44.824Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '32,60p' src/ingest/pipeline.py && echo "=== Settings dataclass ===" && sed -n '30,45p' src/settings.py
+
+--- USER  2026-09-08T05:44:45.041Z ----------------------------------
+[tool result] ok (1214 chars, 46 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:45:18.732Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat > tests/test_baseline.py <<'PY' """The Checkpoint 1 baseline's build path, exercised without spending quota ...
+
+--- USER  2026-09-08T05:45:20.600Z ----------------------------------
+[tool result] ok (7 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:45:26.358Z -----------------------------
+[thinking]
+I need to clean up the test file: remove that leftover stray monkeypatch line in the offline fixture, simplify the pointless dataclasses.replace call by just constructing IngestionResult directly, and verify the import path so patching pipeline.ingest_cached actually works. Let me check the IngestionResult fields to make sure the construction is valid.
+
+--- ASSISTANT  2026-09-08T05:45:26.395Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '56,86p' src/ingest/pipeline.py
+
+--- USER  2026-09-08T05:45:26.558Z ----------------------------------
+[tool result] ok (1160 chars, 31 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:45:33.614Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import pathlib p = pathlib.Path("tests/test_baseline.py") s = p.read_text(encoding="utf-8") s = ...
+
+--- USER  2026-09-08T05:45:35.654Z ----------------------------------
+[tool result] ok (514 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:45:38.442Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^from\|^import\|DedupReport" src/ingest/pipeline.py | head -20
+
+--- USER  2026-09-08T05:45:38.654Z ----------------------------------
+[tool result] ok (635 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:45:41.574Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_baseline.py -q 2>&1 | tail -40
+
+--- USER  2026-09-08T05:45:46.079Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:45:57.060Z -----------------------------
+[thinking]
+All 8 tests pass, and each uses its own tmp_path so there's no interference between runs. I'm double-checking that the reuse test actually verifies embedding calls stay at 1, and that the force-rebuild test correctly expects 2 calls, then verifying the fake embed function is genuinely being invoked through VectorIndex.build.
+
+I want to prove the subprocess-based regression test would actually fail without the fix, but that test runs against the real file in the project root, so mutating it directly risks losing my work — I'll need to make a backup copy before temporarily commenting out the main block to verify the test catches the regression, then restore it.
+
+--- ASSISTANT  2026-09-08T05:45:57.074Z -----------------------------
+Let me verify by mutation that the regression test actually catches the original defect.
+
+--- ASSISTANT  2026-09-08T05:45:58.839Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cp src/baseline/index.py /tmp/index.bak && python -c " import pathlib p=pathlib.Path('src/baseline/index.py');  ...
+
+--- USER  2026-09-08T05:46:05.641Z ----------------------------------
+[tool result] ok (765 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:46:08.979Z -----------------------------
+[thinking]
+Good, the guard correctly catches the exact defect: silent failures with exit-0 and empty stdout. Now I should run the full suite to confirm nothing else broke.
+
+--- ASSISTANT  2026-09-08T05:46:09.210Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -15
+
+--- USER  2026-09-08T05:47:37.646Z ----------------------------------
+[tool result] ok (565 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:47:41.757Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | grep -E "passed|failed" ; .venv/Scripts/python.exe -m pytest --col ...
+
+--- USER  2026-09-08T05:49:13.310Z ----------------------------------
+[tool result] ok (20 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:49:15.943Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest 2>&1 | tail -4
+
+--- USER  2026-09-08T05:50:43.956Z ----------------------------------
+[tool result] ok (273 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:50:58.607Z -----------------------------
+[thinking]
+487 tests pass now, up from 479 after my 8 additions. I've confirmed empirically that run_eval already exits with code 1 — the SystemExit raised inside run_baseline's main() propagates out before sys.exit is called, so Python's default handling correctly returns exit 1, which my probe verified. No change is needed there, though I'm considering whether to add a regression test to guard this behavior.
+
+It's cheap and directly relevant since it addresses the user's second concern about a CI wrapper misreading the missing-index case as failure, so I'll add it to test_baseline.py.
+
+Now I need to think through the decision about committing the index to the repo — I want to ask the user, but first let me gather the facts: total index size is 19.3 MB, well under GitHub's 100MB hard limit though there's a warning threshold at 50MB. There's also a separate embeddings cache directory to consider, and I need to check whether committing just the index is sufficient for run_eval to work, since search queries require embed_query which needs a Voyage API key unless the query is already cached, and run_eval also needs a Gemini API key.
+
+Since Gemini responses are cached separately, truly reproducing the baseline arm with zero keys would require committing the index plus the query embeddings plus the Gemini response cache — I should check the sizes of all three before deciding what to recommend.
+
+--- ASSISTANT  2026-09-08T05:50:58.621Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && du -sh .cache/* 2>/dev/null && echo "--- counts ---" && find .cache/embeddings -type f | wc -l && find .cache/r ...
+
+--- USER  2026-09-08T05:51:27.585Z ----------------------------------
+[tool result] ok (169 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:51:37.516Z -----------------------------
+[thinking]
+That corpus.v1.json size looks suspiciously small for holding all the evidence — I should verify with ls directly rather than trusting du's rounding. Looking at the space breakdown: .git is 2.1MB, but the index file alone is 19MB, meaning committing it would balloon the repo roughly tenfold, and the embeddings cache adds another 82MB across 3417 files needed for query embedding on the eval questions.
+
+Actually, most of those 3417 files are document chunks, not query embeddings — only a handful correspond to the 9 eval queries themselves. So a targeted baseline bundle would really just need the 19MB index plus tiny query embeddings plus the 25K of cached Gemini responses, making a key-free reproducible run feasible at ~19MB rather than 82MB. That's tempting as a "prebuilt baseline bundle," but it clashes with the .gitignore policy and still bloats the repo significantly.
+
+--- ASSISTANT  2026-09-08T05:51:37.522Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la .cache/ && ls .cache/responses | head -3 && ls .cache/embeddings | head -3
+
+--- USER  2026-09-08T05:51:37.875Z ----------------------------------
+[tool result] ok (414 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:51:45.389Z -----------------------------
+[thinking]
+I'm noticing corpus.v1.json is suspiciously small at 3488 bytes with a timestamp matching my test run — that's a red flag since my corpus_free fixture should have patched ingest_cached to prevent writes, but test_docs.py and test_diagram.py call the real function directly, so the cache may have been overwritten with incomplete data.
+
+I'm checking whether data/Ashen_Era_Archive actually exists, since data/ is gitignored and the README requires a manual download. But the full suite showed 487 passing tests with no skips, which means the corpus must be present — so I need to actually inspect why the cache file is so small.
+
+--- ASSISTANT  2026-09-08T05:51:46.173Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && head -c 600 .cache/corpus.v1.json && echo && echo "---" && ls data/ && .venv/Scripts/python.exe -c " import jso ...
+
+--- USER  2026-09-08T05:51:48.198Z ----------------------------------
+[tool result] ok (767 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:51:58.675Z -----------------------------
+[thinking]
+The real corpus cache seems to have been replaced with a tiny 8-unit test corpus, and the data directory listing came back empty, so the actual corpus isn't at the expected path. I need to check .env to see if CORPUS_PATH points elsewhere and confirm whether this was a pre-existing condition rather than something I caused.
+
+My corpus_free fixture patches ingest_cached rather than calling the real function, so my tests shouldn't have triggered any writes — some other test likely has a fingerprint mismatch that clobbered the shared cache, which looks like a pre-existing test-isolation issue. Let me check .env for CORPUS_PATH before deciding how to restore things.
+
+--- ASSISTANT  2026-09-08T05:51:59.115Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -v "KEY" .env && echo "--- data ---" && ls -la data/ && echo "--- who writes tiny corpus ---" && grep -rn  ...
+
+--- USER  2026-09-08T05:51:59.469Z ----------------------------------
+[tool result] ok (1806 chars, 28 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:52:02.568Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '155,200p' tests/test_sources.py
+
+--- USER  2026-09-08T05:52:02.784Z ----------------------------------
+[tool result] ok (1582 chars, 38 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:52:15.339Z -----------------------------
+[thinking]
+I've confirmed that this test writes into the real shared `.cache/corpus.v1.json` instead of an isolated test cache, since cache_path resolves from the actual repo settings. That means running the suite poisons the real ingestion cache with a synthetic corpus, though since `ingest_cached` compares fingerprints, the next genuine run should detect the mismatch and rebuild.
+
+This is self-healing rather than corrupting, but it costs the next run a full re-parse of the novels, which is expensive. It's the same class of test isolation issue but out of scope for this task, so I'll flag it as a separate item rather than fix it now — though I'll restore the real corpus cache by re-running `ingest_cached()` so I don't leave the repo in a worse state than I found it.
+
+--- ASSISTANT  2026-09-08T05:52:15.357Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.ingest.pipeline import ingest_cached r = ingest_cached() print('evidence ...
+
+--- USER  2026-09-08T05:52:23.449Z ----------------------------------
+[tool result] ok (93 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:52:36.578Z -----------------------------
+[thinking]
+The restored count of 30,553 matches what's documented in test_sources.py, which is reassuring. Now I want to verify the end-to-end baseline eval reproduces the 4/9 results using cached Gemini responses so it shouldn't cost anything, though I should double check the cache flag defaults to make sure it won't accidentally hit the API.
+
+The README states this reproduction is fully cached, and with 21 cached response files for the 9 scoreable questions out of 20 total, this should be warm. There's a small chance of a cache miss forcing a live call, but that'd only be a few free-tier Gemini requests, and the query embeddings should also already be cached from the original run. I'll go ahead and run it since this is the documented reproduction path.
+
+--- ASSISTANT  2026-09-08T05:52:36.580Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m eval.run_eval --checkpoint baseline 2>&1 | tail -20; echo "exit: $?"
+
+--- USER  2026-09-08T05:52:41.928Z ----------------------------------
+[tool result] ok (681 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:52:54.750Z -----------------------------
+[thinking]
+The results match exactly: 1B 2/7, 1C 2/2, 4/9 scored, 11 not scored, zero API calls, 20 cache hits — confirming the README numbers hold at HEAD. It also generated a new untracked results file, which is expected but worth checking against .gitignore later. Now I'm moving on to add the run_eval exit-code guard.
+
+Reconsidering: the original claim was wrong but behavior is already correct, so a cheap test pinning that run_eval exits non-zero when the index is missing is worth adding since it directly addresses the CI wrapper concern. I'll place it in test_baseline.py alongside the existing test about run_eval's module path, since both cover the same failure-path defect. For implementation, I'll patch VectorIndex.load to return None, invoke run_eval.main, and assert it raises SystemExit with a code that's neither 0 nor None — a true subprocess test isn't feasible since CACHE_DIR can't be overridden via env var, so in-process monkeypatching is the right approach.
+
+--- ASSISTANT  2026-09-08T05:52:57.640Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> tests/test_baseline.py <<'PY' def test_run_eval_fails_loudly_when_the_index_is_missing(monkeypatch): """ ...
+
+--- USER  2026-09-08T05:53:01.940Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:53:15.379Z -----------------------------
+[thinking]
+All 9 tests pass. Now I need to raise the question of whether to commit the index files, since this is a repo-policy decision with real trade-offs — the index adds 19 MB while .gitignore currently excludes .npy and cache files, so I should lay out the facts (size deltas, what's excluded, what a key-free baseline run would still need) and ask the user directly.
+
+Weighing three options: don't commit and require an API key (keeps repo clean, consistent with existing policy), commit the full prebuilt baseline bundle so the arm works with zero setup, or use Git LFS as a middle ground. My instinct leans toward not committing since it matches stated policy and the baseline is meant to be beaten anyway, but I want to check whether eval/results/*.json is already committed — if judges can already verify numbers from committed results, that further supports not committing the raw index.
+
+--- ASSISTANT  2026-09-08T05:53:15.380Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git ls-files eval/results | head && echo "--- status ---" && git status --short
+
+--- USER  2026-09-08T05:53:15.739Z ----------------------------------
+[tool result] ok (827 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:53:24.854Z -----------------------------
+[thinking]
+Wait, something's off — README.md, tests/test_docs.py, and docs/engineering-notes.md are now showing as modified/untracked, plus a results file I didn't generate, when the initial git status only showed the PDF submission report. I never touched those files, so something else must have changed them.
+
+That baseline_2026-09-08T11-18-21 timestamp doesn't match my 11:22 run, which points to another process writing to this repo concurrently — maybe a parallel Claude Code session or the user working alongside me. I shouldn't assume any of these changes are mine and need to be careful not to overwrite anything; the baseline_latest.md update is expected since that's from my own run, but I should diff README.md and test_docs.py to figure out what someone else is editing.
+
+--- ASSISTANT  2026-09-08T05:53:24.858Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git diff --stat README.md tests/test_docs.py && echo "=== README diff ===" && git diff README.md | head -60
+
+--- USER  2026-09-08T05:53:25.265Z ----------------------------------
+[tool result] ok (3486 chars, 65 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:53:31.366Z -----------------------------
+[thinking]
+Since another session is rewriting the README concurrently, I need to check if my planned edit would conflict—verifying whether the working tree still has the "Checkpoint 1 — vector RAG baseline" caveat block, along with the test_docs.py addition and docs/engineering-notes.md before proceeding.
+
+--- ASSISTANT  2026-09-08T05:53:32.157Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git diff tests/test_docs.py && echo "=== does new README keep the caveat? ===" && grep -n "index\|VOYAGE\|basel ...
+
+--- USER  2026-09-08T05:53:32.423Z ----------------------------------
+[tool result] ok (1586 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:53:39.994Z -----------------------------
+[thinking]
+The other session moved the evidence details into engineering-notes.md, and the README footnote about needing a Voyage key still holds under my fix since it's now backed by a real command. I need to check engineering-notes.md for the caveat claiming the module isn't exposed as runnable, since that's the specific claim my fix invalidates — and I should be careful since another agent may be actively editing that file.
+
+--- ASSISTANT  2026-09-08T05:53:40.378Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "runnable module\|not currently exposed\|src.baseline.index\|TODO.md" README.md docs/engineering-notes. ...
+
+--- USER  2026-09-08T05:53:40.686Z ----------------------------------
+[tool result] ok (1044 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:53:43.843Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '328,348p' docs/engineering-notes.md
+
+--- USER  2026-09-08T05:53:43.999Z ----------------------------------
+[tool result] ok (965 chars, 21 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:53:49.600Z -----------------------------
+[thinking]
+I need to update engineering-notes.md, but another agent is actively editing that same untracked file, which creates risk of a lost update if I overwrite it. A targeted small edit is probably safer than a full rewrite, but I should first check the file's current state before deciding whether to proceed or flag the conflict to the user.
+
+--- ASSISTANT  2026-09-08T05:53:50.154Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && date && ls -la --time-style=+%H:%M:%S README.md docs/engineering-notes.md tests/test_docs.py
+
+--- USER  2026-09-08T05:53:50.400Z ----------------------------------
+[tool result] ok (210 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:54:01.659Z -----------------------------
+[thinking]
+I notice README.md was just edited seconds ago, meaning another session is actively working on shared docs — I should avoid racing edits and instead flag this to the user. I'll combine asking about the index-commit decision with a note about the concurrent session, since silently overwriting engineering-notes.md could cause my changes to vanish if the other agent rewrites it.
+
+There are still safe things I can do though: the baseline index and test files are mine alone, and I need to resolve a loose end where my docstring references ADR-037 and F-034 that don't actually exist yet in decisions.md and failures.md. Those are append-only logs with lower collision risk than the README, so I'll check the current highest entry numbers there before adding these.
+
+--- ASSISTANT  2026-09-08T05:54:01.670Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -c "^## ADR-" docs/decisions.md && grep "^## ADR-" docs/decisions.md | tail -3 && echo "--- failures ---"  ...
+
+--- USER  2026-09-08T05:54:01.996Z ----------------------------------
+[tool result] ok (638 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:54:09.616Z -----------------------------
+[thinking]
+I need to fix my docstring's citation since ADR-037 and F-034 are already taken — the next free slots are ADR-047 and F-037. I should check decisions.md and failures.md format before writing, and consider whether the entrypoint fix warrants a failure log entry versus an ADR, since the commit-vs-key question feels more like a decision that needs recording separately.
+
+My plan: correct the docstring to reference F-037, write the failure entry for the dead command, then ask the user about committing the index before drafting the ADR. Let me check a recent failure entry's format first.
+
+--- ASSISTANT  2026-09-08T05:54:09.618Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^## F-036" -A 45 docs/failures.md
+
+--- USER  2026-09-08T05:54:09.784Z ----------------------------------
+[tool result] ok (2753 chars, 46 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:54:19.037Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import pathlib p = pathlib.Path("src/baseline/index.py"); s = p.read_text(encoding="utf-8") s = ...
+
+--- USER  2026-09-08T05:54:21.352Z ----------------------------------
+[tool result] ok (197 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:54:25.092Z -----------------------------
+Now the failure-log entry, matching the house format:
+
+--- ASSISTANT  2026-09-08T05:54:25.713Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && tail -c 60 docs/failures.md | cat -A | tail -3
+
+--- USER  2026-09-08T05:54:25.978Z ----------------------------------
+[tool result] ok (65 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:54:48.129Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import pathlib entry = """## F-037 - The one command a fresh clone needs, and it did nothing ** ...
+
+--- USER  2026-09-08T05:54:50.556Z ----------------------------------
+[tool result] ok (427 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:54:58.421Z -----------------------------
+[thinking]
+I realize pathlib's read_text doesn't support the newline kwarg until Python 3.13, so I need to switch to using open() instead. The grep count of 37 actually confirms F-000 through F-036 exist, meaning F-037 is indeed the correct next entry — I should also check the .gitattributes settings for text handling.
+
+Since .gitattributes normalizes to LF on commit but the working tree uses CRLF, I'll write with CRLF to match the existing file format.
+
+--- ASSISTANT  2026-09-08T05:55:10.046Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io entry = """## F-037 - The one command a fresh clone needs, and it did nothing **Appro ...
+
+--- USER  2026-09-08T05:55:12.633Z ----------------------------------
+[tool result] ok (84 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:55:18.229Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest tests/test_docs.py -q 2>&1 | tail -20
+
+--- USER  2026-09-08T05:55:26.771Z ----------------------------------
+[tool result] ok (79 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:55:43.939Z -----------------------------
+[thinking]
+Docs tests are passing, so now I need to decide whether to commit the index and flag the concurrent session to the user. The index is 19.3 MB total (13.9 MB .npy plus 5.4 MB chunks.json) while .git is only 2.1 MB, and I notice the .gitignore explicitly excludes `.cache/` and `*.npy` as build artifacts, which is worth surfacing as a consideration.
+
+For a truly key-free reproduction I'd also need the 20 query embeddings and 21 cached Gemini responses, and build cost runs ~5 min on paid tier vs ~2 hours free, with the deadline tomorrow night. I'm weighing three options: requiring VOYAGE_API_KEY with no commit, committing the ~19.3 MB prebuilt baseline bundle for zero-key reproduction, or using Git LFS — leaning toward committing the bundle since closing that last reproducibility gap seems worth it given the size is manageable for a repo judges will clone.
+
+But committing derived artifacts risks staleness against the corpus/chunker with nothing to catch drift, which cuts against the project's "re-derivable numbers" ethos — unless I add a test verifying the committed index matches current chunker output. This is genuinely a call for the user to make, so I should ask them directly, along with whether to address the concurrent-doc coordination issue myself.
+
+--- ASSISTANT  2026-09-08T05:55:43.942Z -----------------------------
+The fix and tests are done and verified. One decision left is genuinely yours.
+
+--- ASSISTANT  2026-09-08T05:55:54.695Z -----------------------------
+[tool] AskUserQuestion
+
+--- USER  2026-09-08T05:58:44.051Z ----------------------------------
+[tool result] ok (615 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:58:49.140Z -----------------------------
+[thinking]
+I need to commit the bundle: locate the embedding cache files holding the query embeddings, un-ignore the relevant cache directories in .gitignore, add a guard against a stale committed index, write ADR-047, and update the docs footnote. I'm starting by tracing how the query text gets hashed into a key and mapped to its shard path to find the right files.
+
+--- ASSISTANT  2026-09-08T05:58:49.467Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '153,185p' src/clients/embeddings.py && sed -n '281,300p' src/clients/embeddings.py
+
+--- USER  2026-09-08T05:58:49.778Z ----------------------------------
+[tool result] ok (1211 chars, 40 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:59:44.641Z -----------------------------
+[thinking]
+Since query embeddings share the same content-addressed shard cache as documents (keyed only by text, not input_type), I can compute exact shard paths for the 20 sample questions and un-ignore just those. I notice `_key(text)` doesn't factor in input_type, meaning a text embedded as "document" versus "query" would collide — worth flagging even though it's outside my current scope.
+
+I also need to account for the response cache (21 files, 25 KB) while skipping `responses_openrouter`, which is planner-only. For the .gitignore exceptions, un-ignoring the whole embeddings directory would pull in 82 MB, so I only want the specific query shards — but git requires un-excluding parent directories to re-include nested files, which gets messy fast. I'm looking for a cleaner alternative than fighting gitignore's exclusion rules directly.
+
+That approach is too ugly with nested shard directories scattered across many 2-char folders. I'm now leaning toward force-adding the specific files once and letting .gitignore continue excluding the rest—tracked files stay tracked regardless of ignore rules, so this works but feels implicit. The cleanest, most honest solution is really to treat the queries as their own first-class committed artifact instead.
+
+I also need `.cache/responses/` un-ignored. Checking `embed()`, it does raise if a text is uncached and no API key is present, so a fresh clone with no key would indeed fail on the first query embedding — confirming this is a real blocker. Listin
+    ... [reasoning truncated]
+
+--- ASSISTANT  2026-09-08T05:59:44.649Z -----------------------------
+Committing the bundle. First, the piece that makes it actually key-free — the query vectors:
+
+--- ASSISTANT  2026-09-08T05:59:44.681Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '70,110p' src/baseline/rag.py
+
+--- USER  2026-09-08T05:59:44.958Z ----------------------------------
+[tool result] ok (1051 chars, 38 lines, output not included)
+
+--- ASSISTANT  2026-09-08T05:59:53.991Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="src/baseline/index.py" s=io.open(p,encoding="utf-8",newline="").read() # --- 1. se ...
+
+--- USER  2026-09-08T05:59:55.893Z ----------------------------------
+[tool result] ok (263 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:00:12.173Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="src/baseline/index.py" s=io.open(p,encoding="utf-8",newline="").read() helper = '' ...
+
+--- USER  2026-09-08T06:00:14.898Z ----------------------------------
+[tool result] ok (80 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:00:18.063Z -----------------------------
+Now generate the sidecar (served from the warm embedding cache, so it costs no quota):
+
+--- ASSISTANT  2026-09-08T06:00:20.873Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from src.baseline.index import save_query_vectors, sample_questions, load_query_v ...
+
+--- USER  2026-09-08T06:00:23.033Z ----------------------------------
+[tool result] ok (449 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:00:30.344Z -----------------------------
+[thinking]
+With the bundle at 19.7 MB, I want to confirm everything runs with no API keys present, so I'm checking how settings load from the environment—since load_dotenv doesn't override existing env vars, I need to figure out how to properly simulate an empty-key state to test key-free reproduction.
+
+--- ASSISTANT  2026-09-08T06:00:30.345Z -----------------------------
+Now the real test — reproduce the numbers with every key blanked:
+
+--- ASSISTANT  2026-09-08T06:00:31.721Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && VOYAGE_API_KEY="" GOOGLE_API_KEY="" OPENROUTER_API_KEY="" .venv/Scripts/python.exe -m eval.run_eval --checkpoin ...
+
+--- USER  2026-09-08T06:00:34.036Z ----------------------------------
+[tool result] ok (751 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:00:38.209Z -----------------------------
+[thinking]
+I notice that `GeminiPool()` still requires an API key at construction even when every response would come from cache, which is another blocker for key-free reproduction. I want to check gemini.py around line 175 to look at the generate/cache path.
+
+--- ASSISTANT  2026-09-08T06:00:38.485Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '155,200p' src/clients/gemini.py && echo "=== generate/cache ===" && grep -n "def generate\|_cache\|use_ ...
+
+--- USER  2026-09-08T06:00:38.834Z ----------------------------------
+[tool result] ok (2604 chars, 66 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:00:45.290Z -----------------------------
+[thinking]
+Since the cache check happens before any API usage in generate, a fully warm cache never actually needs the key, so I should move the key requirement out of the constructor and instead raise the error only after a cache miss, right before the API would actually be used.
+
+--- ASSISTANT  2026-09-08T06:00:45.870Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '205,265p' src/clients/gemini.py
+
+--- USER  2026-09-08T06:00:46.112Z ----------------------------------
+[tool result] ok (2438 chars, 61 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:00:57.201Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="src/clients/gemini.py" s=io.open(p,encoding="utf-8",newline="").read() old = ''' d ...
+
+--- USER  2026-09-08T06:00:59.656Z ----------------------------------
+[tool result] ok (183 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:01:03.437Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && file src/clients/gemini.py && .venv/Scripts/python.exe -c " import io s=io.open('src/clients/gemini.py',encodin ...
+
+--- USER  2026-09-08T06:01:05.594Z ----------------------------------
+[tool result] ok (62 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:01:13.607Z -----------------------------
+[thinking]
+I realize gemini.py already uses LF endings, so no conversion is needed there. I'm double-checking that index.py is indeed CRLF as I assumed, since my earlier asserts with the CRLF replace passed, confirming I didn't corrupt its line endings.
+
+--- ASSISTANT  2026-09-08T06:01:19.307Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="src/clients/gemini.py" s=io.open(p,encoding="utf-8",newline="").read() old = ''' d ...
+
+--- USER  2026-09-08T06:01:21.732Z ----------------------------------
+[tool result] ok (201 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:01:26.017Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && VOYAGE_API_KEY="" GOOGLE_API_KEY="" OPENROUTER_API_KEY="" .venv/Scripts/python.exe -m eval.run_eval --checkpoin ...
+
+--- USER  2026-09-08T06:01:30.226Z ----------------------------------
+[tool result] ok (484 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:01:42.749Z -----------------------------
+[thinking]
+Checkpoint 1 numbers now reproduce with zero API keys, matching the expected scoring counts and zero calls made. With that confirmed, I still need to handle the .gitignore exception, add tests for the sidecar query and keyless GeminiPool behavior, write ADR-047, update the engineering-notes.md footnote, and run the full test suite. I'm starting with the .gitignore file, looking at the current build artifacts and cache exclusions.
+
+I'm carving out a deliberate exception so the Checkpoint 1 baseline bundle stays committed while everything else under .cache stays ignored and rebuildable, using ordered ignore/un-ignore rules so the baseline index and responses directories survive while other cache data like embeddings gets excluded. I want to verify the ordering is correct using `git check-ignore -v` before finalizing.
+
+--- ASSISTANT  2026-09-08T06:01:46.766Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p=".gitignore" s=io.open(p,encoding="utf-8",newline="").read() nl = "\r\n" if "\r\n"  ...
+
+--- USER  2026-09-08T06:01:49.174Z ----------------------------------
+[tool result] ok (451 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:01:53.539Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git status --short --untracked-files=all .cache/ | head -30 && echo "--- count & size of what would be added -- ...
+
+--- USER  2026-09-08T06:01:55.715Z ----------------------------------
+[tool result] ok (1296 chars, 27 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:02:06.691Z -----------------------------
+[thinking]
+24 files, 19 MB total, looks clean. I realize the .npy binary file could get mangled by the text=auto eol=lf setting in .gitattributes, so even though git's NUL-byte detection would likely catch it as binary anyway, I should be explicit and add `*.npy binary` alongside the existing binary rules for images.
+
+After updating .gitattributes, I want to add tests guarding against index drift: one checking every sample question has a shipped query vector, and another comparing the committed index's chunk count against what the current chunker produces from the corpus (skipping if no corpus is present, consistent with existing test patterns). I'll also add a test verifying GeminiPool constructs without a key and serves cached prompts but raises on real requests, then move on to the ADR and docs.
+
+--- ASSISTANT  2026-09-08T06:02:07.440Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p=".gitattributes" s=io.open(p,encoding="utf-8",newline="").read() nl = "\r\n" if "\r ...
+
+--- USER  2026-09-08T06:02:09.579Z ----------------------------------
+[tool result] ok (431 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:02:11.997Z -----------------------------
+Now the guards that keep the committed bundle honest:
+
+--- ASSISTANT  2026-09-08T06:02:32.177Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat >> tests/test_baseline.py <<'PY' # -- the committed bundle (ADR-047) -------------------------------------- ...
+
+--- USER  2026-09-08T06:02:45.404Z ----------------------------------
+[tool result] ok (1184 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:02:50.951Z -----------------------------
+[thinking]
+I realize `build_and_save` also embeds sample questions now, adding a second embed call, so the total becomes 4 rather than what the test expects. I should make the assertion count only chunk embeddings by filtering for document-type calls, so I'll update the fake embed helper to track input type alongside texts and adjust the two tests accordingly.
+
+--- ASSISTANT  2026-09-08T06:03:02.745Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="tests/test_baseline.py" s=io.open(p,encoding="utf-8",newline="").read() nl = "\r\n ...
+
+--- USER  2026-09-08T06:03:07.757Z ----------------------------------
+[tool result] ok (83 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:03:11.342Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest 2>&1 | tail -25
+
+--- USER  2026-09-08T06:04:54.725Z ----------------------------------
+[tool result] ok (598 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:04:59.369Z -----------------------------
+[thinking]
+497 tests now pass, up from 479. I notice the corpus cache got clobbered again by test_sources, so I need to restore it after all test runs finish. Now I'll move on to writing ADR-047, checking the format of a recent one first for consistency.
+
+--- ASSISTANT  2026-09-08T06:04:59.645Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^## ADR-046" -A 40 docs/decisions.md | head -50 && echo "=== endings ===" && .venv/Scripts/python.exe  ...
+
+--- USER  2026-09-08T06:05:01.632Z ----------------------------------
+[tool result] ok (2282 chars, 43 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:05:34.031Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io entry = """## ADR-047 - Commit the prebuilt baseline bundle, so Checkpoint 1 needs no ...
+
+--- USER  2026-09-08T06:05:36.427Z ----------------------------------
+[tool result] ok (90 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:05:41.395Z -----------------------------
+[thinking]
+Before updating the docs footnote in engineering-notes.md, I want to check whether the other agent has already modified it, so I'm looking at the file's modification time.
+
+--- ASSISTANT  2026-09-08T06:05:41.526Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && date +%H:%M:%S && ls -la --time-style=+%H:%M:%S README.md docs/engineering-notes.md && git status --short | hea ...
+
+--- USER  2026-09-08T06:05:41.878Z ----------------------------------
+[tool result] ok (414 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:05:47.401Z -----------------------------
+[thinking]
+README.md is still actively being edited (last touched 3 minutes ago) while engineering-notes.md has been quiet longer. I'll make surgical edits to the stale engineering-notes block with the false claim and the README footnote, but I need to flag the risk of the other agent overwriting my changes since README is still in flux — let me check both current texts first.
+
+--- ASSISTANT  2026-09-08T06:05:47.408Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '308,322p' README.md
+
+--- USER  2026-09-08T06:05:47.634Z ----------------------------------
+[tool result] ok (1081 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:05:53.485Z -----------------------------
+[thinking]
+The other agent's README claims 490 tests passing, but the suite has grown to 497 since then, so that number is now stale — test_docs.py doesn't seem to guard against this. I'll plan to remove the footnote marker and its corresponding note as part of my edits.
+
+I'll fix the count from 490 to 497, doing a careful surgical replace since the other agent might be editing the file concurrently, then verify the change.
+
+--- ASSISTANT  2026-09-08T06:05:57.751Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="README.md" s=io.open(p,encoding="utf-8",newline="").read() nl = "\r\n" if "\r\n" i ...
+
+--- USER  2026-09-08T06:06:00.248Z ----------------------------------
+[tool result] ok (1172 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:06:06.217Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="README.md" s=io.open(p,encoding="utf-8",newline="").read() nl = "\r\n" if "\r\n" i ...
+
+--- USER  2026-09-08T06:06:08.249Z ----------------------------------
+[tool result] ok (165 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:06:10.831Z -----------------------------
+Now the stale block in `docs/engineering-notes.md`:
+
+--- ASSISTANT  2026-09-08T06:06:22.553Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="docs/engineering-notes.md" s=io.open(p,encoding="utf-8",newline="").read() nl = "\ ...
+
+--- USER  2026-09-08T06:06:33.460Z ----------------------------------
+[tool result] ok (83 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:06:36.793Z -----------------------------
+[thinking]
+I should also check other places in the README claiming a key is needed, particularly the Voyage key rows around lines 68, 75, and 83.
+
+--- ASSISTANT  2026-09-08T06:06:37.691Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '78,90p' README.md
+
+--- USER  2026-09-08T06:06:37.862Z ----------------------------------
+[tool result] ok (724 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:06:50.305Z -----------------------------
+[thinking]
+That table entry looks accurate as is, no change needed. I'm considering whether to log this in TODO.md too—it wasn't originally listed there, but since it's real completed work, I'll add it for the record before moving on to check the decisions log.
+
+Actually, skip TODO.md — it's a sprint list and the decisions/failures log already covers this thoroughly, adding a done-item that was never a todo would just be noise.
+
+Now I need to restore the corpus cache that got clobbered by the test run again, then do a final verification with the full suite plus a keyless run. I also need to figure out which eval/results files are mine versus from another agent — I generated a few timestamped ones and should clean up the redundant intermediate runs while keeping the final keyless one as evidence, but I need to check carefully before deleting anything since the 11:18 file might not be mine.
+
+--- ASSISTANT  2026-09-08T06:06:50.321Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la --time-style=+%H:%M eval/results/ | tail -12 && echo "--- latest pointer ---" && head -20 eval/results/b ...
+
+--- USER  2026-09-08T06:06:50.676Z ----------------------------------
+[tool result] ok (1512 chars, 32 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:06:57.586Z -----------------------------
+[thinking]
+I notice the commit hash doesn't match what git log showed earlier, meaning the other agent must have committed since then. I'll keep the 11:31 run since its JSON output showing "0 LLM calls, 20 from cache" is the meaningful keyless proof, and remove the intermediate 11:22 run as redundant. Let me check git log again to confirm the current state.
+
+--- ASSISTANT  2026-09-08T06:06:57.589Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git log --oneline -6 && echo "--- status ---" && git status --short
+
+--- USER  2026-09-08T06:06:57.991Z ----------------------------------
+[tool result] ok (1062 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:07:04.310Z -----------------------------
+[thinking]
+I see the other session committed the README rewrite and engineering-notes.md, so my edits are cleanly layered on top with nothing lost. Now I'll clean up my intermediate 11:22 results pair while keeping the 11:31 keyless proof, then restore the corpus cache and do a final full verification.
+
+--- ASSISTANT  2026-09-08T06:07:04.312Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && rm -f eval/results/baseline_2026-09-08T11-22-39.json eval/results/baseline_2026-09-08T11-22-39.md && .venv/Scri ...
+
+--- USER  2026-09-08T06:07:13.824Z ----------------------------------
+[tool result] ok (30 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:07:16.945Z -----------------------------
+Final end-to-end verification — clean state, no keys:
+
+--- ASSISTANT  2026-09-08T06:07:19.943Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== 1. the command that used to do nothing ===" && VOYAGE_API_KEY="" GOOGLE_API_KEY="" .venv/Scripts/pyth ...
+
+--- USER  2026-09-08T06:07:24.286Z ----------------------------------
+[tool result] ok (574 chars, 14 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:07:28.864Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && rm -f eval/results/baseline_2026-09-08T11-31-28.json eval/results/baseline_2026-09-08T11-31-28.md && .venv/Scri ...
+
+--- USER  2026-09-08T06:09:14.235Z ----------------------------------
+[tool result] ok (228 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:09:19.353Z -----------------------------
+[thinking]
+Everything looks green now. Let me do a final review of the changed index.py entrypoint section to make sure it reads well, then check git status once more.
+
+--- ASSISTANT  2026-09-08T06:09:19.356Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '1,30p' src/baseline/index.py && echo "..." && sed -n '118,145p' src/baseline/index.py
+
+--- USER  2026-09-08T06:09:19.668Z ----------------------------------
+[tool result] ok (2319 chars, 59 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:09:26.214Z -----------------------------
+[thinking]
+I notice the docstring line about "receives the prebuilt cache" is now stale since the cache actually ships. I'll update that for accuracy, and note that reading and JSON-parsing the 456 KB file on every search call is a minor inefficiency but acceptable given it's documented.
+
+--- ASSISTANT  2026-09-08T06:09:27.870Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && python - <<'PY' import io p="src/baseline/index.py" s=io.open(p,encoding="utf-8",newline="").read() nl="\r\n" i ...
+
+--- USER  2026-09-08T06:09:39.864Z ----------------------------------
+[tool result] ok (605 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:09:48.249Z -----------------------------
+[thinking]
+Everything looks ready, but I haven't committed since the user didn't request it and another session is actively committing to this repo. I want to flag two out-of-scope issues I noticed: the test that invalidates the ingestion cache overwrites the real corpus cache file with a synthetic one, which is self-healing but wasteful and now riskier since `.cache/` holds committed files; and there's a second issue with the key function I still need to describe.
+
+--- ASSISTANT  2026-09-08T06:09:59.629Z -----------------------------
+[tool] mcp__ccd_session__spawn_task: prompt=In E:\AI Challenge CodeFest\ashen-assistant, `tests/test_sources.py::test_adding_a_document_invalidates_the_ingestion_cache` (and the `synthetic_corpus` fixture ...
+
+--- USER  2026-09-08T06:09:59.675Z ----------------------------------
+[tool result] ok (343 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:10:13.639Z -----------------------------
+[tool] mcp__ccd_session__spawn_task: prompt=In E:\AI Challenge CodeFest\ashen-assistant, `src/clients/embeddings.py` has: def _key(text: str) -> str: """Content address for one text.""" return hashlib.sha ...
+
+--- USER  2026-09-08T06:10:13.654Z ----------------------------------
+[tool result] ok (406 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:10:31.032Z -----------------------------
+Done. The Checkpoint 1 baseline now reproduces from a fresh clone with **no API key at all** — verified with `VOYAGE_API_KEY`, `GOOGLE_API_KEY` and `OPENROUTER_API_KEY` all empty:
+
+```
+1B: 2/7    1C: 2/2    all scored: 4/9    not scored: 11
+quota: calls: none | cache hits: 20
+```
+
+**Your three items:**
+
+**1. The dead command — fixed.** [src/baseline/index.py](src/baseline/index.py) now has `build_and_save()`, `main()` and a `__main__` block that ingests, chunks, embeds and saves, and refuses to re-embed a warm index. The gap was worse than reported: `VectorIndex.build` and `chunk_documents` had *no callers anywhere in the repo* — the whole build path existed only as functions nothing ran. [tests/test_baseline.py](tests/test_baseline.py) is new (16 tests, no corpus or key needed). The key guard runs `python -m src.baseline.index --help` in a subprocess; **verified by mutation** — with the `__main__` block commented out it fails on empty stdout, the original defect's exact signature.
+
+**2. The exit code — your claim was wrong, no change needed.** `eval/run_eval.py` exits **1**, not 0. `raise SystemExit("message")` prints to stderr and exits 1 — the string is a message, not a code. Measured in a subprocess with `VectorIndex.load` stubbed to `None`. I added `test_run_eval_fails_loudly_when_the_index_is_missing` anyway, because correct and broken look nearly identical at that call site.
+
+**3. Committed the bundle**, per your choice — 24 files, 19 MB. Two things had to change beyond un-ignoring it:
+
+- The 20 query vectors ship as `.cache/index/{model}.queries.json` rather than via `.cache/embeddings/`, whose shards are content-addressed across 20 of 256 directories inside an 82 MB tree that must stay ignored. `search()` consults the sidecar before calling Voyage. Honest limit, documented: **the bundle covers the supplied twenty questions, not every question.**
+- `GeminiPool.__init__` demanded `GOOGLE_API_KEY` before reading a single cached response. Moved to `generate()`, immediately before the client is built.
+
+Recorded as **ADR-047** in [docs/decisions.md](docs/decisions.md) and **F-037** in [docs/failures.md](docs/failures.md). Stale-index drift is tested, not trusted — `test_the_committed_index_matches_what_the_chunker_produces_now` re-runs the chunker over the live corpus and compares chunk ids in order.
+
+**Full suite: 497 passed** (was 479).
+
+**Two things you should know:**
+
+- **Another session is committing to this repo right now.** It landed `3789089` (README rewrite) and `9da23fc` while I worked, and moved the baseline block into the new `docs/engineering-notes.md`. I edited on top of its committed versions, so nothing was lost — but I have **not committed**, and README.md is still being actively edited. Worth sequencing before you commit.
+- Running `pytest` silently replaces the real `.cache/corpus.v1.json` (30,553 units) with an 8-unit synthetic one. Self-healing, but it now matters more since `.cache/` holds committed files. Flagged as a task, along with the embedding cache keying on text without `input_type`. I restored the cache after each run.
+
+--- USER  2026-09-08T06:17:29.811Z ----------------------------------
+commit this
+
+--- ASSISTANT  2026-09-08T06:17:58.142Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git branch --show-current && git log --oneline -3 && echo "--- status ---" && git status --short && echo "--- r ...
+
+--- USER  2026-09-08T06:18:00.483Z ----------------------------------
+[tool result] ok (889 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:18:10.587Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && date +%H:%M:%S && git diff --stat && echo "=== README diff (must be only mine) ===" && git diff README.md
+
+--- USER  2026-09-08T06:18:11.011Z ----------------------------------
+[tool result] ok (3188 chars, 51 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:18:17.742Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add .gitattributes .gitignore README.md docs/decisions.md docs/engineering-notes.md docs/failures.md src/ba ...
+
+--- USER  2026-09-08T06:18:20.531Z ----------------------------------
+[tool result] ok (2995 chars, 52 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:18:29.956Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "working tree sha256:" && sha256sum .cache/index/voyage-4-lite.vectors.npy && echo "staged blob sha256:" & ...
+
+--- USER  2026-09-08T06:18:32.104Z ----------------------------------
+[tool result] ok (384 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:18:34.960Z -----------------------------
+Byte-identical, and git treats it as binary. Committing:
+
+--- ASSISTANT  2026-09-08T06:18:51.231Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git commit -F - <<'EOF' fix(baseline): Checkpoint 1 reproduces from a clone with no API key MEASURED 2026-09-08 ...
+
+--- USER  2026-09-08T06:18:53.757Z ----------------------------------
+[tool result] ok (2361 chars, 36 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:18:59.344Z -----------------------------
+Now the actual proof — a fresh clone, no keys:
+
+--- ASSISTANT  2026-09-08T06:19:04.284Z -----------------------------
+[tool] Bash: command=SP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/a610b99e-e68f-42a9-af43-023f3a271f8f/scratchpad" && rm -rf "$SP/freshclone" && git clone  ...
+
+--- USER  2026-09-08T06:19:07.435Z ----------------------------------
+[tool result] ok (301 chars, 7 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:19:12.383Z -----------------------------
+[tool] Bash: command=SP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/a610b99e-e68f-42a9-af43-023f3a271f8f/scratchpad" && cd "$SP/freshclone" && VOYAGE_API_KEY ...
+
+--- USER  2026-09-08T06:19:16.732Z ----------------------------------
+[tool result] ok (552 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:19:22.077Z -----------------------------
+[tool] Bash: command=SP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/a610b99e-e68f-42a9-af43-023f3a271f8f/scratchpad" && cd "$SP/freshclone" && echo "=== buil ...
+
+--- USER  2026-09-08T06:20:54.104Z ----------------------------------
+[tool result] ok (600 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:20:59.016Z -----------------------------
+[tool] Bash: command=SP="C:/Users/LENOVO/AppData/Local/Temp/claude/E--AI-Challenge-CodeFest/a610b99e-e68f-42a9-af43-023f3a271f8f/scratchpad" && cd "$SP/freshclone" && CORPUS_PATH="E ...
+
+--- USER  2026-09-08T06:22:27.853Z ----------------------------------
+[tool result] ok (353 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:22:36.920Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -la .cache/corpus.v1.json && git log --stat -1 --oneline | tail -4 && echo "--- unpushed ---" && git log --o ...
+
+--- USER  2026-09-08T06:22:37.356Z ----------------------------------
+[tool result] ok (1777 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-08T06:22:49.196Z -----------------------------
+Committed as `44c1835` on `main` — 36 files, +3,935/−29.
+
+**Verified from a genuine fresh `git clone`**, not just the working tree:
+
+- `.cache/index/voyage-4-lite.vectors.npy` round-trips byte-identically (sha256 matches; `git check-attr` confirms `binary: set`, so `text=auto eol=lf` never touched the 13.9 MB of float32).
+- With `VOYAGE_API_KEY`, `GOOGLE_API_KEY` and `OPENROUTER_API_KEY` all empty: **1B 2/7, 1C 2/2, 4/9 scored, 11 not scored, `calls: none | cache hits: 20`**.
+- `python -m src.baseline.index` reports the built index and exits 0 — the command run_eval names now does something.
+- **497 passed** in the clone.
+
+The clone was then deleted.
+
+**Notes:**
+
+- I committed to `main` rather than branching. Every commit in this repo's history is on `main`, and the other active session is committing there too — branching a day before the deadline would have fragmented the work. Say the word if you'd rather this were a branch.
+- **Not pushed.** `origin` has no `main` ref locally, so the whole history — all 21 commits — appears unpushed. Worth checking before you rely on the remote; the rubric has judges read commit history.
+- Left untracked, since they aren't mine: `docs/Ashen Era Intelligence Assistant - Submission Report.pdf` and `eval/results/baseline_2026-09-08T11-18-21.*`.
+- The other session's README rewrite (`3789089`) said "490 passing"; I updated it to 497 as part of this commit.

@@ -1,0 +1,545 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : 3a6fb620-54c3-4f64-a676-79f684ab90ce
+Source          : 3a6fb620-54c3-4f64-a676-79f684ab90ce.jsonl
+First activity  : 2026-09-08T07:24:34.366Z
+Last activity   : 2026-09-08T08:07:28.117Z
+Dialogue turns  : 148   (of 353 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\Ashen_Era_Archive, E:\AI Challenge CodeFest\ashen-assistant, e:\AI Challenge CodeFest
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-08T07:24:35.186Z ----------------------------------
+Verify the readme fil using the @AI_Competition_Challenge.pdf
+
+--- ASSISTANT  2026-09-08T07:24:37.313Z -----------------------------
+I'll read the PDF and the README, then compare them.
+
+--- ASSISTANT  2026-09-08T07:24:38.188Z -----------------------------
+[tool] Bash: command=ls -la "e:/AI Challenge CodeFest" 2>/dev/null || ls -la
+
+--- USER  2026-09-08T07:24:39.274Z ----------------------------------
+[tool result] ok (609 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:24:42.327Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && find . -maxdepth 3 -iname "*.md" -not -path "*/node_modules/*" | head -50 && echo "---NOTES---" && cat Notes.txt && echo "---CO ...
+
+--- USER  2026-09-08T07:24:42.568Z ----------------------------------
+[tool result] ok (2389 chars, 58 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:24:45.562Z -----------------------------
+[tool] Read: file_path=E:\AI Challenge CodeFest\AI_Competition_Challenge.pdf
+
+--- USER  2026-09-08T07:24:46.034Z ----------------------------------
+[tool result] ok (163 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:24:55.429Z -----------------------------
+Now let me read the README and the surrounding repo structure.
+
+--- ASSISTANT  2026-09-08T07:24:55.965Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cat README.md
+
+--- USER  2026-09-08T07:24:56.231Z ----------------------------------
+[tool result] ok (16603 chars, 372 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:25:06.771Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls -a && echo "=== TREE (2 deep, no venv/cache) ===" && find . -maxdepth 2 -not -path "*/.git/*" -not -path "*/ ...
+
+--- USER  2026-09-08T07:25:07.248Z ----------------------------------
+[tool result] ok (3520 chars, 126 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:25:20.025Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== ocr_cache count ===" && ls ocr_cache | wc -l && echo "=== git remote ===" && git remote -v && echo "= ...
+
+--- USER  2026-09-08T07:25:20.519Z ----------------------------------
+[tool result] ok (2625 chars, 71 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:25:33.635Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== .env (keys masked) ===" && sed -E 's/=(.{4}).*/=\1***/' .env && echo "=== .env.example ===" && cat .e ...
+
+--- USER  2026-09-08T07:25:36.560Z ----------------------------------
+[tool result] ok (2193 chars, 50 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:25:48.007Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && head -c 200 .env | grep CORPUS && echo "---" && ls "E:/AI Challenge CodeFest/Ashen_Era_Archive" && echo "=== sa ...
+
+--- USER  2026-09-08T07:25:48.411Z ----------------------------------
+[tool result] ok (225 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:26:01.054Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && cat README.txt && echo "=== counts ===" && for d in chronicles codex ephemera images wiki; do echo -n "$d: "; ...
+
+--- USER  2026-09-08T07:26:03.836Z ----------------------------------
+[tool result] ok (2278 chars, 66 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:26:23.295Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls docs/diagrams && echo "=== report pdf ===" && ls -la docs/*.pdf && echo "=== TEAM.md ===" && cat TEAM.md &&  ...
+
+--- USER  2026-09-08T07:26:23.679Z ----------------------------------
+[tool result] ok (9444 chars, 177 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:26:39.690Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | tail -20
+
+--- USER  2026-09-08T07:26:42.108Z ----------------------------------
+[tool result] ok (448 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:26:54.791Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.ingest.integrity 2>&1 | tail -8 && echo "=== GRAPH ===" && .venv/Scripts/python ...
+
+--- USER  2026-09-08T07:27:05.691Z ----------------------------------
+[tool result] ok (669 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:27:14.799Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.graph.build 2>&1 | grep -iE "entit|edge|relation|evidence" | head -20 && echo " ...
+
+--- USER  2026-09-08T07:27:31.313Z ----------------------------------
+[tool result] ok (203 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:27:39.547Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== CORROBORATE ===" && .venv/Scripts/python.exe -m src.graph.corroborate 2>&1 | tail -12
+
+--- USER  2026-09-08T07:27:50.569Z ----------------------------------
+[tool result] ok (317 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:27:58.318Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== COMPARISON HARNESS ===" && timeout 900 .venv/Scripts/python.exe -m comparison.harness 2>&1 | tail -40
+
+--- USER  2026-09-08T07:28:10.932Z ----------------------------------
+[tool result] ok (816 chars, 17 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:28:20.490Z -----------------------------
+[tool] Bash: command=cat "C:\Users\LENOVO\AppData\Local\Temp\claude\e--AI-Challenge-CodeFest\3a6fb620-54c3-4f64-a676-79f684ab90ce\tasks\be5vf11pf.output" 2>/dev/null | tail -15
+
+--- USER  2026-09-08T07:28:20.632Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:28:27.809Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== BASELINE ===" && timeout 600 .venv/Scripts/python.exe -m eval.run_eval --checkpoint baseline 2>&1 | t ...
+
+--- USER  2026-09-08T07:28:31.731Z ----------------------------------
+[tool result] ok (999 chars, 31 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:28:42.047Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && tail -5 "C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/[REDACTED] ...
+
+--- USER  2026-09-08T07:29:14.527Z ----------------------------------
+[tool result] ok (848 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:29:22.736Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -iE "passed|failed|error" "C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/3a6fb620-54c ...
+
+--- USER  2026-09-08T07:29:22.936Z ----------------------------------
+[tool result] ok (417 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:29:29.794Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | tail -3 && echo "=== dev q test count ===" && .venv ...
+
+--- USER  2026-09-08T07:29:35.348Z ----------------------------------
+[tool result] ok (101 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:29:41.977Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest --collect-only -q 2>&1 | grep -E "tests? collected|^[0-9]+ tests" | tail -3; ...
+
+--- USER  2026-09-08T07:29:47.986Z ----------------------------------
+[tool result] ok (28 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:29:57.153Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && (timeout 25 .venv/Scripts/python.exe -m src.ui.server > /tmp/srv.log 2>&1 &) ; sleep 12; cat /tmp/srv.log; echo ...
+
+--- USER  2026-09-08T07:30:13.915Z ----------------------------------
+[tool result] ok (1426 chars, 22 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:30:27.697Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && (timeout 40 .venv/Scripts/python.exe -m src.ui.server > /tmp/srv2.log 2>&1 &) ; sleep 12; echo "=== server stdo ...
+
+--- USER  2026-09-08T07:30:44.434Z ----------------------------------
+[tool result] ok (22431 chars, 11 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:31:12.066Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/Ashen_Era_Archive" && echo -n "wiki .md: " && find wiki -name "*.md" | wc -l && echo -n "wiki other: " && find wiki -type f ! -name ...
+
+--- USER  2026-09-08T07:31:12.522Z ----------------------------------
+[tool result] ok (798 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:31:25.065Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && timeout 20 .venv/Scripts/python.exe -u -m src.ui.server 2>&1 | head -8; echo "=== repo public? ==="; curl -s -o ...
+
+--- USER  2026-09-08T07:31:48.840Z ----------------------------------
+[tool result] ok (239 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:31:59.929Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import pdfplumber p=pdfplumber.open('docs/Ashen Era Intelligence Assistant - Subm ...
+
+--- USER  2026-09-08T07:32:03.418Z ----------------------------------
+[tool result] ok (1226 chars, 19 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:32:16.260Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== CLI dev q ===" && .venv/Scripts/python.exe -m src.query.engine "Which war did Ravena Stormwell's own  ...
+
+--- USER  2026-09-08T07:32:32.685Z ----------------------------------
+[tool result] ok (803 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:32:45.457Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== README internal links exist? ===" && grep -oE "\]\(([^)]+)\)" README.md | sed 's/](//;s/)//' | grep - ...
+
+--- USER  2026-09-08T07:32:47.920Z ----------------------------------
+[tool result] ok (662 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:33:37.726Z -----------------------------
+I ran every command the README claims, against the real corpus, and cross-read it against the challenge document. Results:
+
+## Everything the README claims, reproduced
+
+| README claim | Command | Result |
+|---|---|---|
+| 340 files → 317 docs → 30,553 passages | `src.ingest.pipeline` | 340 / 317 / 30553 ✓ (22 duplicates collapsed) |
+| 118 entities, 265 edges, 15 relations | `src.graph.build` | 118 / 265 / 15 ✓ |
+| 259 of 265 corroborated | `src.graph.corroborate` | 259 (97.7%) ✓ |
+| 497 tests passing | `pytest` | 497 collected, exit 0 ✓ |
+| Baseline 2/7, 0/9 complete evidence | `eval.run_eval --checkpoint baseline` | 1B 2/7, "Complete evidence: 0/9" ✓ — and it genuinely ran with **zero API calls** (`calls: none | cache hits: 20`) |
+| 49 frozen: 22 correct, 31 complete evidence, 36/49 no route shape, 6/6 refusals | `comparison.harness` | 22 / 31 / 36 / 6 ✓ |
+| `corpus matches the shipped archive.` | `src.ingest.integrity` | 341 verified, 0 missing, 0 modified ✓ |
+| Startup banner | `src.ui.server` | prints **verbatim** what the README quotes ✓ |
+| Nav, 7 dev questions, reindex button | HTTP | ✓ |
+| CLI answer + "row 3" / "row 5" evidence | `src.query.engine` | exact match ✓ |
+| Typo refusal at 0.938 / 0.750 | CLI | exact match ✓ |
+| Eight direct dependencies, 17 scanned pages | files | 8 in requirements.txt, 17 in `ocr_cache/`, 17 `*scan*` in ephemera ✓ |
+| All 8 internal doc links | filesystem | all resolve ✓ |
+
+No claim in the README failed. That's unusual and worth saying plainly.
+
+## Problems found
+
+**1. Step 1 of the setup instructions is broken for a judge.** [README.md](ashen-assistant/README.md) opens with `git clone https://github.com/mithilyr/CODEFEST---AI-Challenge.git`. That URL returns **404** unauthenticated — the repo is private. §5.2 hands judges a ZIP, not a clone, and §6 scores "can a judge set up and run your project from the README alone?" at 15%. Step 1 should be "unzip the submitted archive and `cd` into it", with the clone as an alternative.
+
+**2. Corpus size appears to contradict the challenge document.** §3 of the PDF says the archive is "415 documents and about 1,277 pages". The README's first line says "a 317-document collection". A judge reading both will assume a third of the corpus was missed. The reconciliation is only in *How it works*, four screens down. Worth one clause up front. (For the record: the shipped archive actually holds 339 content files — 95 wiki `.md`, 55 wiki images, 8 chronicles, 21 codex, 145 ephemera, 15 plates — so the PDF's 415 is itself loose, and 340→317 is the defensible derivation. Saying that in one sentence pre-empts the question rather than inviting it.)
+
+**3. "Three pages" is two pages and an anchor.** The nav is `/`, `/graph`, `/#relations`; `/relations` 404s. "What you can ask" is a section of the Ask page. The user manual describes it as a third page.
+
+**4. The submission report is misplaced and unlinked.** §5.2's structure puts `submission_report.pdf` at the repo root; it lives at [docs/Ashen Era Intelligence Assistant - Submission Report.pdf](ashen-assistant/docs/) and the README's "Where to read more" table never mentions it.
+
+**5. `cp .env.example .env` under a "Windows commands are shown" heading.** Fine in PowerShell (alias), fails in `cmd.exe`.
+
+## Outside the README, but blocking submission
+
+- **The report's page 1 still reads `Demonstration video: [UNLISTED YOUTUBE LINK — paste before submitting]`.** §5.1 requires the link at the top of the report and says the upload timestamp is checked.
+- **[TEAM.md](ashen-assistant/TEAM.md) still contains `[TEAM — ...]` and `[TO BE COMPLETED]` placeholders**, and says "All 117 commits" against a log that now has 127. §5.3 requires team names, roles and contributions.
+- **`.env` holds live Google/Voyage/OpenRouter keys.** It's correctly gitignored, so `git archive` is safe — but zipping the folder directly would ship the keys, along with `.venv` and the 82 MB `.cache/embeddings/`. §9.3 is explicit that a leaked key stays leaked.
+
+Want me to fix items 1–5 in the README directly?
+
+--- USER  2026-09-08T07:34:51.762Z ----------------------------------
+Fix all.
+
+--- ASSISTANT  2026-09-08T07:35:06.487Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -nE "output|\.pdf|docs/|report" docs/build_report.py | head -30 && echo "=== git status ===" && git status ...
+
+--- USER  2026-09-08T07:35:09.612Z ----------------------------------
+[tool result] ok (605 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:35:31.923Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' import json,collections d=json.load(open('.cache/corpus.v1.json',encoding='ut ...
+
+--- USER  2026-09-08T07:35:34.112Z ----------------------------------
+[tool result] ERROR: Exit code 1 File "<stdin>", line 13 print(collections.Counter(p.split('/')[0].split('\')[0] for p in paths)) ^ SyntaxError: unterminated string literal (detected at line 13)
+
+--- ASSISTANT  2026-09-08T07:35:42.132Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json,collections,re d=json.load(open('.cache/corpus.v1.json',encoding='utf ...
+
+--- USER  2026-09-08T07:35:44.648Z ----------------------------------
+[tool result] ok (118 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:35:52.946Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json,collections,re d=json.load(open('.cache/corpus.v1.json',encoding='utf ...
+
+--- USER  2026-09-08T07:35:55.778Z ----------------------------------
+[tool result] ok (211 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:36:05.106Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " import json,collections d=json.load(open('.cache/corpus.v1.json',encoding='utf-8' ...
+
+--- USER  2026-09-08T07:36:08.226Z ----------------------------------
+[tool result] ok (365 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:36:18.358Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rnE "README|sample_questions|SUFFIX|suffix|EXTENS|\.txt" src/ingest/discover.py 2>/dev/null | head -20 || ...
+
+--- USER  2026-09-08T07:36:18.572Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:36:27.448Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && ls src/ingest/ && grep -rnE "sample_questions|README|SKIP|ignore" src/ingest/*.py | head -20
+
+--- USER  2026-09-08T07:36:27.751Z ----------------------------------
+[tool result] ok (1441 chars, 24 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:36:41.102Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '160,190p' src/ingest/dedup.py && echo "=== metadata 150-170 ===" && sed -n '150,170p' src/ingest/metada ...
+
+--- USER  2026-09-08T07:36:41.381Z ----------------------------------
+[tool result] ok (2264 chars, 53 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:37:15.736Z -----------------------------
+All five README items, plus the drift-prone commit count in TEAM.md. First the README edits:
+
+--- ASSISTANT  2026-09-08T07:37:30.112Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' from pathlib import Path p = Path("README.md"); s = p.read_text(encoding="utf ...
+
+--- USER  2026-09-08T07:37:32.730Z ----------------------------------
+[tool result] ok (33 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:37:38.317Z -----------------------------
+Now the report placement and the TEAM.md commit count:
+
+--- ASSISTANT  2026-09-08T07:37:43.555Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && mv "docs/Ashen Era Intelligence Assistant - Submission Report.pdf" submission_report.pdf && ls -la submission_r ...
+
+--- USER  2026-09-08T07:37:46.120Z ----------------------------------
+[tool result] ok (100 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:37:51.147Z -----------------------------
+Now re-verifying that the edited README still holds up end to end:
+
+--- ASSISTANT  2026-09-08T07:37:54.574Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== all README links resolve? ===" && grep -oE "\]\(([^)]+)\)" README.md | sed 's/](//;s/)//' | grep -v " ...
+
+--- USER  2026-09-08T07:39:54.599Z ----------------------------------
+[tool result] ok (616 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:40:08.640Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m pytest -q 2>&1 | grep -cE "^F|^E|error" ; echo "exit=$?" ; .venv/Scripts/python.exe ...
+
+--- USER  2026-09-08T07:43:46.897Z ----------------------------------
+[tool result] ok (39 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:44:29.124Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -m src.ingest.pipeline 2>&1 | grep -A15 -iE "duplicates collapsed|per collection|colla ...
+
+--- USER  2026-09-08T07:45:27.319Z ----------------------------------
+[tool result] ok (281 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:46:46.315Z -----------------------------
+One claim in the paragraph I added was wrong — only 7 of the 22 collapses are format duplicates. Correcting it:
+
+--- ASSISTANT  2026-09-08T07:46:54.791Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' from pathlib import Path p = Path("README.md"); s = p.read_text(encoding="utf ...
+
+--- USER  2026-09-08T07:47:02.716Z ----------------------------------
+[tool result] ok (203 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:47:15.453Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && sed -n '10,40p' README.md && echo "..." && grep -n "Get the code\|copy .env.example\|Three links\|Graph, and Wh ...
+
+--- USER  2026-09-08T07:47:18.032Z ----------------------------------
+[tool result] ok (2319 chars, 37 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:47:31.374Z -----------------------------
+The counts note interrupts the argument. Moving it to the end of that section and rewrapping:
+
+--- ASSISTANT  2026-09-08T07:47:35.744Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' from pathlib import Path p = Path("README.md"); s = p.read_text(encoding="utf ...
+
+--- USER  2026-09-08T07:47:38.343Z ----------------------------------
+[tool result] ok (1780 chars, 33 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:47:54.023Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' from pathlib import Path p = Path("README.md"); s = p.read_text(encoding="utf ...
+
+--- USER  2026-09-08T07:47:56.761Z ----------------------------------
+[tool result] ok (224 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:48:07.269Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "On the two document counts" README.md && sed -n '34p;62p' README.md && echo "=== was line 34 long befo ...
+
+--- USER  2026-09-08T07:48:10.418Z ----------------------------------
+[tool result] ok (315 chars, 6 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:48:22.242Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && awk 'NR>=52 && NR<=70 && length>80 {print NR": "length": "$0}' README.md && awk 'NR>=110 && NR<=135 && length>8 ...
+
+--- USER  2026-09-08T07:48:24.545Z ----------------------------------
+[tool result] ok (271 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:48:38.767Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' from pathlib import Path p = Path("README.md"); s = p.read_text(encoding="utf ...
+
+--- USER  2026-09-08T07:48:41.220Z ----------------------------------
+[tool result] ok (40 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:48:47.944Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git show HEAD:README.md > /tmp/old_readme.md && awk 'length>80 {print $0}' README.md | sort > /tmp/new_long.txt ...
+
+--- USER  2026-09-08T07:48:50.646Z ----------------------------------
+[tool result] ok (296 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:48:59.614Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' from pathlib import Path p = Path("README.md"); s = p.read_text(encoding="utf ...
+
+--- USER  2026-09-08T07:49:02.867Z ----------------------------------
+[tool result] ok (268 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:49:09.666Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from pathlib import Path p=Path('README.md'); s=p.read_text(encoding='utf-8') old ...
+
+--- USER  2026-09-08T07:49:12.351Z ----------------------------------
+[tool result] ok (197 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:49:20.307Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from pathlib import Path p=Path('README.md'); s=p.read_text(encoding='utf-8') old ...
+
+--- USER  2026-09-08T07:49:22.671Z ----------------------------------
+[tool result] ok (1537 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:49:31.648Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from pathlib import Path p=Path('README.md'); s=p.read_text(encoding='utf-8') old ...
+
+--- USER  2026-09-08T07:49:34.668Z ----------------------------------
+[tool result] ok (115 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:49:39.477Z -----------------------------
+Only a table row remains long, matching the file's existing style. Final verification of the whole README against a clean run:
+
+--- ASSISTANT  2026-09-08T07:49:42.390Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && echo "=== links ===" && grep -oE "\]\(([^)]+)\)" README.md | sed 's/](//;s/)//' | grep -v "^http" | sort -u | w ...
+
+--- USER  2026-09-08T07:49:44.668Z ----------------------------------
+[tool result] ok (940 chars, 28 lines, output not included)
+
+--- ASSISTANT  2026-09-08T07:50:03.017Z -----------------------------
+All five README items are fixed and re-verified; the repo layout now matches §5.2.
+
+**What changed in [README.md](ashen-assistant/README.md):**
+
+1. **Setup step 1** now leads with "extract the ZIP and `cd` in" and marks the clone as the alternative, flagged as non-public. A judge working from the submitted archive is no longer sent to a 404.
+2. **The 415-vs-317 conflict** gets a short paragraph at the end of *What this is*, showing the arithmetic rather than asserting it: 341 shipped files → 340 scanned → 22 collapsed → 1 root file set aside → 317, broken out as 150 wiki / 145 ephemera / 18 codex / 4 chronicles, with the point that the 17 hard scanned pages are inside the count, not excluded from it.
+3. **"Three pages"** now reads "Three links across the top", and says plainly that Ask and What-you-can-ask are one page and Graph is its own. The `### The other two pages` heading became `### Graph, and What you can ask`.
+4. **`submission_report.pdf` moved to the repo root** (from `docs/Ashen Era Intelligence Assistant - Submission Report.pdf`) and is now the first row of *Where to read more*.
+5. **`cp .env.example .env` → `copy .env.example .env`**, with the top-of-section note extended to "`cp` in place of `copy`" for macOS/Linux. `copy` works in both `cmd.exe` and PowerShell.
+
+**[TEAM.md](ashen-assistant/TEAM.md):** "All 117 commits" → "Every commit", in both places. The count was already wrong (127) and would have gone stale again on the next commit; the claim never needed a number.
+
+I corrected one thing I got wrong on the first pass: I initially wrote that the 22 collapsed files were mostly `.docx`/`.pdf` twins. Checking the dedup report, only 7 are — the other 15 are standalone figure plates folded into the document each illustrates. The README now says that.
+
+Re-verified after editing: all 9 internal links resolve, pipeline still reports 340/317/22, integrity still passes on 341 files, and **497 tests pass**.
+
+**Three things I did not fix, because they need facts I don't have:**
+
+- **The report's video link** is still `[UNLISTED YOUTUBE LINK — paste before submitting]` on page 1 of `submission_report.pdf`. §5.1 requires the real unlisted URL there and says the upload timestamp is checked. It's regenerated via `docs/report.md` → `docs/build_report.py` → print to PDF, so paste the link into `docs/report.md` and rebuild.
+- **TEAM.md's `[TEAM — …]` and `[TO BE COMPLETED]` placeholders.** Filling these means writing claims about what four named people did; §4.1 lets a judge ask any of them to defend it. That has to come from them.
+- **Packaging.** `.env` holds live Google/Voyage/OpenRouter keys. It's gitignored, so `git archive HEAD` is safe — zipping the folder directly is not, and would also drag in `.venv` and the 82 MB `.cache/embeddings/`.
+
+Changes are uncommitted; `submission_report.pdf` is untracked. Want me to commit them?
+
+--- USER  2026-09-08T08:03:51.363Z ----------------------------------
+Youtube is yet to be made. Team md is yet to be discussed. Commit changes for now.
+
+--- ASSISTANT  2026-09-08T08:04:22.505Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git diff --stat eval/results/baseline_latest.md && git diff eval/results/baseline_latest.md | head -30 && echo  ...
+
+--- USER  2026-09-08T08:04:29.560Z ----------------------------------
+[tool result] ok (1292 chars, 30 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:04:38.869Z -----------------------------
+Committing as five atomic changes, matching the repo's existing style:
+
+--- ASSISTANT  2026-09-08T08:04:39.822Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git log -3 --format="%an <%ae>" && git config user.name && git config user.email
+
+--- USER  2026-09-08T08:04:42.424Z ----------------------------------
+[tool result] ok (153 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:04:49.476Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' # Stage the setup-instruction hunks only, leaving the rest of README for late ...
+
+--- USER  2026-09-08T08:04:52.351Z ----------------------------------
+[tool result] ok (216 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:05:14.931Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && cp README.md /tmp/final_readme.md && git show HEAD:README.md > /tmp/orig_readme.md && .venv/Scripts/python.exe  ...
+
+--- USER  2026-09-08T08:05:19.277Z ----------------------------------
+[tool result] ERROR: Exit code 1 Traceback (most recent call last): File "<stdin>", line 2, in <module> File "C:\Users\LENOVO\AppData\Local\hermes\hermes-agent\.hermes-runtime\python\[REDACTED]\cpy ...
+
+--- ASSISTANT  2026-09-08T08:05:27.618Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/3a6fb620-54c3-4f64-a676-79f684ab90ce/scr ...
+
+--- USER  2026-09-08T08:05:32.100Z ----------------------------------
+[tool result] ok (228 chars, 5 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:05:48.462Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe - <<'PY' from pathlib import Path SP = Path(r"C:/Users/LENOVO/AppData/Local/Temp/claud ...
+
+--- USER  2026-09-08T08:05:50.884Z ----------------------------------
+[tool result] ok (72 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:06:02.990Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/3a6fb620-54c3-4f64-a676-79f684ab90ce/scr ...
+
+--- USER  2026-09-08T08:06:06.129Z ----------------------------------
+[tool result] ok (80 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:06:19.529Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/3a6fb620-54c3-4f64-a676-79f684ab90ce/scr ...
+
+--- USER  2026-09-08T08:06:24.334Z ----------------------------------
+[tool result] ok (83 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:06:35.143Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/3a6fb620-54c3-4f64-a676-79f684ab90ce/scr ...
+
+--- USER  2026-09-08T08:06:37.802Z ----------------------------------
+[tool result] ok (321 chars, 4 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:06:48.707Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git add TEAM.md && git commit -q -F - <<'MSG' docs(team): "every commit", not "all 117" - a count that was alre ...
+
+--- USER  2026-09-08T08:06:52.335Z ----------------------------------
+[tool result] ok (1285 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:06:57.317Z -----------------------------
+Working tree is clean. Final check that HEAD is what I verified:
+
+--- ASSISTANT  2026-09-08T08:07:03.318Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && SP="C:/Users/LENOVO/AppData/Local/Temp/claude/e--AI-Challenge-CodeFest/3a6fb620-54c3-4f64-a676-79f684ab90ce/scr ...
+
+--- USER  2026-09-08T08:07:07.661Z ----------------------------------
+[tool result] ok (314 chars, 13 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:07:13.907Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && git grep -nE "AQ\.A|pa-_|sk-or" HEAD -- CLAUDE.md | head -5
+
+--- USER  2026-09-08T08:07:14.054Z ----------------------------------
+[tool result] ok (146 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T08:07:28.117Z -----------------------------
+That hit is the project's own key-scanning recipe in `CLAUDE.md`, not a key. No secrets in the history.
+
+Six commits on `main`, working tree clean:
+
+```
+ac9e4ff  chore(eval): baseline re-run at HEAD, verifying the README's quoted numbers
+1cb9c42  docs(team): "every commit", not "all 117" - a count that was already stale
+66fc730  docs: submission_report.pdf at the root, where §5.2 puts it, and linked
+69d0541  docs(readme): the nav is three links over two pages, not three pages
+77c000a  docs(readme): reconcile the challenge document's 415 documents with our 317
+f65adfb  docs(readme): a judge starts from the ZIP, not a clone of a private repo
+```
+
+I split the README work into four commits rather than one, since §6 scores "meaningful atomic commits" and each of these is a separate defect with a separate reason. Each message says what was wrong and why it mattered, not just what changed.
+
+Two notes on judgement calls I made:
+
+- **Committed to `main` directly**, matching how every `docs:` change in this repo has landed. The feature branches are for `feat/` work.
+- **Committed the two eval re-runs.** `eval/results/` is tracked as an audit trail here, and both runs confirm the baseline row still reproduces at HEAD with zero API calls. Deleting a run that happened seemed worse than the small noise.
+
+I verified HEAD's README is byte-identical to the version I checked, all nine internal links resolve from the committed tree, and the 497 tests pass.
+
+Still open, as you said — the YouTube link in `submission_report.pdf` (paste into `docs/report.md`, rerun `docs/build_report.py`, reprint) and the TEAM.md placeholders. One thing worth deciding before you zip: build the submission with `git archive HEAD` rather than zipping the folder, or `.env` with your live keys goes in alongside `.venv` and the 82 MB embeddings cache.

@@ -1,0 +1,539 @@
+==============================================================================
+Ashen Era Intelligence Assistant -- AI collaboration transcript
+SLIIT Codefest 2026, sub-track 1B. Exported for challenge doc s4.1.
+
+Session id      : 8b4991a4-80bc-4878-be5a-647f49391b46
+Source          : 8b4991a4-80bc-4878-be5a-647f49391b46.jsonl
+First activity  : 2026-09-08T12:32:20.050Z
+Last activity   : 2026-09-08T19:02:12.297Z
+Dialogue turns  : 81   (of 245 raw records)
+Working dir     : E:\AI Challenge CodeFest, E:\AI Challenge CodeFest\ashen-assistant, e:\AI Challenge CodeFest
+Git branch      : HEAD
+Assistant       : Claude Code (Anthropic)
+
+Tool calls appear as one summary line each; tool output is omitted by
+design so the human-AI dialogue stays legible. Credentials are replaced
+with [REDACTED] by ai_usage/export_logs.py. Nothing else is edited.
+==============================================================================
+
+--- USER  2026-09-08T12:32:20.183Z ----------------------------------
+<command-message>i-have-adhd:i-have-adhd</command-message>
+<command-name>/i-have-adhd:i-have-adhd</command-name>
+<command-args>Why is it  317 ddocuments and not 415 as stated in the pdf</command-args>
+
+--- USER  2026-09-08T12:32:20.183Z ----------------------------------
+Base directory for this skill: C:\Users\LENOVO\.claude\plugins\cache\i-have-adhd\i-have-adhd\0.2.0\skills\i-have-adhd
+
+# i-have-adhd
+
+The reader has ADHD. Output is not just brief. It is shaped so an ADHD brain can act on it.
+
+## Persistence
+
+These rules apply to every response for the rest of the session, not only this one. They do not expire after a few turns and they do not lapse when the topic changes. If you are unsure whether they still apply, they do.
+
+Turn them off only when the reader says "stop adhd mode" or "normal mode". Confirm in one line, then return to your default style.
+
+## What ADHD changes about reading
+
+Five facts drive every rule below:
+
+1. Working memory is small. Anything not on screen is forgotten. Do not ask the reader to "keep in mind X."
+2. Knowing the answer is not doing the answer. The friction between "got it" and "done it" is where work dies.
+3. Starting is the hardest step. The first action must be obvious, small, and doable now.
+4. Time estimates feel uniform. "A bit of work" and "a few hours" register the same. Vague estimates fail.
+5. Dopamine is scarce. Visible progress matters. Buried wins do not register.
+
+## Rules
+
+### 1. Lead with the next action
+
+The first line is something the reader can do. Not context. Not a plan. The action.
+
+Bad: "Let's think about this. Your auth flow has a few moving pieces..."
+Good: "Run `npm install jsonwebtoken`, then edit `src/auth.ts:42`."
+
+If the answer is a command, path, or snippet, it goes first. Prose comes after, if at all.
+
+### 2. Number multi-step tasks
+
+If the work takes more than one step, write a numbered list. Each step is one bounded action. No step contains "and then" twice.
+
+Use the fewest steps that still work. Cut any step the reader does not need, and fold trivial steps into the one before. A short path finished beats a complete path abandoned.
+
+Bad: "First open the file, find the function, swap it out, then run the tests."
+
+Good:
+```
+1. Open `src/auth.ts`
+2. Replace `verifyToken` (lines 42 to 58) with the snippet below
+3. Run `npm test -- auth.spec.ts`
+```
+
+### 3. End with one concrete next action
+
+If anything is left open, name ONE thing the reader can do in under two minutes. Even "open the file" counts.
+
+Bad: "Hope that helps. Let me know if you want to dig deeper."
+Good: "Next: run `npm test` and paste the first failing line."
+
+### 4. Suppress tangents
+
+If a second issue exists, finish the first, then offer the second as a separate question.
+
+Bad: "Here's the fix. By the way, your dependency is also stale, and your README is out of date, and..."
+Good: "Here's the fix. Separately: there is also a stale dependency. Want me to handle that next?"
+
+A question that comes up mid-work is not a tangent: answer it yourself if you can and fold the result in. If it still needs the reader, surface it once, at the end.
+
+### 5. Restate state every turn
+
+The reader cannot hold "we are on step 3 of 5" between messages. Restate it.
+
+Bad: "Done. Ready for the next part?"
+Good: "Step 3 of 5 done: schema updated. Next: backfill the new column. Run the script?"
+
+If the harness has a task or plan tool, use it for multi-step work: one item per step, one in progress at a time. The checklist does the restating; do not also narrate the full plan as prose.
+
+### 6. Give specific time estimates
+
+Vague estimates fail. Ballpark in concrete units.
+
+Bad: "This will take some work."
+Good: "About 15 minutes if tests already cover this. An afternoon if not."
+
+### 7. Make completed work visible
+
+Show what now works, in concrete terms. Do not bury wins in a recap.
+
+Bad: "I've made some changes to the auth flow. Among other things..."
+Good: "Login now works with magic links. Try: `npm run dev`, open `/login`."
+
+### 8. Matter-of-fact tone for errors
+
+Never use "Uh oh," "Oh no," or "There seems to be a problem." State cause and fix.
+
+Bad: "Uh oh, the test is failing. There seems to be an issue..."
+Good: "Test fails at `auth.spec.ts:42`: expected 200, got 401. Cause: missing auth header. Fix: add `Authorization: Bearer ${token}` to the request."
+
+### 9. Cap lists at 5 items
+
+If a list grows past five, split into "do now" vs "later," or "must" vs "nice to have." Five items ranked beats ten unranked.
+
+### 10. No preamble, no recap, no closing pleasantries
+
+Forbidden openers: "Great question," "Let me...", "I'll...", "Sure!", "Looking at your...", "To answer your question..."
+
+Forbidden recaps after a completed task: "I've now done X, Y, and Z, which means..."
+
+Forbidden closers: "Let me know if you need anything else," "Hope this helps," "Happy to clarify," "Feel free to ask."
+
+Start with the answer. End when the answer is done.
+
+## When to break the rules
+
+Override the defaults when:
+
+1. User asks to "explain" or "walk me through." Explain fully. Still no preamble, still no closer, but the body runs as long as the topic needs. Add headers so the reader can skim back.
+2. Destructive action ahead (`rm -rf`, force push, schema migration, dropping a table). Confirm before acting. Safety wins over brevity.
+3. Debug spiral. If the last three turns have been "still broken," stop iterating on code. Name the assumption that might be wrong. Ask one diagnostic question.
+4. Real ambiguity in the request. One short clarifying question beats guessing and rewriting.
+5. A rule fights the task. When a rule would delete the answer itself, the task wins; the shape stays. Example: "what are my options" gets 2 to 4 ranked options with one-line trade-offs, recommendation first, not one path. The options are the answer.
+6. A rule fights the harness. Inside an agent harness, the system prompt outranks this skill: announce a tool call when the harness requires it, do the work instead of asking "want me to," point time estimates at whoever executes the steps. Same principle as 5: the constraint wins, the shape stays.
+
+## Pre-send check
+
+Before sending, delete:
+
+1. The first sentence if it announces what you are about to do.
+2. The last sentence if it asks "anything else?" or recaps what just happened.
+3. Any "by the way" sidebar.
+4. Any hedging adverb adding no information ("perhaps," "might," "could possibly"). Keep a hedge that carries real uncertainty; deleting it manufactures confidence.
+5. Any idiom or figurative phrase ("circle back," "get the ball rolling," "on the same page"). Replace with the literal action.
+
+Then verify: if the reader reads only the first line and the last line, do they know (a) what to do next, and (b) what just happened?
+
+If yes, send.
+
+
+ARGUMENTS: Why is it  317 ddocuments and not 415 as stated in the pdf
+
+--- ASSISTANT  2026-09-08T12:32:25.623Z -----------------------------
+[tool] Bash: command=find "e:/AI Challenge CodeFest" -maxdepth 3 -iname "*.pdf" -o -maxdepth 3 -iname "*report*" 2>/dev/null | head -50
+
+--- USER  2026-09-08T12:32:26.589Z ----------------------------------
+[tool result] ok (4676 chars, 50 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:32:30.902Z -----------------------------
+[tool] Bash: command=grep -rn "317\|415" "E:/AI Challenge CodeFest/ashen-assistant" --include="*.md" --include="*.py" --include="*.json" --include="*.html" 2>/dev/null | grep -v nod ...
+
+--- USER  2026-09-08T12:32:31.259Z ----------------------------------
+[tool result] ok (7521 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:32:35.447Z -----------------------------
+[tool] Bash: command=grep -n -i "document" "E:/AI Challenge CodeFest/ashen-assistant/docs/report.md" "E:/AI Challenge CodeFest/ashen-assistant/docs/report-draft.md" "E:/AI Challenge ...
+
+--- USER  2026-09-08T12:32:35.686Z ----------------------------------
+[tool result] ok (1347 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:32:38.982Z -----------------------------
+[tool] Read: file_path=E:/AI Challenge CodeFest/ashen-assistant/docs/report.md
+
+--- USER  2026-09-08T12:32:39.038Z ----------------------------------
+[tool result] ok (1186 chars, 25 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:32:44.429Z -----------------------------
+317 vs 415: two separate gaps, both already documented in [report.md:44-46](ashen-assistant/docs/report.md#L44-L46).
+
+**Gap 1 — 415 → 341 files (74 missing):** the challenge PDF's stated count doesn't match what actually shipped in the archive folder. That's a discrepancy in the source materials, not your pipeline.
+
+**Gap 2 — 341 → 317 canonical documents (24 dropped):** your ingest pipeline deduplicates. Some of the 341 files are duplicate copies of the same document (e.g. a `.pdf` and a `.docx`/`.scan.pdf` of the same content) and get collapsed to one canonical id during the dedup step.
+
+Next: if you want proof rather than just the stated number, run the dedup step's log/manifest and diff which 24 files got merged — tell me and I'll find it in [ashen-assistant/](ashen-assistant).
+
+--- USER  2026-09-08T12:35:26.280Z ----------------------------------
+Show it
+
+--- ASSISTANT  2026-09-08T12:35:29.640Z -----------------------------
+[tool] Bash: command=grep -rln "duplicate\|dedup" "e:/AI Challenge CodeFest/ashen-assistant" --include="*.py" 2>/dev/null | grep -v node_modules | grep -v test
+
+--- USER  2026-09-08T12:35:56.495Z ----------------------------------
+[tool result] ok (15668 chars, 166 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:35:59.822Z -----------------------------
+`src/ingest/dedup.py` is the file. Read it.
+
+--- ASSISTANT  2026-09-08T12:35:59.836Z -----------------------------
+[tool] Read: file_path=E:/AI Challenge CodeFest/ashen-assistant/src/ingest/dedup.py
+
+--- USER  2026-09-08T12:35:59.884Z ----------------------------------
+[tool result] ok (10121 chars, 229 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:36:04.374Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && find . -maxdepth 2 -iname "*dedup*" -o -iname "*coverage*" 2>/dev/null | grep -v .venv
+
+--- USER  2026-09-08T12:36:04.538Z ----------------------------------
+[tool result] ok (31 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:36:07.741Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "def discover" src/ingest/metadata.py | head -5
+
+--- USER  2026-09-08T12:36:07.963Z ----------------------------------
+[tool result] ok (60 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:36:12.014Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && .venv/Scripts/python.exe -c " from pathlib import Path from src.ingest.metadata import discover from src.ingest ...
+
+--- USER  2026-09-08T12:36:15.948Z ----------------------------------
+[tool result] ok (3446 chars, 77 lines, output not included)
+
+--- ASSISTANT  2026-09-08T12:36:31.089Z -----------------------------
+22 collapsed groups, verified by running the actual dedup code (`src/ingest/dedup.py`) against the archive — not just quoting the report:
+
+**15 image plates** — byte-identical PNGs duplicated between `images/` and `codex/images/` (e.g. `plate_00_location_marrowwatch.png` ×2).
+
+**7 document pairs** — same work shipped as both `.docx` and `.pdf`:
+- 4 in `chronicles/` (the four Chronicles volumes)
+- 3 in `codex/` (Vaeloria I, Vaeloria II, the Annals)
+
+340 files scanned (1 root `README.txt` excluded from the document set, not a duplicate — it describes the archive, isn't evidence) → 22 collapsed → **317 canonical documents**. Matches the report's number exactly.
+
+Note: live count is 340 files, report.md says 341 — one file's worth of drift since that doc was written. Not worth chasing unless you want the diff.
+
+Next: if you want the corpus re-verified end to end, run `pytest src/ingest/` — ~1 min.
+
+--- USER  2026-09-08T13:05:02.555Z ----------------------------------
+What is a query planner
+
+--- ASSISTANT  2026-09-08T13:05:08.442Z -----------------------------
+[tool] Grep: pattern=query.?planner|QueryPlanner|planner  in E:/AI Challenge CodeFest/ashen-assistant/src
+
+--- USER  2026-09-08T13:05:08.685Z ----------------------------------
+[tool result] ok (267 chars, 8 lines, output not included)
+
+--- ASSISTANT  2026-09-08T13:05:15.109Z -----------------------------
+This project has one: `src/query/planner.py`. Here's the general concept, then how yours does it.
+
+**Query planner, in general**
+
+A component that takes a question and decides *how* to answer it before any answering happens — which data sources to hit, in what order, and with what strategy. It sits between "user asks something" and "system retrieves/computes." Database query planners (e.g. Postgres) do this for SQL: pick join order, index vs scan, etc. RAG/agent systems do the same thing at a higher level: pick which retrieval path fits the question shape.
+
+**Why it exists**
+
+Not all questions need the same strategy. "What is X's title" is a single lookup. "How are X and Y connected" needs a multi-hop graph traversal. Running every question through one generic retrieval path either wastes work on simple questions or fails outright on complex ones — a planner routes each question to the strategy that can actually answer it.
+
+--- ASSISTANT  2026-09-08T13:05:15.248Z -----------------------------
+[tool] Read: file_path=E:/AI Challenge CodeFest/ashen-assistant/src/query/planner.py
+
+--- USER  2026-09-08T13:05:15.294Z ----------------------------------
+[tool result] ok (2806 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-09-08T13:05:22.320Z -----------------------------
+**Your project's query planner** ([planner.py](ashen-assistant/src/query/planner.py)) — third and last routing tier:
+
+1. **Template match** tries first (fast, deterministic) — catches 11/49 questions
+2. **Cue fallback** tries next — catches another 19/49
+3. **This planner** only fires when both decline (39% of questions were falling through before it existed)
+
+What it does: asks an LLM for a *plan* only — a start entity + ordered relations to walk — never an answer, never graph contents. `validate_plan` then checks the plan against the real graph and `config/relations.yaml`. If the plan names something that doesn't exist, it's rejected outright, not auto-corrected (matches your project's no-invent rule from ADR-011/016).
+
+So: template → cue → **LLM plans, code validates and walks** → answer. The LLM never touches evidence directly; it only picks the route.
+
+Next: want the walk-through of `validate_plan` or `walk_relations` (the two functions that actually execute the plan)?
+
+--- USER  2026-09-08T14:06:50.433Z ----------------------------------
+give me an example of the above
+
+--- ASSISTANT  2026-09-08T14:06:56.356Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "class QueryPlan\|def validate_plan\|def plan_and_walk" src/query/planner.py
+
+--- USER  2026-09-08T14:06:56.687Z ----------------------------------
+[tool result] ok (66 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:07:00.125Z -----------------------------
+[tool] Read: file_path=E:/AI Challenge CodeFest/ashen-assistant/src/query/planner.py
+
+--- USER  2026-09-08T14:07:00.167Z ----------------------------------
+[tool result] ok (5968 chars, 140 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:07:06.466Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "Gravemaw" -r --include="*.py" --include="*.yaml" --include="*.json" . | grep -v .venv | head -20
+
+--- USER  2026-09-08T14:07:35.617Z ----------------------------------
+[tool result] ok (6726 chars, 20 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:07:42.468Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n -i "lair" config/relations.yaml
+
+--- USER  2026-09-08T14:07:42.623Z ----------------------------------
+[tool result] ok (62 chars, 3 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:07:53.229Z -----------------------------
+**Question:** "Where does the Gravemaw Wyrm sleep?"
+
+No template matches "sleep" (the graph calls it `lair_in`), and the cue fallback doesn't catch the rephrase either. Falls to the planner.
+
+1. **LLM emits a plan** — sees the question + the list of known relations (never the graph), returns:
+   ```json
+   {"start_entity": "Gravemaw Wyrm", "relations": ["lair_in"], "answer_type": "location"}
+   ```
+
+2. **`validate_plan` checks it** against the real graph, three gates:
+   - Entity exists? — `Gravemaw Wyrm` is a real node → pass
+   - Grounded in the question? — every token of the name ("gravemaw", "wyrm") appears in "sleep" question → pass ([planner.py:163-189](ashen-assistant/src/query/planner.py#L163-L189))
+   - Relation known? — `lair_in` is in `config/relations.yaml:95` → pass
+
+   → produces `QueryPlan(start_key="gravemaw_wyrm", relations=("lair_in",), answer_type="location")`
+
+3. **`walk_relations` executes it** — pure graph traversal, no model involved — follows `lair_in` from the Gravemaw Wyrm node and lands on **Marrowwell Abbey**, with the evidence unit backing that edge attached ([corpus.v1.json:331484](ashen-assistant/.cache/corpus.v1.json#L331484)).
+
+**Where it would reject instead:** same question but "What color is the sky in the Ashen Era?" — the LLM might hallucinate a plan starting from "The Ashen Vanguard" (shares the word "Ashen"). The grounding check catches it: "vanguard" never appears in the question → rejected, previous tier's honest non-answer returned instead of a wrong one. That's the actual bug this code was built to stop ([planner.py:166-172](ashen-assistant/src/query/planner.py#L166-L172)).
+
+--- USER  2026-09-08T14:30:40.867Z ----------------------------------
+ex[;ain 2b in simple terms block by block
+
+--- ASSISTANT  2026-09-08T14:30:48.518Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n "^#\|2b\|2\.b\|(b)" docs/report.md | head -60
+
+--- USER  2026-09-08T14:30:48.804Z ----------------------------------
+[tool result] ok (477 chars, 12 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:30:53.810Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && .\ashen-assistant\.venv\Scripts\python.exe -c " import pdfplumber with pdfplumber.open('AI_Competition_Challenge.pdf') as pdf:  ...
+
+--- USER  2026-09-08T14:30:57.704Z ----------------------------------
+[tool result] ok (80 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:31:04.267Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && "ashen-assistant/.venv/Scripts/python.exe" -c " import pdfplumber with pdfplumber.open('AI_Competition_Challenge.pdf') as pdf:  ...
+
+--- USER  2026-09-08T14:31:07.959Z ----------------------------------
+[tool result] ok (1 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:31:13.321Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest" && "ashen-assistant/.venv/Scripts/python.exe" -c " import pdfplumber with pdfplumber.open('AI_Competition_Challenge.pdf') as pdf:  ...
+
+--- USER  2026-09-08T14:31:16.757Z ----------------------------------
+[tool result] ERROR: Exit code 1 Traceback (most recent call last): File "<string>", line 7, in <module> File "C:\Users\LENOVO\AppData\Local\hermes\hermes-agent\.hermes-runtime\python\[REDACTED]\cp ...
+
+--- ASSISTANT  2026-09-08T14:31:24.904Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rn "\b2b\b\|2\.b\b" docs/ comparison/ 2>/dev/null
+
+--- USER  2026-09-08T14:31:25.222Z ----------------------------------
+[tool result] ok (50 chars, 1 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:31:29.247Z -----------------------------
+Found it: [INTERNALS.md:107](ashen-assistant/docs/INTERNALS.md#L107) — "2b. Build path in detail".
+
+--- ASSISTANT  2026-09-08T14:31:30.005Z -----------------------------
+[tool] Read: file_path=E:/AI Challenge CodeFest/ashen-assistant/docs/INTERNALS.md
+
+--- USER  2026-09-08T14:31:30.030Z ----------------------------------
+[tool result] ok (4460 chars, 90 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:31:42.450Z -----------------------------
+**"2b. Build path in detail"** — how raw archive files become the graph the system queries. Six blocks, in order:
+
+1. **CORPUS** — the raw archive sitting on disk. 341 files, untouched, never committed to git.
+
+2. **INTEG** (`integrity.py`) — checks every file's SHA-256 against a saved manifest, runs *first*. Why first: an editor once silently rewrote 36 files behind the team's back — this catches that before it poisons everything downstream.
+
+3. **DISC** (`metadata.py discover()`) — reads each filename and pulls out what it can tell just from the name: document type, which entity it's about, whether it's a scan, what kind of image. No file content read yet.
+
+4. **DEDUP** (`dedup.py`) — the 317-vs-341 logic from earlier: collapses `.docx`+`.pdf` pairs in chronicles/codex, leaves ephemera alone since same-stem files there are genuinely different documents.
+
+5. **AUTH** (`authority.py`) — stamps each surviving document with a reliability rank (tier/subtier) from a config file — this is what lets the system later say "the codex outranks a tavern ballad" when two sources disagree.
+
+6. **LOAD** (`loaders.py` + `ocr.py`) — actually reads the content: markdown/text/docx/pdf parsed directly, the 17 scanned-image files go through a pre-computed OCR cache instead of a live OCR call.
+
+**Output:** 317 canonical documents → 30,553 `EvidenceUnits`, each one tagged with its document id, exact location, and authority tier — that's the atomic fact unit everything downstream (the graph, the answers) is built from.
+
+Then it branches three ways: wiki rows go on to build the graph, everything else feeds corroboration, and a separate copy feeds the baseline comparison arm.
+
+Next: want 2c (the answer path) explained the same way, or the branch-out (graph build / corroboration / baseline) in detail?
+
+--- USER  2026-09-08T14:33:15.472Z ----------------------------------
+what is a sha-256
+
+--- ASSISTANT  2026-09-08T14:33:24.928Z -----------------------------
+SHA-256 is a hash function: feed it any file (or any bytes), it outputs a fixed 256-bit fingerprint — always the same 64-character hex string for the same input, e.g. `e3b0c44298fc1c14...`.
+
+**Three properties that matter:**
+1. **Deterministic** — same file in, same hash out, every time, on any machine.
+2. **One-way** — you can't reverse the hash back into the file.
+3. **Collision-resistant** — change even one byte, and the hash comes out completely different. No two different files are ever expected to produce the same hash.
+
+**Why your project uses it** ([integrity.py](ashen-assistant/src/ingest/integrity.py)): it hashes every archive file on startup and compares against a saved manifest of hashes. If a file's content changed even slightly since the manifest was recorded, the hash won't match — instant, cheap proof of tampering. That's how it caught "an editor once silently rewrote 36 files": the file names looked the same, but the hashes didn't.
+
+Next: want to see the actual manifest file or the comparison code in `integrity.py`?
+
+--- USER  2026-09-08T14:37:41.466Z ----------------------------------
+what is the comparison arm
+
+--- ASSISTANT  2026-09-08T14:37:46.728Z -----------------------------
+[tool] Read: file_path=E:/AI Challenge CodeFest/ashen-assistant/src/baseline/rag.py
+
+--- USER  2026-09-08T14:37:46.857Z ----------------------------------
+[tool result] ok (2256 chars, 60 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:37:56.233Z -----------------------------
+**The comparison arm** = a second, deliberately dumb pipeline built alongside the real system, just to prove the real one is actually better — not assumed better.
+
+`src/baseline/rag.py` ([1-21](ashen-assistant/src/baseline/rag.py#L1-L21)):
+
+1. Embed the question
+2. Grab the top-5 most similar chunks by cosine similarity
+3. Paste them into a plain prompt
+4. Ask an LLM to answer
+
+That's it — the standard "day one" RAG pipeline every team could build. On purpose, it's missing everything the real system has:
+- No source authority (can't tell a codex from a tavern sermon)
+- No graph traversal (can't join two documents that share no vocabulary)
+- No conflict detection (contradictory claims sit side by side, unflagged)
+- No abstention (always answers, even when it shouldn't)
+
+**Why it's fair, not a strawman:** it gets the *same* corpus, same embeddings, same deduplicated evidence units as the real system ([rag.py:15-17](ashen-assistant/src/baseline/rag.py#L15-L17)). If it were handicapped, a win wouldn't mean anything.
+
+**What it's for:** the diagram's number — "Checkpoint 1: 1B 2/7, complete evidence 0/9" — is this baseline's score. It answered 2 of 7 multi-hop questions right, and got *complete* evidence in 0 of 9 cases. That's the benchmark the graph-based system has to beat to justify its extra complexity.
+
+Next: want the actual scored comparison table from [comparison/REPORT.md](ashen-assistant/comparison/REPORT.md)?
+
+--- USER  2026-09-08T14:41:12.455Z ----------------------------------
+The reindex function we established earlier, does that not change the build path diagram?
+
+--- ASSISTANT  2026-09-08T14:41:20.057Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -rln "reindex" src/ docs/ 2>/dev/null | grep -v .venv
+
+--- USER  2026-09-08T14:41:20.820Z ----------------------------------
+[tool result] ok (224 chars, 9 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:41:27.246Z -----------------------------
+No "reindex" came up earlier in this conversation — that must be from a different session I don't have. But it exists in the code, so let me check it directly.
+
+--- ASSISTANT  2026-09-08T14:41:27.742Z -----------------------------
+[tool] Grep: pattern=reindex  in E:/AI Challenge CodeFest/ashen-assistant/src/ingest/integrit ...
+
+--- USER  2026-09-08T14:41:27.880Z ----------------------------------
+[tool result] ok (36 chars, 2 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:41:32.563Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && grep -n -i "reindex" src/ingest/integrity.py src/ui/render.py docs/report.md
+
+--- USER  2026-09-08T14:41:32.727Z ----------------------------------
+[tool result] ok (890 chars, 10 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:41:37.636Z -----------------------------
+[tool] Read: file_path=E:/AI Challenge CodeFest/ashen-assistant/docs/report.md
+
+--- USER  2026-09-08T14:41:37.672Z ----------------------------------
+[tool result] ok (964 chars, 15 lines, output not included)
+
+--- ASSISTANT  2026-09-08T14:41:45.641Z -----------------------------
+No — reindex doesn't change the 2b diagram's *shape*, it just re-runs the exact same six blocks (CORPUS → INTEG → DISC → DEDUP → AUTH → LOAD → UNITS → GRAPH) on demand instead of once at startup.
+
+The diagram already says "run once, cached" ([INTERNALS.md:91](ashen-assistant/docs/INTERNALS.md#L91)) — reindex is what makes "cached" not permanent. It's a UI button ([render.py:1455](ashen-assistant/src/ui/render.py#L1455)) that triggers a POST, which reruns the whole build path from scratch, about 6 seconds, and reports before/after counts (317→whatever the new count is).
+
+**What it doesn't do:** watch the filesystem or update incrementally. Per the limitations list ([report.md:168-170](ashen-assistant/docs/report.md#L168-L170)), a document added while the server is running is invisible until someone clicks reindex — there's no auto-detection.
+
+So the diagram stays accurate as drawn; reindex is just "run the arrow from CORPUS to GRAPH again," not a new arrow.
+
+One thing I can't confirm: what exactly you and I "established earlier" about it — that didn't happen in this conversation, so if there was a specific detail from another session, paste it and I'll check it against the code.
+
+--- USER  2026-09-08T14:42:45.121Z ----------------------------------
+what is POST
+
+--- ASSISTANT  2026-09-08T14:42:52.510Z -----------------------------
+POST is an HTTP method — one of the verbs a browser or client uses when talking to a server.
+
+**The core distinction:**
+- **GET** — "give me data." No side effects expected. Loading a page, fetching results.
+- **POST** — "here's data, do something with it / change state." Submitting a form, creating a record, triggering an action.
+
+That's why reindex is a POST, not a GET: clicking it changes server state (rebuilds the whole corpus), so it can't be a safe, repeatable "just looking" request. It also matches what [render.py:395-397](ashen-assistant/src/ui/render.py#L395-L397) warns about — a second reindex isn't harmless, which is exactly the kind of action POST is meant to gate off from being triggered accidentally (like a page refresh re-firing a GET would).
+
+Next: want to see the actual POST route handler in `src/ui/server.py` that receives this request?
+
+--- USER  2026-09-08T18:55:02.355Z ----------------------------------
+Explain 2C briefly.
+
+--- ASSISTANT  2026-09-08T18:55:15.470Z -----------------------------
+**2c — the answer path.** Same three-tiers-then-decline pattern, but for questions instead of building the graph. From [INTERNALS.md:137-179](ashen-assistant/docs/INTERNALS.md#L137-L179):
+
+1. **Resolve** — match the question's entity to a graph node (exact → normalized → alias). Fuzzy matches never win outright, only become candidates.
+2. **Tier 1: templates** — fixed question shapes, 91% precision. No match on 36 of 49 dev questions → falls through.
+3. **Tier 2: cue router** — keyword-based fallback. No cue → falls through again (or returns a full profile if it's clearly an identity question).
+4. **Tier 3: LLM planner** — the one from earlier, off by default. Emits a plan, never an answer.
+5. **Traverse** — the actual graph walk. No model involved here, ever. Every hop cites its source.
+6. **Evidence status** — 15 named outcomes, bucketed into answered (sufficient/conflicting/etc.) or declined (no path, missing attribute, abstention).
+7. **Synthesis / diagnostics** — answered questions get reworded from the verified chain (never re-picks evidence); declines get rendered honestly as "here's what we found instead."
+8. **UI** — just displays it, adds no reasoning.
+
+Same rule as everywhere else in this system: each tier only runs if the last one gave up.
+
+--- USER  2026-09-08T19:01:53.682Z ----------------------------------
+Explain all the .py codes in 2C shortly
+
+--- ASSISTANT  2026-09-08T19:01:59.038Z -----------------------------
+[tool] Bash: command=cd "E:/AI Challenge CodeFest/ashen-assistant" && for f in src/query/resolve.py src/query/route.py src/query/fallback.py src/graph/traverse.py src/query/synthesi ...
+
+--- USER  2026-09-08T19:02:04.018Z ----------------------------------
+[tool result] ok (8129 chars, 161 lines, output not included)
+
+--- ASSISTANT  2026-09-08T19:02:12.297Z -----------------------------
+**7 files, one line each:**
+
+1. **`resolve.py`** — matches the question's entity name to a graph node. Exact → normalized → alias → fuzzy candidates only (never auto-picks a fuzzy winner — two real entities sit at 0.839 similarity).
+
+2. **`route.py`** (Tier 1) — 4 hardcoded question templates, matched only when a real dev question proved that shape exists. 91% precision, but matches just 11-14 of 49 real questions.
+
+3. **`fallback.py`** (Tier 2) — cue/keyword router for what templates miss. Adds 7 correct answers + 13 complete-evidence retrievals over templates alone.
+
+4. **`planner.py`** (Tier 3) — LLM emits a plan (entity + relations), never an answer. Off by default. Covered in detail earlier.
+
+5. **`traverse.py`** — plain bidirectional BFS over the graph. No scoring, no model, no heuristics — just walks and returns paths with their evidence attached.
+
+6. **`synthesis.py`** — turns a verified answer chain into a sentence. Phrasing only; forbidden from adding facts or touching the graph.
+
+7. **`diagnostics.py`** — for declines: records what *was* established (resolved names, existing relations, how far the walk got) so a refusal looks different from a crash.
+
+Next: want the same treatment for `evidence.py` (the 15 status values) or `ui/server.py`/`render.py`?
